@@ -1,0 +1,1069 @@
+(function() {
+	// =========================================================================
+	//
+	// Cache
+	//
+	// =========================================================================
+
+	// =========================================================================
+	//
+	// Settings
+	//
+	// =========================================================================
+	/**
+	 * window.openで開くかどうか。 <br>
+	 * window.openで開く場合はtrue、ページ上に表示するならfalse
+	 */
+	var useWindowOpen = h5.env.ua.isDesktop;
+//	useWindowOpen = true;
+//		useWindowOpen = false;
+
+	// =========================================================================
+	//
+	// Constants
+	//
+	// =========================================================================
+
+	/**
+	 * デバッグツールのスタイル
+	 */
+	var H5DEBUG_STYLE = [{
+		selector: '.h5debug',
+		rule: {
+			backgroundColor: 'rgba(255,255,255,0.8)',
+			height: '100%',
+			margin: 0,
+			padding: 0,
+			zIndex: 20000
+		}
+	}, {
+		selector: '.h5debug.posfix',
+		rule: {
+			position: 'fixed',
+			top: 0,
+			left: 0
+		}
+	}, {
+		selector: '.h5debug-upper-right',
+		rule: {
+			position: 'fixed',
+			zIndex: 20001,
+			top: 0,
+			left: '810px',
+			width: '100px',
+			textAlign: 'right'
+		}
+	}, {
+		selector: '.h5debug-controllBtn',
+		rule: {
+			display: 'inline-block',
+			cursor: 'pointer',
+			fontSize: '30px',
+			fontWeight: 'bold',
+			textAlign: 'center',
+			lineHeight: '30px',
+			width: '32px',
+			height: '32px',
+			margin: 2,
+			backgroundColor: 'rgba(128,255,198,0.4)'
+		}
+	}, {
+		selector: '.h5debug .debug-controller .controll',
+		rule: {
+			paddingLeft: '30px'
+		}
+	}, {
+		selector: '.h5debug .debug-controller ul,dl',
+		rule: {
+			paddingTop: '1em',
+			paddingLeft: '1.2em'
+		}
+	},{
+		selector: '.h5debug .debug-controller ul.no-padding',
+		rule: {
+			padding: '0!important'
+		}
+	}, {
+		selector: '.h5debug .debug-controller .controllerlist',
+		rule: {
+			paddingTop: 0,
+		}
+	}, {
+		selector: '.h5debug .debug-controller .controllerlist .controller-name',
+		rule: {
+			cursor: 'default'
+		}
+	}, {
+		selector: '.h5debug .debug-controller .controllerlist .controller-name.selected',
+		rule: {
+			backgroundColor: 'rgba(170,237,255,1)!important'
+		}
+	}, {
+		selector: '.h5debug .debug-controller .controllerlist .controller-name:hover',
+		rule: {
+			backgroundColor: 'rgba(170,237,255,0.4)'
+		}
+	}, {
+		selector: '.h5debug .debug-controller .eventHandler ul',
+		rule: {
+			paddingTop: '12px'
+		}
+	}, {
+		selector: '.h5debug .debug-controller .eventHandler li.selected',
+		rule: {
+			backgroundColor: 'rgba(128,255,198,0.4)'
+		}
+	}, {
+		selector: '.h5debug pre',
+		rule: {
+			margin: '0 0 10px',
+			padding: '4px',
+			wordBreak: 'break-all',
+			wordWrap: 'break-word',
+			whiteSpace: 'pre',
+			whiteSpace: 'pre-wrap',
+			backgroundColor: 'rgba(245,245,245,0.5)',
+			border: '1px solid rgba(0,0,0,0.15)',
+			'-webkit-border-radius': '4px',
+			'-moz-border-radius': '4px',
+			borderRadius: '4px',
+			fontFamily: 'Monaco,Menlo,Consolas,"Courier New",monospace',
+			fontSize: '12px'
+		}
+	}, {
+		selector: '.h5debug .debug-controller .detail',
+		rule: {
+			overflow: 'auto'
+		}
+	}, {
+		selector: '.h5debug .left',
+		rule: {
+			height: '100%',
+			width: '350px',
+			border: '1px solid #20B5FF',
+			float: 'left',
+			overflow: 'auto'
+		}
+	}, {
+		selector: '.h5debug .right',
+		rule: {
+			height: '100%',
+			width: '550px',
+			border: '1px solid #20B5FF',
+			marginLeft: '-1px',
+			float: 'left',
+			overflow: 'auto'
+		}
+	}, {
+		selector: '.h5debug .eventHandler .menu',
+		rule: {
+			display: 'none'
+		}
+	}, {
+		selector: '.h5debug .eventHandler .menu>*',
+		rule: {
+			display: 'inline-block'
+		}
+	}, {
+		selector: '.h5debug .eventHandler .selected .menu',
+		rule: {
+			display: 'inline-block'
+		}
+	}, {
+		selector: '.h5debug ul.nav-tabs',
+		rule: {
+			listStyle: 'none',
+			width: '100%',
+			borderBottom: '1px solid #ddd',
+			margin: 0,
+			padding: 0,
+
+		}
+	}, {
+		selector: '.h5debug ul.nav-tabs>li',
+		rule: {
+			float: 'left',
+			padding: '3px',
+			border: '1px solid #ccc',
+			color: '#20B5FF',
+			cursor: 'pointer'
+		}
+	}, {
+		selector: '.h5debug ul.nav-tabs>li.active',
+		rule: {
+			color: '#000',
+			borderBottom: '1px solid #fff'
+		}
+	}, {
+		selector: '.h5debug .tab-content>*:not(.active)',
+		rule: {
+			display: 'none'
+		}
+	}];
+	/**
+	 * デバッグするページ側のスタイル
+	 */
+	var H5PAGE_STYLE = [{
+		selector: '.h5debug-overlay',
+		rule: {
+			position: 'absolute',
+			boxSizing: 'border-box',
+			zIndex: 10000
+		}
+	}, {
+		selector: '.h5debug-overlay.root',
+		rule: {
+			backgroundColor: 'rgba(64, 214, 255,0.4)',
+			border: '5px solid rgba(64, 214, 255, 1)'
+		}
+	}, {
+		selector: '.h5debug-overlay.child',
+		rule: {
+			backgroundColor: 'rgba(170,237,255,0.4)',
+			border: '5px dashed rgba(170, 237, 255, 1)'
+		}
+	}, {
+		selector: '.h5debug-overlay.event-target',
+		rule: {
+			backgroundColor: 'rgba(128,255,198,0.3)',
+			border: '5px solid rgba(128,255,198,1)'
+		}
+	}, {
+		selector: '.h5debug-overlay.borderOnly',
+		rule: {
+			backgroundColor: 'transparent!important'
+		}
+	}];
+
+	// =========================================================================
+	//
+	// Scoped Privates
+	//
+	// =========================================================================
+	// =============================
+	// View
+	// =============================
+	/**
+	 * デバッグツールで使用するview
+	 */
+	var view = h5.core.view.createView();
+	// モバイル、タブレット用のラッパー。
+	view
+			.register(
+					'wrapper',
+					'<div class="h5debug-upper-right"><div class="h5debug-controllBtn showhideBtn hideTool">↑</div><div class="h5debug-controllBtn opencloseBtn closeTool">×</div></div><div class="h5debug posfix" style="position:fix; left:0; top:0;"></div>');
+	// --------------------- コントローラ --------------------- //
+	// コントローラデバッグ画面
+	view
+			.register('controllerDebugWrapper',
+					'<div class="debug-controller"><div class="left"></div><div class="right"></div></div>');
+	// 操作パネル
+	view.register('controller-controll',
+			'<div class="controll"><button class="refresh">更新</button></div>');
+
+	// コントローラリストul
+	view.register('controller-list', '<ul class="controllerlist"></ul>');
+
+	// コントローラリストli
+	view.register('controller-list-part',
+			'<li><span class="controller-name [%= cls %]">[%= name %]</span></li>');
+
+	// 詳細情報画面
+	view.register('controller-detail', '<div class="detail"><ul class="nav nav-tabs">'
+			+ '<li class="active" data-tab-page="eventHandler">イベントハンドラ</li>'
+			+ '<li data-tab-page="method">メソッド</li>' + '<li data-tab-page="log">ログ</li>'
+			+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
+			+ '<div class="active eventHandler"></div>' + '<div class="method"></div>'
+			+ '<div class="log"></div>' + '<div class="otherInfo"></div></div>');
+
+	// イベントハンドラリスト
+	view
+			.register(
+					'controller-eventHandler',
+					'<ul>[% if(controller){for(var p in controller){ if(p.indexOf(\' \')!==-1){ %]'
+							+ '<li><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span><span class="key">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
+							+ '[% } }} %]</ul>');
+	// メソッドリスト
+	view
+			.register(
+					'controller-method',
+					'<ul>[% if(controller){for(var p in controller){ if(p.indexOf(\' \')===-1 && "function"===typeof controller[p]){ %]'
+							+ '<li><span class="name">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
+							+ '[% } }} %]</ul>');
+
+	// ログ
+	view
+			.register(
+					'controller-log',
+					'<ul data-h5-loop-context="logs"><li><span data-h5-bind="time"></span><span class="message" data-h5-bind="text:message; class:cls"></span></li></ul>');
+
+	// その他情報
+	view
+			.register(
+					'controller-otherInfo',
+					'<dl><dt>名前</dt><dd>[%= controller.__name %]</dd>'
+							+ '<dt>parentController</dt><dd>[%= controller.parentController && controller.parentController.__name || "なし" %]</dd>'
+							+ '<dt>rootController</dt><dd>[%= controller.rootController.__name %]</dd>'
+							+ '<dt>rootElement</dt><dd>[%= controller.rootElement.nodeName  %]</dd>'
+							+ '<dt>isInit</dt><dd>[%= controller.isInit %]</dd>'
+							+ '<dt>isReady</dt><dd>[%= controller.isReady %]</dd>'
+							+ '<dt>isRoot</dt><dd>[%= controller.__controllerContext.isRoot %]</dd>'
+							+ '<dt>__templates</dt><dd>[%= controller.__templates || "なし" %]</dd>'
+							+ '<dt>有効なテンプレートID</dt><dd><ul class="no-padding">[% for(var p in controller.view.__view.__cachedTemplates){ %]<li>[%= p %]p</li>[% } %]</ul></dd>'
+							+ '</dl>');
+
+	// オーバレイ
+	view.register('overlay', '<div class="h5debug-overlay [%= cls %]"></div>');
+
+	// =============================
+	// Functions
+	// =============================
+	/**
+	 * h5.scopedglobals.jsからコピペ
+	 *
+	 * @private
+	 * @param value 値
+	 * @returns 配列化された値、ただし引数がnullまたはundefinedの場合はそのまま
+	 */
+	function wrapInArray(value) {
+		if (value == null) {
+			return value;
+		}
+		return $.isArray(value) ? value : [value];
+	}
+	/**
+	 * h5.core.__compileAspectsからコピペ
+	 *
+	 * @param {Object|Object[]} aspects アスペクト設定
+	 */
+	function compileAspects(aspects) {
+		var compile = function(aspect) {
+			if (aspect.target) {
+				aspect.compiledTarget = getRegex(aspect.target);
+			}
+			if (aspect.pointCut) {
+				aspect.compiledPointCut = getRegex(aspect.pointCut);
+			}
+			return aspect;
+		};
+		h5.settings.aspects = $.map(wrapInArray(aspects), function(n) {
+			return compile(n);
+		});
+	}
+	/**
+	 * h5scopedglobals.jsからコピペ
+	 *
+	 * @private
+	 * @param {String} str 文字列
+	 * @returns {String} エスケープ済文字列
+	 */
+	function escapeRegex(str) {
+		return str.replace(/\W/g, '\\$&');
+	}
+	/**
+	 * h5scopedglobals.jsからコピペ
+	 *
+	 * @private
+	 * @param {String|RegExp} target 値
+	 * @returns {RegExp} オブジェクト
+	 */
+	function getRegex(target) {
+		if ($.type(target) === 'regexp') {
+			return target;
+		}
+		var str = '';
+		if (target.indexOf('*') !== -1) {
+			var array = $.map(target.split('*'), function(n) {
+				return escapeRegex(n);
+			});
+			str = array.join('.*');
+		} else {
+			str = target;
+		}
+		return new RegExp('^' + str + '$');
+	}
+
+	/**
+	 * h5.core.controller.jsからコピペ
+	 */
+	function getGlobalSelectorTarget(selector) {
+		var specialObj = ['window', 'document', 'navigator'];
+		for ( var i = 0, len = specialObj.length; i < len; i++) {
+			var s = specialObj[i];
+			if (selector === s) {
+				//特殊オブジェクトそのものを指定された場合
+				return h5.u.obj.getByPath(selector);
+			}
+			if (h5.u.str.startsWith(selector, s + '.')) {
+				//window. などドット区切りで続いている場合
+				return h5.u.obj.getByPath(selector);
+			}
+		}
+		return selector;
+	}
+
+	/**
+	 * デバッグウィンドウを開く
+	 */
+	function openDebugWindow() {
+		var body = null;
+		var devWindow = null;
+		if (useWindowOpen) {
+			devWindow = window.open(null,
+					'width=910, height=700, menubar=no, toolbar=no, scrollbars=yes');
+			body = devWindow.document.body;
+			$(body).html('').addClass('h5debug');
+		} else {
+			// モバイル用の擬似ウィンドウを開く
+			devWindow = window;
+			body = document.body;
+			view.append(body, 'wrapper');
+		}
+		return devWindow;
+	}
+
+	/**
+	 * CSSの設定
+	 */
+	function hyphenate(str) {
+		return str.replace(/[A-Z]/g, function(s) {
+			return '-' + s.toLowerCase();
+		});
+	}
+	function setCSS(devWindow, styleDef) {
+		// ウィンドウが開きっぱなしの時はスタイル追加はしない
+		var doc = devWindow.document;
+		if ($(doc).find('style.h5debug-style').length && devWindow != window) {
+			return;
+		}
+		var style = doc.createElement('style');
+		$(style).addClass('h5debug-style');
+		doc.getElementsByTagName('head')[0].appendChild(style);
+		var sheet = doc.styleSheets[doc.styleSheets.length - 1];
+		if (sheet.insertRule) {
+			for ( var i = 0, l = styleDef.length; i < l; i++) {
+				var def = styleDef[i];
+				var selector = def.selector;
+				var rule = def.rule;
+				var cssStr = selector + '{';
+				for ( var p in rule) {
+					var key = hyphenate(p);
+					var val = rule[p];
+					cssStr += key + ':' + val + ';';
+				}
+				cssStr += '}';
+				sheet.insertRule(cssStr, sheet.cssRules.length);
+			}
+		} else {
+			for ( var i = 0, l = styleDef.length; i < l; i++) {
+				var def = styleDef[i];
+				var selector = def.selector;
+				var rule = def.rule;
+				for ( var p in rule) {
+					var key = hyphenate(p);
+					var val = rule[p];
+					sheet.addRule(selector, key + ':' + val);
+				}
+			}
+		}
+	}
+	/**
+	 * 関数を文字列化
+	 */
+	function funcToStr(f) {
+		if (!f) {
+			return '' + f;
+		}
+		var str = f.toString();
+		// タブが余分にあった場合は取り除く
+		// フォーマットされている前提で、末尾の"}"の前にあるタブの数分を他の行からも取り除く
+		var match = str.match(/(\t+)\}$/);
+		var tabs = match && match[1];
+		if (tabs) {
+			return str.replace(new RegExp('\n' + tabs, 'g'), '\n');
+		}
+		return str;
+	}
+	/**
+	 * コントローラが持つ子コントローラを取得
+	 */
+	function getChildControllers(controller) {
+		var ret = [];
+		for ( var prop in controller) {
+			var target = controller[prop];
+			if (h5.u.str.endsWith(prop, 'Controller') && prop !== 'rootController'
+					&& prop !== 'parentController' && !$.isFunction(target)
+					&& (target && !target.__controllerContext.isRoot)) {
+				ret.push(target);
+			}
+		}
+		return ret;
+	}
+
+	/**
+	 * イベントハンドラを指定しているキーから対象になる要素を取得
+	 */
+	function getTargetFromEventHandlerKey(key, controller) {
+		var $rootElement = $(controller.rootElement);
+		var lastIndex = key.lastIndexOf(' ');
+		var selector = $.trim(key.substring(0, lastIndex));
+		var isGlobalSelector = !!selector.match(/^\{.*\}$/);
+		if (isGlobalSelector) {
+			selector = $.trim(selector.substring(1, selector.length - 1));
+			if (selector === 'rootElement') {
+				return $rootElement;
+			}
+			return $(getGlobalSelectorTarget(selector));
+
+		}
+		return $rootElement.find(selector);
+	}
+
+	/**
+	 * Dateをフォーマット
+	 *
+	 * @param {Date} date
+	 */
+	function timeFormat(date) {
+		var h = date.getHours();
+		var m = date.getMinutes();
+		var s = date.getSeconds();
+		var ms = date.getMilliseconds();
+		return h5.u.str.format('{0}:{1}:{2}.{3}', h, m, s, ms);
+	}
+	/**
+	 * ログメッセージオブジェクトを作成
+	 *
+	 * @param message
+	 * @param cls
+	 */
+	function createLogObject(message, cls) {
+		return {
+			time: timeFormat(new Date()),
+			cls: cls,
+			message: message
+		};
+	}
+
+
+	// =============================
+	// Variables
+	// =============================
+	/**
+	 * デバッグするウィンドウ。window.openなら開いたウィンドウで、そうじゃなければページのwindowオブジェクト。
+	 */
+	var debugWindow = null;
+	var hasTouchEvent = document.ontouchstart !== undefined;
+
+	/**
+	 * ログ用に現在の時刻を取得
+	 */
+	var loadDebugJsTime = new Date();
+	// =========================================================================
+	//
+	// Controller
+	//
+	// =========================================================================
+
+	/**
+	 * コントローラデバッグコントローラ<br>
+	 * デバッグコントローラの子コントローラ
+	 *
+	 * @name h5.debug.developer.ControllerDebugController
+	 */
+	var controllerDebugController = {
+		/**
+		 * @name h5.debug.developer.ControllerDebugController
+		 */
+		__name: 'h5.debug.developer.ControllerDebugController',
+		/**
+		 * @name h5.debug.developer.ControllerDebugController
+		 */
+		win: null,
+		/**
+		 * @name h5.debug.developer.ControllerDebugController
+		 */
+		$info: null,
+		/**
+		 * 選択中のコントローラ
+		 *
+		 * @name h5.debug.developer.ControllerDebugController
+		 */
+		selectedController: null,
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param context
+		 */
+		__ready: function(context) {
+			// 初期化処理
+			view.update(this.$find('.debug-controller .controll'), 'controller-controll');
+
+			this.win = context.args.win;
+			setCSS(this.win, H5DEBUG_STYLE);
+			setCSS(window, H5PAGE_STYLE);
+			// コントローラの詳細表示エリア
+			view.append(this.$find('.left'), 'controller-controll');
+			view.append(this.$find('.left'), 'controller-list');
+			view.append(this.$find('.right'), 'controller-detail');
+
+			// 1秒待ってからコントローラを取得する
+			var that = this;
+			setTimeout(function() {
+				that.refreshControllerList();
+			}, 1000);
+		},
+		/**
+		 * オープン時のイベント
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		'{.h5debug} open': function() {
+			this.refreshControllerList();
+		},
+		/**
+		 * クローズ時のイベント
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		'{.h5debug} close': function() {
+			this.removeOverlay(true);
+		},
+		/**
+		 * 左側の何もない箇所がクリックされたらコントローラの選択なしにする
+		 */
+		'{.h5debug} leftclick': function() {
+			this.setDetail();
+			this.$find('.controller-name').removeClass('selected');
+			this.removeOverlay(true);
+		},
+
+		/**
+		 * 更新ボタンクリック
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param context
+		 */
+		'.refresh click': function(context) {
+			this.refreshControllerList();
+		},
+		/**
+		 * マウスオーバーでコントローラのバインド先オーバレイ表示(PC用)
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param context
+		 * @param $el
+		 */
+		'.controllerlist .controller-name mouseover': function(context, $el) {
+			if (hasTouchEvent) {
+				return;
+			}
+			var controller = this.getControllerFromElem($el);
+			this.removeOverlay();
+			this.overlay(controller.rootElement, controller.__controllerContext.isRoot ? 'root'
+					: 'child');
+		},
+		/**
+		 * マウスアウト
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param context
+		 * @param $el
+		 */
+		'.controllerlist .controller-name mouseout': function(context, $el) {
+			if (hasTouchEvent) {
+				return;
+			}
+			this.removeOverlay();
+		},
+		/**
+		 * コントローラリスト上のコントローラをクリック
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param context
+		 * @param $el
+		 */
+		'.controllerlist .controller-name click': function(context, $el) {
+			context.event.preventDefault();
+			var controller = this.getControllerFromElem($el);
+			this.$find('.controller-name').removeClass('selected');
+			$el.addClass('selected');
+			this.selectedController = controller;
+
+			this.setDetail(controller);
+
+			// 選択したコントローラのルートエレメントについてボーダーだけのオーバレイを作成
+			this.removeOverlay(true);
+			this.overlay(controller.rootElement, [
+					controller.__controllerContext.isRoot ? 'root' : 'child', 'borderOnly']);
+		},
+		/**
+		 * イベントハンドラにマウスオーバーで選択(PC用)
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		' .eventHandler li:not(.selected) mouseover': function(context, $el) {
+			this.selectEventHandler($el);
+		},
+		/**
+		 * イベントハンドラをクリックで選択(タブレット用)
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		'.eventHandler li:not(.selected) click': function(context, $el) {
+			this.selectEventHandler($el);
+		},
+		/**
+		 * イベントハンドラの選択
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param $el
+		 */
+		selectEventHandler: function($el) {
+			this.$find('.eventHandler li').removeClass('selected');
+			$el.addClass('selected');
+			var controller = this.getControllerFromElem(this.$find('.controller-name.selected'));
+			var key = $.trim($el.find('.key').text());
+			var $target = getTargetFromEventHandlerKey(key, controller);
+
+			// 取得結果を保存。これはクリックしてイベントを発火させるとき用です。
+			// 再度mosueoverされ場合は新しく取得しなおします。
+			$el.data('h5debug-eventTarget', $target);
+			this.removeOverlay();
+			this.overlay($target, 'event-target');
+
+			// 実行メニューの表示
+			var $select = $el.closest('li').find('select.eventTarget').html('');
+			$target.each(function() {
+				var $option = $('<option>');
+				$option.data('h5debug-eventTarget', this);
+				//TODO outerHTML見せられても分からないので、どうするか考える
+				$option.text(this.outerHTML != null ? this.outerHTML.substring(0, 20) : this);
+				$select.append($option);
+			});
+		},
+		/**
+		 * イベントを実行
+		 */
+		' .eventHandler .trigger click': function(context, $el) {
+			var evName = $.trim($el.closest('li').find('.key').text()).match(/ (\S+)$/)[1];
+			var target = $el.closest('.menu').find('option:selected').data('h5debug-eventTarget');
+			if (target) {
+				//TODO evNameがmouse/keyboard/touch系ならネイティブのイベントでやる
+				$(target).trigger(evName);
+			} else {
+				alert('イベントターゲットがありません');
+			}
+		},
+		/**
+		 * タブの切り替え
+		 */
+		'{.h5debug} tabChange': function(context) {
+			var target = context.evArg;
+			if (target !== 'eventHandler') {
+				// イベントハンドラの選択状態を解除
+				this.removeOverlay();
+				this.$find('.eventHandler li').removeClass('selected');
+			}
+		},
+		/**
+		 * 詳細画面(右側画面)をコントローラを基に作成。nullが渡されたら空白にする
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param controller
+		 */
+		setDetail: function(controller) {
+			if (controller == null) {
+				this.$find('.detail .tab-content>*').html('');
+				return;
+			}
+			// イベントハンドラリスト
+			view.update(this.$find('.detail .tab-content .eventHandler'),
+					'controller-eventHandler', {
+						controller: controller,
+						_funcToStr: funcToStr
+					});
+
+			// メソッドリスト
+			view.update(this.$find('.detail .tab-content .method'), 'controller-method', {
+				controller: controller,
+				_funcToStr: funcToStr
+			});
+
+			// ログ
+			var logAry = controller.__controllerContext._h5debugLog;
+			view.update(this.$find('.detail .tab-content .log'), 'controller-log', {
+				controller: controller
+			});
+			view.bind(this.$find('.detail .tab-content .log'), {
+				logs: logAry
+			});
+
+			// その他情報
+			view.update(this.$find('.detail .tab-content .otherInfo'), 'controller-otherInfo', {
+				controller: controller,
+			});
+
+		},
+		/**
+		 * エレメントにコントローラを持たせる
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param $el
+		 * @param controller
+		 */
+		setControllerToElem: function($el, controller) {
+			$el.data('h5debug-controller', controller);
+		},
+		/**
+		 * エレメントに覚えさせたコントローラを取得する
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param $el
+		 * @returns {Controller}
+		 */
+		getControllerFromElem: function($el) {
+			return $el.data('h5debug-controller');
+		},
+		/**
+		 * 引数に指定された要素にオーバレイ
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		overlay: function(elem, classNames) {
+			var className = ($.isArray(classNames) ? classNames : [classNames]).join(' ');
+			var $el = $(elem);
+			$el.each(function() {
+				view.append(window.document.body, 'overlay', {
+					cls: className
+				});
+				// documentオブジェクトならoffset取得できないので、0,0にする
+				var offset = $(this).offset() || {
+					top: 0,
+					left: 0
+				};
+				$('.h5debug-overlay:last').css({
+					top: offset.top || 0,
+					left: offset.left || 0,
+					width: $(this).outerWidth(),
+					height: $(this).outerHeight()
+				});
+			});
+		},
+		/**
+		 * オーバレイの削除。deleteAllにtrueが指定されたボーダーだけのオーバーレイも削除
+		 *
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		removeOverlay: function(deleteAll) {
+			if (deleteAll) {
+				$('.h5debug-overlay').remove();
+			} else {
+				$('.h5debug-overlay:not(.borderOnly)').remove();
+			}
+		},
+		refreshControllerList: function() {
+			// コントローラ全て(ルートコントローラのみ)を取得
+			var controllers = h5.core.controllerManager.getAllControllers();
+			this.$find('.controllerlist').remove();
+			view.append(this.$find('.left'), 'controller-list');
+			var $ul = this.$find('.controllerlist');
+
+
+			var that = this;
+			function addList(_$ul, _controller) {
+				if (h5.u.str.startsWith(_controller.__name, 'h5.debug.developer')) {
+					// デバッグ用にバインドしたコントローラは無視
+					return;
+				}
+				// コントローラにログ用のObservableArrayを持たせる
+				if (!_controller.__controllerContext._h5debugLog) {
+					_controller.__controllerContext._h5debugLog = h5.core.data
+							.createObservableArray();
+				}
+
+				var isRoot = _controller.__controllerContext.isRoot;
+				var $li = $(view.get('controller-list-part', {
+					name: _controller.__name,
+					cls: isRoot ? 'root' : 'child'
+				}));
+				// データにコントローラを持たせる
+				that.setControllerToElem($li.children('.controller-name'), _controller);
+				_$ul.append($li);
+
+				// 子コントローラも追加
+				var childControllers = getChildControllers(_controller);
+				if (childControllers.length) {
+					for ( var i = 0, l = childControllers.length; i < l; i++) {
+						view.append($li, 'controller-list');
+						addList($li.find('ul:last'), childControllers[i]);
+					}
+				}
+			}
+			// li要素を追加してデータ属性にコントローラを持たせる
+			for ( var i = 0, l = controllers.length; i < l; i++) {
+				addList($ul, controllers[i]);
+			}
+
+			// 詳細画面を空にする
+			this.setDetail(null);
+		}
+	};
+
+	/**
+	 * タブコントローラ タブ表示切替をサポートする
+	 *
+	 * @name h5.debug.developer.TabController
+	 */
+	var tabController = {
+		/**
+		 * @memberOf h5.debug.developer.TabController
+		 */
+		__name: 'h5.debug.developer.TabController',
+		/**
+		 * @memberOf h5.debug.developer.TabController
+		 */
+		__ready: function() {
+			// 非アクティブのものを非表示
+			this.$find('tab-content').not('.active').css('display', 'none');
+		},
+		'.nav-tabs li click': function(contextn, $el) {
+			if ($el.hasClass('active')) {
+				return;
+			}
+			var $navTabs = $el.parent();
+			$navTabs.find('.active').removeClass('active');
+			$el.addClass('active');
+			var targetContent = $el.data('tab-page');
+			var $tabContentsRoot = $el.closest('.nav-tabs').next();
+			$tabContentsRoot.find('.active').removeClass('active');
+			$tabContentsRoot.find('.' + targetContent).addClass('active');
+			this.trigger('tabChange', targetContent);
+		}
+	};
+	/**
+	 * デバッグコントローラ
+	 *
+	 * @name h5.debug.developer.DebugController
+	 */
+	var debugController = {
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		__name: 'h5.debug.developer.DebugController',
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		win: null,
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		_controllerDebugController: controllerDebugController,
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		_tabController: tabController,
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		__meta: {
+			_controllerDebugController: {
+			// rootElementは__constructで追加してから設定している
+			}
+		},
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		__construct: function(context) {
+			this.win = context.args.win;
+			// 必要な要素を追加
+			view.append(this.rootElement, 'controllerDebugWrapper');
+			this.__meta._controllerDebugController.rootElement = this.$find('.debug-controller');
+		},
+
+		/**
+		 * 何もない箇所をクリック
+		 */
+		'.left click': function(context, $el) {
+			if (context.event.target !== $el[0]) {
+				return;
+			}
+			this.trigger('leftclick');
+		},
+		/**
+		 * 閉じるボタン(モバイル用) 閉じて、オーバレイも消える。
+		 */
+		'{.h5debug-controllBtn.opencloseBtn.closeTool} click': function(context, $el) {
+			$el.text('▼').removeClass('closeTool').addClass('openTool');
+			$('.h5debug-controllBtn').not($el).css('display', 'none');
+			$(this.rootElement).css('display', 'none');
+			this.trigger('close');
+		},
+		/**
+		 * 開くボタン(モバイル用)
+		 */
+		'{.h5debug-controllBtn.opencloseBtn.openTool} click': function(context, $el) {
+			$el.text('×').removeClass('openTool').addClass('closeTool');
+			$('.h5debug-controllBtn').not($el).css('display', 'inline-block');
+			$(this.rootElement).css('display', 'block');
+			$('.h5debug-controllBtn.showhideBtn.showTool').trigger('click');
+			this.trigger('open');
+		},
+
+		/**
+		 * 隠すボタン
+		 * <p>
+		 * オーバレイを隠す。タブレット版の場合はデバッグツールも隠す。
+		 * </p>
+		 */
+		'{.h5debug-controllBtn.showhideBtn.hideTool} click': function(context, $el) {
+			$el.text('↓').removeClass('hideTool').addClass('showTool');
+			if (!useWindowOpen) {
+				$(this.rootElement).css({
+					display: 'none'
+				});
+			}
+		},
+		/**
+		 * 見るボタン
+		 */
+		'{.h5debug-controllBtn.showhideBtn.showTool} click': function(context, $el) {
+			$el.text('↑').removeClass('showTool').addClass('hideTool');
+			if (!useWindowOpen) {
+				$(this.rootElement).css({
+					display: ''
+				});
+			}
+		}
+	};
+	// アスペクトを掛ける
+	var aspect = {
+		target: '*Controller',
+		interceptors: h5.u.createInterceptor(function(invocation) {
+			if (h5.u.str.startsWith(this.__name, 'h5.debug.developer')) {
+				return invocation.proceed();
+			}
+			var fName = invocation.funcName;
+			var cls = 'method';
+			if (fName.indexOf(' ') !== -1) {
+				cls += ' event';
+			}
+			if (!this.__controllerContext._h5debugLog) {
+				this.__controllerContext._h5debugLog = h5.core.data.createObservableArray();
+			}
+			this.__controllerContext._h5debugLog.push(createLogObject(invocation.funcName, cls));
+			return invocation.proceed();
+		}, function() {
+		//
+		}),
+		pointCut: '*'
+	};
+	compileAspects(aspect);
+	h5.settings.aspects = [aspect];
+	$(function() {
+		debugWindow = openDebugWindow();
+		h5.core.controller($(debugWindow.document).find('.h5debug'), debugController, {
+			win: debugWindow
+		});
+	});
+
+})();
