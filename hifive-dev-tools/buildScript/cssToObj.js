@@ -8,13 +8,13 @@ fileContent += bytes[0];
 fs.closeSync(fd);
 
 //TODO cssのparse
-function parseCSS(){
+function parseCSS() {
 	var ret = {};
 	return ret;
 }
 
 //TODO パースされたオブジェクトをJavaScriptのオブジェクト記述に変換
-function transObjectCode(css){
+function transObjectCode(css) {
 	var ret = '';
 	return ret;
 }

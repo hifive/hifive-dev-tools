@@ -15,8 +15,8 @@
 	 * window.openで開く場合はtrue、ページ上に表示するならfalse
 	 */
 	var useWindowOpen = h5.env.ua.isDesktop;
-//	useWindowOpen = true;
-//		useWindowOpen = false;
+	//	useWindowOpen = true;
+	//		useWindowOpen = false;
 
 	// =========================================================================
 	//
@@ -78,7 +78,7 @@
 			paddingTop: '1em',
 			paddingLeft: '1.2em'
 		}
-	},{
+	}, {
 		selector: '.h5debug .debug-controller ul.no-padding',
 		rule: {
 			padding: '0!important'
@@ -320,7 +320,7 @@
 	// =============================
 	/**
 	 * h5.scopedglobals.jsからコピペ
-	 *
+	 * 
 	 * @private
 	 * @param value 値
 	 * @returns 配列化された値、ただし引数がnullまたはundefinedの場合はそのまま
@@ -333,7 +333,7 @@
 	}
 	/**
 	 * h5.core.__compileAspectsからコピペ
-	 *
+	 * 
 	 * @param {Object|Object[]} aspects アスペクト設定
 	 */
 	function compileAspects(aspects) {
@@ -352,7 +352,7 @@
 	}
 	/**
 	 * h5scopedglobals.jsからコピペ
-	 *
+	 * 
 	 * @private
 	 * @param {String} str 文字列
 	 * @returns {String} エスケープ済文字列
@@ -362,7 +362,7 @@
 	}
 	/**
 	 * h5scopedglobals.jsからコピペ
-	 *
+	 * 
 	 * @private
 	 * @param {String|RegExp} target 値
 	 * @returns {RegExp} オブジェクト
@@ -521,7 +521,7 @@
 
 	/**
 	 * Dateをフォーマット
-	 *
+	 * 
 	 * @param {Date} date
 	 */
 	function timeFormat(date) {
@@ -533,7 +533,7 @@
 	}
 	/**
 	 * ログメッセージオブジェクトを作成
-	 *
+	 * 
 	 * @param message
 	 * @param cls
 	 */
@@ -568,7 +568,7 @@
 	/**
 	 * コントローラデバッグコントローラ<br>
 	 * デバッグコントローラの子コントローラ
-	 *
+	 * 
 	 * @name h5.debug.developer.ControllerDebugController
 	 */
 	var controllerDebugController = {
@@ -586,7 +586,7 @@
 		$info: null,
 		/**
 		 * 選択中のコントローラ
-		 *
+		 * 
 		 * @name h5.debug.developer.ControllerDebugController
 		 */
 		selectedController: null,
@@ -614,7 +614,7 @@
 		},
 		/**
 		 * オープン時のイベント
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 */
 		'{.h5debug} open': function() {
@@ -622,7 +622,7 @@
 		},
 		/**
 		 * クローズ時のイベント
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 */
 		'{.h5debug} close': function() {
@@ -639,7 +639,7 @@
 
 		/**
 		 * 更新ボタンクリック
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param context
 		 */
@@ -648,7 +648,7 @@
 		},
 		/**
 		 * マウスオーバーでコントローラのバインド先オーバレイ表示(PC用)
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param context
 		 * @param $el
@@ -664,7 +664,7 @@
 		},
 		/**
 		 * マウスアウト
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param context
 		 * @param $el
@@ -677,7 +677,7 @@
 		},
 		/**
 		 * コントローラリスト上のコントローラをクリック
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param context
 		 * @param $el
@@ -698,7 +698,7 @@
 		},
 		/**
 		 * イベントハンドラにマウスオーバーで選択(PC用)
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 */
 		' .eventHandler li:not(.selected) mouseover': function(context, $el) {
@@ -706,7 +706,7 @@
 		},
 		/**
 		 * イベントハンドラをクリックで選択(タブレット用)
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 */
 		'.eventHandler li:not(.selected) click': function(context, $el) {
@@ -714,7 +714,7 @@
 		},
 		/**
 		 * イベントハンドラの選択
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param $el
 		 */
@@ -767,7 +767,7 @@
 		},
 		/**
 		 * 詳細画面(右側画面)をコントローラを基に作成。nullが渡されたら空白にする
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param controller
 		 */
@@ -806,7 +806,7 @@
 		},
 		/**
 		 * エレメントにコントローラを持たせる
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param $el
 		 * @param controller
@@ -816,7 +816,7 @@
 		},
 		/**
 		 * エレメントに覚えさせたコントローラを取得する
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param $el
 		 * @returns {Controller}
@@ -826,7 +826,7 @@
 		},
 		/**
 		 * 引数に指定された要素にオーバレイ
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 */
 		overlay: function(elem, classNames) {
@@ -851,7 +851,7 @@
 		},
 		/**
 		 * オーバレイの削除。deleteAllにtrueが指定されたボーダーだけのオーバーレイも削除
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 */
 		removeOverlay: function(deleteAll) {
@@ -911,7 +911,7 @@
 
 	/**
 	 * タブコントローラ タブ表示切替をサポートする
-	 *
+	 * 
 	 * @name h5.debug.developer.TabController
 	 */
 	var tabController = {
@@ -942,7 +942,7 @@
 	};
 	/**
 	 * デバッグコントローラ
-	 *
+	 * 
 	 * @name h5.debug.developer.DebugController
 	 */
 	var debugController = {
