@@ -1,0 +1,24 @@
+Unless otherwise stated, all source files are licensed under
+the Apache License, Version 2.0(http://www.apache.org/licenses/LICENSE-2.0).
+
+-----
+Code under:
+WebContent/res/lib/jquery
+
+jQuery
+URL:http://jquery.com/
+License:Dual licensed under the MIT and GPL licenses.
+	https://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt
+	https://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt
+Local Modifications: None.
+
+-----
+Code under:
+bin/nodejs
+
+Node.js
+URL:http://nodejs.org/
+License:MIT license
+	https://raw.github.com/joyent/node/v0.10.16/LICENSE
+Local Modifications: None.
+-----
