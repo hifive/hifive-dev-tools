@@ -114,6 +114,11 @@
 			backgroundColor: 'rgba(128,255,198,0.4)'
 		}
 	}, {
+		selector: '.h5debug .debug-controller .otherInfo ul',
+		rule: {
+			margin: 0
+		}
+	}, {
 		selector: '.h5debug pre',
 		rule: {
 			margin: '0 0 10px',
@@ -301,14 +306,17 @@
 			.register(
 					'controller-otherInfo',
 					'<dl><dt>名前</dt><dd>[%= controller.__name %]</dd>'
-							+ '<dt>parentController</dt><dd>[%= controller.parentController && controller.parentController.__name || "なし" %]</dd>'
-							+ '<dt>rootController</dt><dd>[%= controller.rootController.__name %]</dd>'
-							+ '<dt>rootElement</dt><dd>[%= controller.rootElement.nodeName  %]</dd>'
-							+ '<dt>isInit</dt><dd>[%= controller.isInit %]</dd>'
-							+ '<dt>isReady</dt><dd>[%= controller.isReady %]</dd>'
 							+ '<dt>isRoot</dt><dd>[%= controller.__controllerContext.isRoot %]</dd>'
-							+ '<dt>__templates</dt><dd>[%= controller.__templates || "なし" %]</dd>'
-							+ '<dt>有効なテンプレートID</dt><dd><ul class="no-padding">[% for(var p in controller.view.__view.__cachedTemplates){ %]<li>[%= p %]p</li>[% } %]</ul></dd>'
+							+ '<dt>rootElement</dt><dd>[%= _formatDOM(controller.rootElement)  %]</dd>'
+							+ '<dt>rootController</dt><dd>[%= controller.rootController.__name %]</dd>'
+							+ '<dt>parentController</dt><dd>[%= controller.parentController && controller.parentController.__name || "なし" %]</dd>'
+							+ '<dt>childController</dt><dd>[% if(!childControllerNames.length){ %]なし'
+							+ '[% }else{ %]<ul class="no-padding">[% for(var i = 0, l = childControllerNames.length; i < l; i++){ %]<li>[%= childControllerNames[i] %]</li>[% } %]</ul>[% } %]</dd>'
+							+ '<dt>__templates</dt><dd>[% if(!controller.__templates){ %]なし'
+							+ '[% }else{ %]<ul class="no-padding">[% var templates = typeof controller.__templates === "string"? [controller.__templates]: controller.__templates; '
+							+ 'for(var i = 0, l = templates.length; i < l; i++){ %]<li>[%= templates[i] %]</li>[% } %]</ul>[% } %]</dd>'
+							+ '<dt>有効なテンプレートID</dt><dd>[% if(!$.isEmptyObject(controller.view.__view.__cachedTemplates)){ %]なし'
+							+ '[% }else{ %]<ul class="no-padding">[% for(var p in controller.view.__view.__cachedTemplates){ %]<li>[%= p %]p</li>[% } %]</ul>[% } %]</dd>'
 							+ '</dl>');
 
 	// オーバレイ
@@ -483,6 +491,24 @@
 		}
 		return str;
 	}
+
+	/**
+	 * DOM要素を"div#id.cls1 cls2"の形式の文字列に変換
+	 */
+	function formatDOM(elm) {
+		var $elm = $(elm);
+		var id = $elm.attr('id');
+		if (id) {
+			id = '#' + id;
+		}
+		var cls = $elm.attr('class');
+		if (cls) {
+			cls = '.' + cls;
+		}
+		var tagName = $elm[0].tagName.toLocaleLowerCase();
+		return tagName + id + cls;
+	}
+
 	/**
 	 * コントローラが持つ子コントローラを取得
 	 */
@@ -810,8 +836,15 @@
 			});
 
 			// その他情報
+			var childControllers = getChildControllers(controller);
+			var childControllerNames = [];
+			for ( var i = 0, l = childControllers.length; i < l; i++) {
+				childControllerNames.push(childControllers[i].__name);
+			}
 			view.update(this.$find('.detail .tab-content .otherInfo'), 'controller-otherInfo', {
 				controller: controller,
+				childControllerNames: childControllerNames,
+				_formatDOM: formatDOM
 			});
 
 		},
