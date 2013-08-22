@@ -67,7 +67,40 @@
 			margin: 2,
 			backgroundColor: 'rgba(128,255,198,0.4)'
 		}
+	},
+	/*
+	 * 動作ログ
+	 */
+	{
+		selector: '.h5debug .operation-logs',
+		rule: {
+			listStyle: 'none',
+			paddingLeft: 0
+		}
 	}, {
+		selector: '.h5debug .operation-logs .time',
+		rule: {
+			marginRight: '1em'
+		}
+	}, {
+		selector: '.h5debug .operation-logs .message.lifecycle',
+		rule: {
+			color: '#006B89'
+		}
+	}, {
+		selector: '.h5debug .operation-logs .message.event',
+		rule: {
+			color: '#008348'
+		}
+	}, {
+		selector: '.h5debug .operation-logs .message.private',
+		rule: {
+			color: '#B2532E'
+		}
+	},
+	/*
+	 * コントローラのデバッグ
+	 */{
 		selector: '.h5debug .debug-controller .controll',
 		rule: {
 			paddingLeft: '30px'
@@ -83,7 +116,11 @@
 		rule: {
 			padding: '0!important'
 		}
-	}, {
+	},
+	/*
+	 * コントローラリスト
+	 */
+	{
 		selector: '.h5debug .debug-controller .controllerlist',
 		rule: {
 			paddingTop: 0,
@@ -103,7 +140,11 @@
 		rule: {
 			backgroundColor: 'rgba(170,237,255,0.4)'
 		}
-	}, {
+	},
+	/*
+	 * イベントハンドラ
+	 */
+	{
 		selector: '.h5debug .debug-controller .eventHandler ul',
 		rule: {
 			paddingTop: '12px'
@@ -113,7 +154,11 @@
 		rule: {
 			backgroundColor: 'rgba(128,255,198,0.4)'
 		}
-	}, {
+	},
+	/*
+	 * その他情報
+	 */
+	{
 		selector: '.h5debug .debug-controller .otherInfo ul',
 		rule: {
 			margin: 0
@@ -299,7 +344,7 @@
 	view
 			.register(
 					'controller-log',
-					'<ul data-h5-loop-context="logs"><li><span data-h5-bind="time"></span><span class="message" data-h5-bind="text:message; class:cls"></span></li></ul>');
+					'<ul class="operation-logs" data-h5-loop-context="logs"><li><span data-h5-bind="time" class="time"></span><span class="message" data-h5-bind="text:message; class:cls"></span></li></ul>');
 
 	// その他情報
 	view
@@ -550,10 +595,17 @@
 	 * @param {Date} date
 	 */
 	function timeFormat(date) {
-		var h = date.getHours();
-		var m = date.getMinutes();
-		var s = date.getSeconds();
-		var ms = date.getMilliseconds();
+		function formatDigit(val, digit) {
+			var d = digit - ("" + val).length;
+			for ( var i = 0; i < d; i++) {
+				val = '0' + val;
+			}
+			return val;
+		}
+		var h = formatDigit(date.getHours(), 2);
+		var m = formatDigit(date.getMinutes(), 2);
+		var s = formatDigit(date.getSeconds(), 2);
+		var ms = formatDigit(date.getMilliseconds(), 4);
 		return h5.u.str.format('{0}:{1}:{2}.{3}', h, m, s, ms);
 	}
 	/**
@@ -1107,9 +1159,14 @@
 				return invocation.proceed();
 			}
 			var fName = invocation.funcName;
-			var cls = 'method';
+			var lifeCycles = ['__ready', '__init', '__construct', '__unbind', '__dispose'];
+			var cls = '';
 			if (fName.indexOf(' ') !== -1) {
-				cls += ' event';
+				cls = ' event';
+			} else if ($.inArray(fName, lifeCycles) !== -1) {
+				cls = 'lifecycle';
+			} else if (fName.indexOf('_') === 0) {
+				cls = 'private';
 			}
 			if (!this.__controllerContext._h5debugLog) {
 				this.__controllerContext._h5debugLog = h5.core.data.createObservableArray();
