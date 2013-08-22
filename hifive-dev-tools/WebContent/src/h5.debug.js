@@ -542,11 +542,11 @@
 	 */
 	function formatDOM(elm) {
 		var $elm = $(elm);
-		var id = $elm.attr('id');
+		var id = $elm.attr('id') || '';
 		if (id) {
 			id = '#' + id;
 		}
-		var cls = $elm.attr('class');
+		var cls = $elm.attr('class') || '';
 		if (cls) {
 			cls = '.' + cls;
 		}
@@ -1152,6 +1152,7 @@
 		}
 	};
 	// アスペクトを掛ける
+	var aspectIndent = 0;
 	var aspect = {
 		target: '*Controller',
 		interceptors: h5.u.createInterceptor(function(invocation) {
@@ -1171,7 +1172,8 @@
 			if (!this.__controllerContext._h5debugLog) {
 				this.__controllerContext._h5debugLog = h5.core.data.createObservableArray();
 			}
-			this.__controllerContext._h5debugLog.push(createLogObject(invocation.funcName, cls));
+			this.__controllerContext._h5debugLog.push(createLogObject(invocation.funcName, cls,
+					'BEGIN', aspectIndent));
 			return invocation.proceed();
 		}, function() {
 		//
