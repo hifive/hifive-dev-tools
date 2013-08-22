@@ -258,8 +258,7 @@
 			.register('controllerDebugWrapper',
 					'<div class="debug-controller"><div class="left"></div><div class="right"></div></div>');
 	// 操作パネル
-	view.register('controller-controll',
-			'<div class="controll"><button class="refresh">更新</button></div>');
+	view.register('controller-controll', '<div class="controll"></div>');
 
 	// コントローラリストul
 	view.register('controller-list', '<ul class="controllerlist"></ul>');
@@ -638,13 +637,25 @@
 		},
 
 		/**
-		 * 更新ボタンクリック
+		 * コントローラが新たにバインドされた
 		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param context
 		 */
-		'.refresh click': function(context) {
-			this.refreshControllerList();
+		'{document} h5controllerbound': function(context) {
+			var controller = context.evArg;
+			this.appendControllerList(controller);
+		},
+
+		/**
+		 * コントローラがアンバインドされた
+		 * 
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param context
+		 */
+		'{document} h5controllerunbound': function(context) {
+			var controller = context.evArg;
+			this.removeControllerList(controller);
 		},
 		/**
 		 * マウスオーバーでコントローラのバインド先オーバレイ表示(PC用)
@@ -808,21 +819,21 @@
 		 * エレメントにコントローラを持たせる
 		 * 
 		 * @memberOf h5.debug.developer.DebugController
-		 * @param $el
+		 * @param el
 		 * @param controller
 		 */
-		setControllerToElem: function($el, controller) {
-			$el.data('h5debug-controller', controller);
+		setControllerToElem: function(el, controller) {
+			$(el).data('h5debug-controller', controller);
 		},
 		/**
 		 * エレメントに覚えさせたコントローラを取得する
 		 * 
 		 * @memberOf h5.debug.developer.DebugController
-		 * @param $el
+		 * @param el
 		 * @returns {Controller}
 		 */
-		getControllerFromElem: function($el) {
-			return $el.data('h5debug-controller');
+		getControllerFromElem: function(el) {
+			return $(el).data('h5debug-controller');
 		},
 		/**
 		 * 引数に指定された要素にオーバレイ
@@ -861,47 +872,67 @@
 				$('.h5debug-overlay:not(.borderOnly)').remove();
 			}
 		},
+
+		/**
+		 * コントローラをコントローラリストに追加
+		 * 
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param controller
+		 */
+		appendControllerList: function(controller, $ul) {
+			if (h5.u.str.startsWith(controller.__name, 'h5.debug.developer')) {
+				// デバッグ用にバインドしたコントローラは無視
+				return;
+			}
+			$ul = $ul || this.$find('.controllerlist:first');
+			// コントローラにログ用のObservableArrayを持たせる
+			if (!controller.__controllerContext._h5debugLog) {
+				controller.__controllerContext._h5debugLog = h5.core.data.createObservableArray();
+			}
+
+			var isRoot = controller.__controllerContext.isRoot;
+			var $li = $(view.get('controller-list-part', {
+				name: controller.__name,
+				cls: isRoot ? 'root' : 'child'
+			}));
+			// データにコントローラを持たせる
+			this.setControllerToElem($li.children('.controller-name'), controller);
+			$ul.append($li);
+
+			// 子コントローラも追加
+			var childControllers = getChildControllers(controller);
+			if (childControllers.length) {
+				for ( var i = 0, l = childControllers.length; i < l; i++) {
+					view.append($li, 'controller-list');
+					this.appendControllerList(childControllers[i], $li.find('ul:last'));
+				}
+			}
+		},
+		/**
+		 * コントローラをコントローラリストから削除
+		 * 
+		 * @memberOf h5.debug.developer.DebugController
+		 * @param controller
+		 */
+		removeControllerList: function(controller) {
+			var that = this;
+			this.$find('.controllerlist .controller-name').each(function() {
+				if (that.getControllerFromElem(this) === controller) {
+					$(this).closest('li').remove();
+					return false;
+				}
+			});
+		},
+
 		refreshControllerList: function() {
 			// コントローラ全て(ルートコントローラのみ)を取得
 			var controllers = h5.core.controllerManager.getAllControllers();
 			this.$find('.controllerlist').remove();
 			view.append(this.$find('.left'), 'controller-list');
-			var $ul = this.$find('.controllerlist');
 
-
-			var that = this;
-			function addList(_$ul, _controller) {
-				if (h5.u.str.startsWith(_controller.__name, 'h5.debug.developer')) {
-					// デバッグ用にバインドしたコントローラは無視
-					return;
-				}
-				// コントローラにログ用のObservableArrayを持たせる
-				if (!_controller.__controllerContext._h5debugLog) {
-					_controller.__controllerContext._h5debugLog = h5.core.data
-							.createObservableArray();
-				}
-
-				var isRoot = _controller.__controllerContext.isRoot;
-				var $li = $(view.get('controller-list-part', {
-					name: _controller.__name,
-					cls: isRoot ? 'root' : 'child'
-				}));
-				// データにコントローラを持たせる
-				that.setControllerToElem($li.children('.controller-name'), _controller);
-				_$ul.append($li);
-
-				// 子コントローラも追加
-				var childControllers = getChildControllers(_controller);
-				if (childControllers.length) {
-					for ( var i = 0, l = childControllers.length; i < l; i++) {
-						view.append($li, 'controller-list');
-						addList($li.find('ul:last'), childControllers[i]);
-					}
-				}
-			}
 			// li要素を追加してデータ属性にコントローラを持たせる
 			for ( var i = 0, l = controllers.length; i < l; i++) {
-				addList($ul, controllers[i]);
+				this.appendControllerList(controllers[i]);
 			}
 
 			// 詳細画面を空にする
