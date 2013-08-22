@@ -23,7 +23,7 @@
 	// Constants
 	//
 	// =========================================================================
-
+	var LOG_INDENT_WIDTH = 10;
 	/**
 	 * デバッグツールのスタイル
 	 */
@@ -344,7 +344,11 @@
 	view
 			.register(
 					'controller-log',
-					'<ul class="operation-logs" data-h5-loop-context="logs"><li><span data-h5-bind="time" class="time"></span><span class="message" data-h5-bind="text:message; class:cls"></span></li></ul>');
+					'<ul class="operation-logs" data-h5-loop-context="logs"><li>'
+							+ '<span data-h5-bind="time" class="time"></span>'
+							+ '<span data-h5-bind="text:tag;style(margin-left):indentLevel" class="tag"></span>'
+							+ '<span class="message" data-h5-bind="text:message; class:cls"></span>'
+							+ '</li></ul>');
 
 	// その他情報
 	view
@@ -614,11 +618,13 @@
 	 * @param message
 	 * @param cls
 	 */
-	function createLogObject(message, cls) {
+	function createLogObject(message, cls, tag, indentLevel) {
 		return {
 			time: timeFormat(new Date()),
 			cls: cls,
-			message: message
+			message: message,
+			tag: tag,
+			indentLevel: indentLevel
 		};
 	}
 
@@ -1152,32 +1158,61 @@
 		}
 	};
 	// アスペクトを掛ける
-	var aspectIndent = 0;
+	var lifeCycles = ['__ready', '__init', '__construct', '__unbind', '__dispose'];
 	var aspect = {
 		target: '*Controller',
-		interceptors: h5.u.createInterceptor(function(invocation) {
-			if (h5.u.str.startsWith(this.__name, 'h5.debug.developer')) {
-				return invocation.proceed();
-			}
-			var fName = invocation.funcName;
-			var lifeCycles = ['__ready', '__init', '__construct', '__unbind', '__dispose'];
-			var cls = '';
-			if (fName.indexOf(' ') !== -1) {
-				cls = ' event';
-			} else if ($.inArray(fName, lifeCycles) !== -1) {
-				cls = 'lifecycle';
-			} else if (fName.indexOf('_') === 0) {
-				cls = 'private';
-			}
-			if (!this.__controllerContext._h5debugLog) {
-				this.__controllerContext._h5debugLog = h5.core.data.createObservableArray();
-			}
-			this.__controllerContext._h5debugLog.push(createLogObject(invocation.funcName, cls,
-					'BEGIN', aspectIndent));
-			return invocation.proceed();
-		}, function() {
-		//
-		}),
+		interceptors: h5.u
+				.createInterceptor(
+						function(invocation, data) {
+							var controller = invocation.target;
+							controller.__controllerContext._h5debugMethodTreeIndent = controller.__controllerContext._h5debugMethodTreeIndent || 0;
+							var indentLevel = controller.__controllerContext._h5debugMethodTreeIndent;
+							if (h5.u.str.startsWith(this.__name, 'h5.debug.developer')) {
+								return invocation.proceed();
+							}
+							var fName = invocation.funcName;
+							var cls = '';
+							if (fName.indexOf(' ') !== -1) {
+								cls = ' event';
+							} else if ($.inArray(fName, lifeCycles) !== -1) {
+								cls = 'lifecycle';
+							} else if (fName.indexOf('_') === 0) {
+								cls = 'private';
+							}
+							if (!controller.__controllerContext._h5debugLog) {
+								controller.__controllerContext._h5debugLog = h5.core.data
+										.createObservableArray();
+							}
+							var logObj = createLogObject(invocation.funcName, cls, 'BEGIN',
+									indentLevel);
+							controller.__controllerContext._h5debugMethodTreeIndent += LOG_INDENT_WIDTH;
+							data.logObj = logObj;
+							controller.__controllerContext._h5debugLog.push(logObj);
+							return invocation.proceed();
+						},
+						function(invocation, data) {
+							var controller = invocation.target;
+							controller.__controllerContext._h5debugMethodTreeIndent = controller.__controllerContext._h5debugMethodTreeIndent || 0;
+							controller.__controllerContext._h5debugMethodTreeIndent -= LOG_INDENT_WIDTH;
+							var indentLevel = controller.__controllerContext._h5debugMethodTreeIndent;
+							var cls = '';
+							var fName = invocation.funcName;
+							if (data.logObj) {
+								cls = data.logObj.cls;
+							} else {
+								if (fName.indexOf(' ') !== -1) {
+									cls = ' event';
+								} else if ($.inArray(fName, lifeCycles) !== -1) {
+									cls = 'lifecycle';
+								} else if (fName.indexOf('_') === 0) {
+									cls = 'private';
+								}
+							}
+							controller.__controllerContext._h5debugLog = controller.__controllerContext._h5debugLog
+									|| h5.core.data.createObservableArray();
+							controller.__controllerContext._h5debugLog.push(createLogObject(fName,
+									cls, 'END', indentLevel));
+						}),
 		pointCut: '*'
 	};
 	compileAspects(aspect);
