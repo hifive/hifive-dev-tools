@@ -16,7 +16,7 @@
 	 */
 	var useWindowOpen = h5.env.ua.isDesktop;
 	//	useWindowOpen = true;
-	//		useWindowOpen = false;
+	//	useWindowOpen = false;
 
 	// =========================================================================
 	//
@@ -32,6 +32,7 @@
 		rule: {
 			backgroundColor: 'rgba(255,255,255,0.8)',
 			height: '100%',
+			width: '903px',
 			margin: 0,
 			padding: 0,
 			zIndex: 20000
@@ -72,28 +73,35 @@
 	 * 動作ログ
 	 */
 	{
-		selector: '.h5debug .operation-logs',
+		selector: '.h5debug .operation-log',
 		rule: {
 			listStyle: 'none',
-			paddingLeft: 0
+			paddingLeft: 0,
+			margin: 0
 		}
 	}, {
-		selector: '.h5debug .operation-logs .time',
+		selector: '.h5debug .operation-log .time',
 		rule: {
 			marginRight: '1em'
 		}
 	}, {
-		selector: '.h5debug .operation-logs .message.lifecycle',
+		selector: '.h5debug .operation-log .tag',
+		rule: {
+			display: 'inline-block',
+			minWidth: '3em'
+		}
+	}, {
+		selector: '.h5debug .operation-log .message.lifecycle',
 		rule: {
 			color: '#006B89'
 		}
 	}, {
-		selector: '.h5debug .operation-logs .message.event',
+		selector: '.h5debug .operation-log .message.event',
 		rule: {
 			color: '#008348'
 		}
 	}, {
-		selector: '.h5debug .operation-logs .message.private',
+		selector: '.h5debug .operation-log .message.private',
 		rule: {
 			color: '#B2532E'
 		}
@@ -219,14 +227,18 @@
 		rule: {
 			display: 'inline-block'
 		}
-	}, {
+	},
+	/*
+	 * タブ
+	 */
+	{
 		selector: '.h5debug ul.nav-tabs',
 		rule: {
 			listStyle: 'none',
 			width: '100%',
-			borderBottom: '1px solid #ddd',
 			margin: 0,
 			padding: 0,
+			float: 'left'
 
 		}
 	}, {
@@ -236,13 +248,20 @@
 			padding: '3px',
 			border: '1px solid #ccc',
 			color: '#20B5FF',
+			marginLeft: '-1px',
 			cursor: 'pointer'
 		}
 	}, {
 		selector: '.h5debug ul.nav-tabs>li.active',
 		rule: {
 			color: '#000',
-			borderBottom: '1px solid #fff'
+			borderBottom: 'none'
+		}
+	}, {
+		selector: '.h5debug .tab-content',
+		rule: {
+			marginTop: '-1px',
+			width: '100%'
 		}
 	}, {
 		selector: '.h5debug .tab-content>*:not(.active)',
@@ -302,11 +321,16 @@
 			.register(
 					'wrapper',
 					'<div class="h5debug-upper-right"><div class="h5debug-controllBtn showhideBtn hideTool">↑</div><div class="h5debug-controllBtn opencloseBtn closeTool">×</div></div><div class="h5debug posfix" style="position:fix; left:0; top:0;"></div>');
+
+	view.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
+			+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
+			+ '<li data-tab-page="operation-log">動作ログ</li></ul><div class="tab-content">'
+			+ '<div class="active debug-controller"></div>' + '<div class="operation-log"></div>'
+			+ '</div>');
+
 	// --------------------- コントローラ --------------------- //
 	// コントローラデバッグ画面
-	view
-			.register('controllerDebugWrapper',
-					'<div class="debug-controller"><div class="left"></div><div class="right"></div></div>');
+	view.register('controllerDebugWrapper', '<div class="left"></div><div class="right"></div>');
 	// 操作パネル
 	view.register('controller-controll', '<div class="controll"></div>');
 
@@ -340,11 +364,11 @@
 							+ '<li><span class="name">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
 							+ '[% } }} %]</ul>');
 
-	// ログ
+	// 動作ログ(コントローラ、ロジック、全体、で共通)
 	view
 			.register(
-					'controller-log',
-					'<ul class="operation-logs" data-h5-loop-context="logs"><li>'
+					'operation-log',
+					'<ul class="operation-log" data-h5-loop-context="logs"><li>'
 							+ '<span data-h5-bind="time" class="time"></span>'
 							+ '<span data-h5-bind="text:tag;style(margin-left):indentLevel" class="tag"></span>'
 							+ '<span class="message" data-h5-bind="text:message; class:cls"></span>'
@@ -618,7 +642,7 @@
 	 * @param message
 	 * @param cls
 	 */
-	function createLogObject(message, cls, tag, indentLevel) {
+	function createLogObject(message, cls, tag, __name, indentLevel) {
 		return {
 			time: timeFormat(new Date()),
 			cls: cls,
@@ -642,6 +666,13 @@
 	 * ログ用に現在の時刻を取得
 	 */
 	var loadDebugJsTime = new Date();
+
+	/**
+	 * コントローラ、ロジック、全体のログ
+	 */
+	var wholeOperationLogs = h5.core.data.createObservableArray();
+	var wholeOperationLogsIndentLevel = 0;
+
 	// =========================================================================
 	//
 	// Controller
@@ -885,10 +916,8 @@
 			});
 
 			// ログ
-			var logAry = controller.__controllerContext._h5debugLog;
-			view.update(this.$find('.detail .tab-content .log'), 'controller-log', {
-				controller: controller
-			});
+			var logAry = controller._h5debugContext.debugLog;
+			view.update(this.$find('.detail .tab-content .log'), 'operation-log');
 			view.bind(this.$find('.detail .tab-content .log'), {
 				logs: logAry
 			});
@@ -975,10 +1004,13 @@
 				// デバッグ用にバインドしたコントローラは無視
 				return;
 			}
+			// コントローラに_h5debugContextを持たせる
+			controller._h5debugContext = controller._h5debugContext || {};
+
 			$ul = $ul || this.$find('.controllerlist:first');
 			// コントローラにログ用のObservableArrayを持たせる
-			if (!controller.__controllerContext._h5debugLog) {
-				controller.__controllerContext._h5debugLog = h5.core.data.createObservableArray();
+			if (!controller._h5debugContext.debugLog) {
+				controller._h5debugContext.debugLog = h5.core.data.createObservableArray();
 			}
 
 			var isRoot = controller.__controllerContext.isRoot;
@@ -1063,6 +1095,23 @@
 		}
 	};
 	/**
+	 * 全体の動作ログコントローラ<br>
+	 * TODO コントローラ別、ロジック別でやっていることと共通にする。
+	 * 
+	 * @name h5.debug-developer.OperationLogController
+	 */
+	var operationLogController = {
+		__name: 'h5.debug.developer.OperationLogController',
+		__ready: function() {
+			var logAry = wholeOperationLogs;
+			view.update(this.rootElement, 'operation-log');
+			view.bind(this.rootElement, {
+				logs: logAry
+			});
+		}
+	};
+
+	/**
 	 * デバッグコントローラ
 	 * 
 	 * @name h5.debug.developer.DebugController
@@ -1087,8 +1136,15 @@
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 */
+		_operationLogController: operationLogController,
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 */
 		__meta: {
 			_controllerDebugController: {
+			// rootElementは__constructで追加してから設定している
+			},
+			_operationLogController: {
 			// rootElementは__constructで追加してから設定している
 			}
 		},
@@ -1098,8 +1154,12 @@
 		__construct: function(context) {
 			this.win = context.args.win;
 			// 必要な要素を追加
-			view.append(this.rootElement, 'controllerDebugWrapper');
+
+			// 全体を包むタブ
+			view.append(this.rootElement, 'debug-tab');
+			view.append(this.$find('.debug-controller'), 'controllerDebugWrapper');
 			this.__meta._controllerDebugController.rootElement = this.$find('.debug-controller');
+			this.__meta._operationLogController.rootElement = this.$find('.operation-log');
 		},
 
 		/**
@@ -1160,13 +1220,14 @@
 	// アスペクトを掛ける
 	var lifeCycles = ['__ready', '__init', '__construct', '__unbind', '__dispose'];
 	var aspect = {
-		target: '*Controller',
+		target: '*',
 		interceptors: h5.u
 				.createInterceptor(
 						function(invocation, data) {
-							var controller = invocation.target;
-							controller.__controllerContext._h5debugMethodTreeIndent = controller.__controllerContext._h5debugMethodTreeIndent || 0;
-							var indentLevel = controller.__controllerContext._h5debugMethodTreeIndent;
+							var ctrlOrLogic = invocation.target;
+							ctrlOrLogic._h5debugContext = ctrlOrLogic._h5debugContext || {};
+							ctrlOrLogic._h5debugContext.methodTreeIndentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel || 0;
+							var indentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel;
 							if (h5.u.str.startsWith(this.__name, 'h5.debug.developer')) {
 								return invocation.proceed();
 							}
@@ -1179,22 +1240,29 @@
 							} else if (fName.indexOf('_') === 0) {
 								cls = 'private';
 							}
-							if (!controller.__controllerContext._h5debugLog) {
-								controller.__controllerContext._h5debugLog = h5.core.data
+							if (!ctrlOrLogic._h5debugContext.debugLog) {
+								ctrlOrLogic._h5debugContext.debugLog = h5.core.data
 										.createObservableArray();
 							}
-							var logObj = createLogObject(invocation.funcName, cls, 'BEGIN',
+							var logObj = createLogObject(fName, cls, 'BEGIN', ctrlOrLogic.__name,
 									indentLevel);
-							controller.__controllerContext._h5debugMethodTreeIndent += LOG_INDENT_WIDTH;
+							ctrlOrLogic._h5debugContext.methodTreeIndentLevel += LOG_INDENT_WIDTH;
 							data.logObj = logObj;
-							controller.__controllerContext._h5debugLog.push(logObj);
+							ctrlOrLogic._h5debugContext.debugLog.push(logObj);
+
+							// コントローラ全部、ロジック全部の横断動作ログ
+							wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name + '#'
+									+ fName, cls, 'BEGIN', ctrlOrLogic.__name,
+									wholeOperationLogsIndentLevel));
+							wholeOperationLogsIndentLevel += LOG_INDENT_WIDTH;
+
 							return invocation.proceed();
 						},
 						function(invocation, data) {
-							var controller = invocation.target;
-							controller.__controllerContext._h5debugMethodTreeIndent = controller.__controllerContext._h5debugMethodTreeIndent || 0;
-							controller.__controllerContext._h5debugMethodTreeIndent -= LOG_INDENT_WIDTH;
-							var indentLevel = controller.__controllerContext._h5debugMethodTreeIndent;
+							var ctrlOrLogic = invocation.target;
+							ctrlOrLogic._h5debugContext = ctrlOrLogic._h5debugContext || {};
+							ctrlOrLogic._h5debugContext.methodTreeIndentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel || 0;
+							var indentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel;
 							var cls = '';
 							var fName = invocation.funcName;
 							if (data.logObj) {
@@ -1208,10 +1276,21 @@
 									cls = 'private';
 								}
 							}
-							controller.__controllerContext._h5debugLog = controller.__controllerContext._h5debugLog
+							ctrlOrLogic._h5debugContext.methodTreeIndentLevel -= LOG_INDENT_WIDTH;
+							ctrlOrLogic._h5debugContext.debugLog = ctrlOrLogic._h5debugContext.debugLog
 									|| h5.core.data.createObservableArray();
-							controller.__controllerContext._h5debugLog.push(createLogObject(fName,
-									cls, 'END', indentLevel));
+							ctrlOrLogic._h5debugContext.debugLog.push(createLogObject(fName, cls,
+									'END', ctrlOrLogic.__name,
+									ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
+
+							// コントローラ全部、ロジック全部の横断動作ログ
+							wholeOperationLogsIndentLevel -= LOG_INDENT_WIDTH;
+							if (wholeOperationLogsIndentLevel < 0) {
+								wholeOperationLogsIndentLevel = 0;
+							}
+							wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name + '#'
+									+ fName, cls, 'END', ctrlOrLogic.__name,
+									wholeOperationLogsIndentLevel));
 						}),
 		pointCut: '*'
 	};
