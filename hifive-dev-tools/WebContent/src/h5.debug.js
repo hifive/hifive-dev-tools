@@ -1225,12 +1225,12 @@
 				.createInterceptor(
 						function(invocation, data) {
 							var ctrlOrLogic = invocation.target;
+							if (h5.u.str.startsWith(ctrlOrLogic.__name, 'h5.debug.developer')) {
+								return invocation.proceed();
+							}
 							ctrlOrLogic._h5debugContext = ctrlOrLogic._h5debugContext || {};
 							ctrlOrLogic._h5debugContext.methodTreeIndentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel || 0;
 							var indentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel;
-							if (h5.u.str.startsWith(this.__name, 'h5.debug.developer')) {
-								return invocation.proceed();
-							}
 							var fName = invocation.funcName;
 							var cls = '';
 							if (fName.indexOf(' ') !== -1) {
@@ -1260,6 +1260,9 @@
 						},
 						function(invocation, data) {
 							var ctrlOrLogic = invocation.target;
+							if (h5.u.str.startsWith(ctrlOrLogic.__name, 'h5.debug.developer')) {
+								return;
+							}
 							ctrlOrLogic._h5debugContext = ctrlOrLogic._h5debugContext || {};
 							ctrlOrLogic._h5debugContext.methodTreeIndentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel || 0;
 							var indentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel;
