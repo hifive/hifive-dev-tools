@@ -91,6 +91,12 @@
 			minWidth: '3em'
 		}
 	}, {
+		selector: '.h5debug .operation-log .promiseState',
+		rule: {
+			display: 'inline-block',
+			marginRight: '0.5em'
+		}
+	}, {
 		selector: '.h5debug .operation-log .message.lifecycle',
 		rule: {
 			color: '#006B89'
@@ -371,6 +377,7 @@
 					'<ul class="operation-log" data-h5-loop-context="logs"><li>'
 							+ '<span data-h5-bind="time" class="time"></span>'
 							+ '<span data-h5-bind="text:tag;style(margin-left):indentLevel" class="tag"></span>'
+							+ '<span data-h5-bind="promiseState" class="promiseState"></span>'
 							+ '<span class="message" data-h5-bind="text:message; class:cls"></span>'
 							+ '</li></ul>');
 
@@ -642,13 +649,14 @@
 	 * @param message
 	 * @param cls
 	 */
-	function createLogObject(message, cls, tag, __name, indentLevel) {
+	function createLogObject(message, cls, tag, promiseState, __name, indentLevel) {
 		return {
 			time: timeFormat(new Date()),
 			cls: cls,
 			message: message,
-			tag: tag,
-			indentLevel: indentLevel
+			tag: tag + ':',
+			promiseState: promiseState,
+			indentLevel: indentLevel * LOG_INDENT_WIDTH
 		};
 	}
 
@@ -1244,17 +1252,17 @@
 								ctrlOrLogic._h5debugContext.debugLog = h5.core.data
 										.createObservableArray();
 							}
-							var logObj = createLogObject(fName, cls, 'BEGIN', ctrlOrLogic.__name,
-									indentLevel);
-							ctrlOrLogic._h5debugContext.methodTreeIndentLevel += LOG_INDENT_WIDTH;
+							var logObj = createLogObject(fName, cls, 'BEGIN', '',
+									ctrlOrLogic.__name, indentLevel);
+							ctrlOrLogic._h5debugContext.methodTreeIndentLevel += 1;
 							data.logObj = logObj;
 							ctrlOrLogic._h5debugContext.debugLog.push(logObj);
 
 							// コントローラ全部、ロジック全部の横断動作ログ
 							wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name + '#'
-									+ fName, cls, 'BEGIN', ctrlOrLogic.__name,
+									+ fName, cls, 'BEGIN', '', ctrlOrLogic.__name,
 									wholeOperationLogsIndentLevel));
-							wholeOperationLogsIndentLevel += LOG_INDENT_WIDTH;
+							wholeOperationLogsIndentLevel += 1;
 
 							return invocation.proceed();
 						},
@@ -1265,7 +1273,6 @@
 							}
 							ctrlOrLogic._h5debugContext = ctrlOrLogic._h5debugContext || {};
 							ctrlOrLogic._h5debugContext.methodTreeIndentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel || 0;
-							var indentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel;
 							var cls = '';
 							var fName = invocation.funcName;
 							if (data.logObj) {
@@ -1279,21 +1286,68 @@
 									cls = 'private';
 								}
 							}
-							ctrlOrLogic._h5debugContext.methodTreeIndentLevel -= LOG_INDENT_WIDTH;
+							// プロミスの判定
+							var ret = invocation.result;
+							var isPromise = ret && $.isFunction(ret.promise)
+									&& $.isFunction(ret.done) && $.isFunction(ret.fail);
+							var promiseState = '';
+							var tag = 'END';
+							if (isPromise) {
+								tag = 'DFD';
+								// すでにresolve,rejectされていたら状態を表示
+								if (ret.state() === 'resolved') {
+									promiseState = '(RESOLVED)'
+								} else if (ret.state() === 'rejected') {
+									promiseState = '(REJECTED)';
+								}
+							}
+
+							// ログオブジェクトの登録
+							ctrlOrLogic._h5debugContext.methodTreeIndentLevel -= 1;
 							ctrlOrLogic._h5debugContext.debugLog = ctrlOrLogic._h5debugContext.debugLog
 									|| h5.core.data.createObservableArray();
 							ctrlOrLogic._h5debugContext.debugLog.push(createLogObject(fName, cls,
-									'END', ctrlOrLogic.__name,
+									tag, promiseState, ctrlOrLogic.__name,
 									ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
 
-							// コントローラ全部、ロジック全部の横断動作ログ
-							wholeOperationLogsIndentLevel -= LOG_INDENT_WIDTH;
+							// コントローラ全部、ロジック全部の横断動作ログにログオブジェクトの登録
+							wholeOperationLogsIndentLevel -= 1;
 							if (wholeOperationLogsIndentLevel < 0) {
 								wholeOperationLogsIndentLevel = 0;
 							}
 							wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name + '#'
-									+ fName, cls, 'END', ctrlOrLogic.__name,
+									+ fName, cls, tag, promiseState, ctrlOrLogic.__name,
 									wholeOperationLogsIndentLevel));
+
+							// promiseが返されてかつpendingならハンドラを登録
+							// TODO pendingのプロミスをメソッドが返した時にはpostに入ってこない。ログの表示方法はそれで大丈夫かどうか確認
+							if (isPromise && ret.state() === 'pending') {
+								// pendingなら、resolve,rejectされたタイミングでログを出す
+								function doneHandler() {
+									ctrlOrLogic._h5debugContext.debugLog.push(createLogObject(
+											fName, cls, tag, '(RESOLVED)', ctrlOrLogic.__name,
+											ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
+									wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name
+											+ '#' + fName, cls, tag, '(RESOLVED)',
+											ctrlOrLogic.__name, wholeOperationLogsIndentLevel));
+								}
+								function failHandler() {
+									ctrlOrLogic._h5debugContext.debugLog.push(createLogObject(
+											fName, cls, tag, '(REJECTED)', ctrlOrLogic.__name,
+											ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
+									wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name
+											+ '#' + fName, cls, tag, '(REJECTED)',
+											ctrlOrLogic.__name, wholeOperationLogsIndentLevel));
+								}
+								if ($.isFunction(promise._h5UnwrappedCall)) {
+									// h5なdeferredなら_h5UnwrapepedCallを使って登録
+									promise._h5UnwrappedCall('done', doneHandler);
+									promise._h5UnwrappedCall('fail', failHandler);
+								} else {
+									promise.done(doneHandler);
+									promise.fail(failHandler);
+								}
+							}
 						}),
 		pointCut: '*'
 	};
