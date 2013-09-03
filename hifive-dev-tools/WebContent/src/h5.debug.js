@@ -24,6 +24,8 @@
 	//
 	// =========================================================================
 	var LOG_INDENT_WIDTH = 10;
+	var LOG_MAX = 1000;
+
 	/**
 	 * デバッグツールのスタイル
 	 */
@@ -660,6 +662,15 @@
 		};
 	}
 
+	/**
+	 * 第2引数のログメッセージオブジェクトを第1引数のObservableArrayに追加する。 最大数を超えないようにする
+	 */
+	function addLogObject(logArray, logObj) {
+		logArray.push(logObj);
+		if (logArray.length > LOG_MAX) {
+			logArray.shift();
+		}
+	}
 
 	// =============================
 	// Variables
@@ -669,11 +680,6 @@
 	 */
 	var debugWindow = null;
 	var hasTouchEvent = document.ontouchstart !== undefined;
-
-	/**
-	 * ログ用に現在の時刻を取得
-	 */
-	var loadDebugJsTime = new Date();
 
 	/**
 	 * コントローラ、ロジック、全体のログ
@@ -1256,11 +1262,11 @@
 									ctrlOrLogic.__name, indentLevel);
 							ctrlOrLogic._h5debugContext.methodTreeIndentLevel += 1;
 							data.logObj = logObj;
-							ctrlOrLogic._h5debugContext.debugLog.push(logObj);
+							addLogObject(ctrlOrLogic._h5debugContext.debugLog, logObj);
 
 							// コントローラ全部、ロジック全部の横断動作ログ
-							wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name + '#'
-									+ fName, cls, 'BEGIN', '', ctrlOrLogic.__name,
+							addLogObject(wholeOperationLogs, createLogObject(ctrlOrLogic.__name
+									+ '#' + fName, cls, 'BEGIN', '', ctrlOrLogic.__name,
 									wholeOperationLogsIndentLevel));
 							wholeOperationLogsIndentLevel += 1;
 
@@ -1306,8 +1312,8 @@
 							ctrlOrLogic._h5debugContext.methodTreeIndentLevel -= 1;
 							ctrlOrLogic._h5debugContext.debugLog = ctrlOrLogic._h5debugContext.debugLog
 									|| h5.core.data.createObservableArray();
-							ctrlOrLogic._h5debugContext.debugLog.push(createLogObject(fName, cls,
-									tag, promiseState, ctrlOrLogic.__name,
+							addLogObject(ctrlOrLogic._h5debugContext.debugLog, createLogObject(
+									fName, cls, tag, promiseState, ctrlOrLogic.__name,
 									ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
 
 							// コントローラ全部、ロジック全部の横断動作ログにログオブジェクトの登録
@@ -1315,8 +1321,8 @@
 							if (wholeOperationLogsIndentLevel < 0) {
 								wholeOperationLogsIndentLevel = 0;
 							}
-							wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name + '#'
-									+ fName, cls, tag, promiseState, ctrlOrLogic.__name,
+							addLogObject(wholeOperationLogs, createLogObject(ctrlOrLogic.__name
+									+ '#' + fName, cls, tag, promiseState, ctrlOrLogic.__name,
 									wholeOperationLogsIndentLevel));
 
 							// promiseが返されてかつpendingならハンドラを登録
@@ -1324,20 +1330,34 @@
 							if (isPromise && ret.state() === 'pending') {
 								// pendingなら、resolve,rejectされたタイミングでログを出す
 								function doneHandler() {
-									ctrlOrLogic._h5debugContext.debugLog.push(createLogObject(
-											fName, cls, tag, '(RESOLVED)', ctrlOrLogic.__name,
-											ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
-									wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name
-											+ '#' + fName, cls, tag, '(RESOLVED)',
-											ctrlOrLogic.__name, wholeOperationLogsIndentLevel));
+									addLogObject(
+											ctrlOrLogic._h5debugContext.debugLog,
+											createLogObject(
+													fName,
+													cls,
+													tag,
+													'(RESOLVED)',
+													ctrlOrLogic.__name,
+													ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
+									addLogObject(wholeOperationLogs, createLogObject(
+											ctrlOrLogic.__name + '#' + fName, cls, tag,
+											'(RESOLVED)', ctrlOrLogic.__name,
+											wholeOperationLogsIndentLevel));
 								}
 								function failHandler() {
-									ctrlOrLogic._h5debugContext.debugLog.push(createLogObject(
-											fName, cls, tag, '(REJECTED)', ctrlOrLogic.__name,
-											ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
-									wholeOperationLogs.push(createLogObject(ctrlOrLogic.__name
-											+ '#' + fName, cls, tag, '(REJECTED)',
-											ctrlOrLogic.__name, wholeOperationLogsIndentLevel));
+									addLogObject(
+											ctrlOrLogic._h5debugContext.debugLog,
+											createLogObject(
+													fName,
+													cls,
+													tag,
+													'(REJECTED)',
+													ctrlOrLogic.__name,
+													ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
+									addLogObject(wholeOperationLogs, createLogObject(
+											ctrlOrLogic.__name + '#' + fName, cls, tag,
+											'(REJECTED)', ctrlOrLogic.__name,
+											wholeOperationLogsIndentLevel));
 								}
 								if ($.isFunction(promise._h5UnwrappedCall)) {
 									// h5なdeferredなら_h5UnwrapepedCallを使って登録
