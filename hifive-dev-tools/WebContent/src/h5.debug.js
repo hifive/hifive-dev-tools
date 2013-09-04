@@ -70,6 +70,16 @@
 			margin: 2,
 			backgroundColor: 'rgba(128,255,198,0.4)'
 		}
+	}, {
+		selector: '.h5debug .liststyle-none',
+		rule: {
+			listStyle: 'none'
+		}
+	}, {
+		selector: '.h5debug .no-padding',
+		rule: {
+			padding: '0!important'
+		}
 	},
 	/*
 	 * 動作ログ
@@ -77,7 +87,6 @@
 	{
 		selector: '.h5debug .operation-log',
 		rule: {
-			listStyle: 'none',
 			paddingLeft: 0,
 			margin: 0
 		}
@@ -115,22 +124,21 @@
 		}
 	},
 	/*
+	 * カラムレイアウトをコンテンツに持つタブコンテンツのラッパー
+	 * 各カラムでスクロールできればいいので、外側はoverflow:hidden
+	 */
+	{
+		selector: '.h5debug .columnLayoutWrapper',
+		rule: {
+			overflow: 'hidden!important'
+		}
+	},
+	/*
 	 * コントローラのデバッグ
 	 */{
 		selector: '.h5debug .debug-controller .controll',
 		rule: {
 			paddingLeft: '30px'
-		}
-	}, {
-		selector: '.h5debug .debug-controller ul,dl',
-		rule: {
-			paddingTop: '1em',
-			paddingLeft: '1.2em'
-		}
-	}, {
-		selector: '.h5debug .debug-controller ul.no-padding',
-		rule: {
-			padding: '0!important'
 		}
 	},
 	/*
@@ -140,6 +148,7 @@
 		selector: '.h5debug .debug-controller .controllerlist',
 		rule: {
 			paddingTop: 0,
+			paddingLeft: '1.2em'
 		}
 	}, {
 		selector: '.h5debug .debug-controller .controllerlist .controller-name',
@@ -163,7 +172,7 @@
 	{
 		selector: '.h5debug .debug-controller .eventHandler ul',
 		rule: {
-			paddingTop: '12px'
+			listStyle: 'none'
 		}
 	}, {
 		selector: '.h5debug .debug-controller .eventHandler li.selected',
@@ -208,7 +217,8 @@
 			width: '350px',
 			border: '1px solid #20B5FF',
 			float: 'left',
-			overflow: 'auto'
+			overflow: 'auto',
+			boxSizing: 'border-box'
 		}
 	}, {
 		selector: '.h5debug .right',
@@ -218,7 +228,8 @@
 			border: '1px solid #20B5FF',
 			marginLeft: '-1px',
 			float: 'left',
-			overflow: 'auto'
+			overflow: 'auto',
+			boxSizing: 'border-box'
 		}
 	}, {
 		selector: '.h5debug .eventHandler .menu',
@@ -269,6 +280,17 @@
 		selector: '.h5debug .tab-content',
 		rule: {
 			marginTop: '-1px',
+			width: '100%',
+			height: '100%',
+			paddingBottom: '30px',
+			boxSizing: 'border-box'
+		}
+	}, {
+		selector: '.h5debug .tab-content>*',
+		rule: {
+			overflow: 'auto',
+			float: 'left',
+			height: 'inherit',
 			width: '100%'
 		}
 	}, {
@@ -333,8 +355,8 @@
 	view.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
 			+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
 			+ '<li data-tab-page="operation-log">動作ログ</li></ul><div class="tab-content">'
-			+ '<div class="active debug-controller"></div>' + '<div class="operation-log"></div>'
-			+ '</div>');
+			+ '<div class="active debug-controller columnLayoutWrapper"></div>'
+			+ '<div class="operation-log"></div>' + '</div>');
 
 	// --------------------- コントローラ --------------------- //
 	// コントローラデバッグ画面
@@ -361,14 +383,14 @@
 	view
 			.register(
 					'controller-eventHandler',
-					'<ul>[% if(controller){for(var p in controller){ if(p.indexOf(\' \')!==-1){ %]'
+					'<ul class="liststyle-none no-padding">[% if(controller){for(var p in controller){ if(p.indexOf(\' \')!==-1){ %]'
 							+ '<li><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span><span class="key">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
 							+ '[% } }} %]</ul>');
 	// メソッドリスト
 	view
 			.register(
 					'controller-method',
-					'<ul>[% if(controller){for(var p in controller){ if(p.indexOf(\' \')===-1 && "function"===typeof controller[p]){ %]'
+					'<ul class="liststyle-none no-padding">[% if(controller){for(var p in controller){ if(p.indexOf(\' \')===-1 && "function"===typeof controller[p]){ %]'
 							+ '<li><span class="name">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
 							+ '[% } }} %]</ul>');
 
@@ -376,7 +398,7 @@
 	view
 			.register(
 					'operation-log',
-					'<ul class="operation-log" data-h5-loop-context="logs"><li>'
+					'<ul class="operation-log liststyle-none no-padding" data-h5-loop-context="logs"><li>'
 							+ '<span data-h5-bind="time" class="time"></span>'
 							+ '<span data-h5-bind="text:tag;style(margin-left):indentLevel" class="tag"></span>'
 							+ '<span data-h5-bind="promiseState" class="promiseState"></span>'
@@ -563,6 +585,10 @@
 		if (!f) {
 			return '' + f;
 		}
+		if (f === DUMMY_NO_VISIBLE_FUNCTION) {
+			// ダミーの関数なら表示できません
+			return '関数の中身を表示できません';
+		}
 		var str = f.toString();
 		// タブが余分にあった場合は取り除く
 		// フォーマットされている前提で、末尾の"}"の前にあるタブの数分を他の行からも取り除く
@@ -670,6 +696,36 @@
 		if (logArray.length > LOG_MAX) {
 			logArray.shift();
 		}
+		// 一番下までスクロールする
+		if (debugWindow) {
+			var $log = $(debugWindow.document).find('.operation-log');
+			$log.scrollTop($log.find('ul').height());
+		}
+	}
+
+	/**
+	 * コントローラ定義オブジェクトを追加する(hifive1.1.8以前用)
+	 */
+	function addControllerDef(controller, defObj) {
+		if (defObj.__controllerContext) {
+			// defObjにコントローラインスタンスが渡されたら、
+			// メソッドにアスペクトが掛かっているかどうか判定する
+			// 掛かっていたら、『表示できません』にする
+			defObj = $.extend(true, {}, defObj);
+			for ( var p in defObj) {
+				if ($.isFunction(defObj[p]) && defObj[p].toString() === ASPECT_FUNCTION_STR) {
+					defObj[p] = DUMMY_NO_VISIBLE_FUNCTION;
+				}
+			}
+		}
+		controller.__controllerContext.controllerDef = defObj;
+		// 子コントローラを探して再帰的に追加
+		for ( var p in defObj) {
+			if (h5.u.str.endsWith(p, 'Controller') && p !== 'rootController'
+					&& p !== 'parentController') {
+				addControllerDef(controller[p], defObj[p]);
+			}
+		}
 	}
 
 	// =============================
@@ -686,6 +742,36 @@
 	 */
 	var wholeOperationLogs = h5.core.data.createObservableArray();
 	var wholeOperationLogsIndentLevel = 0;
+
+	/**
+	 * アスペクトが掛かっていて元の関数が見えない時に代用する関数
+	 */
+	var DUMMY_NO_VISIBLE_FUNCTION = function() {
+	//ダミー
+	};
+
+	/**
+	 * アスペクトのかかった関数のtoString()結果を取得する。アスペクトが掛かっているかどうかの判定で使用する。
+	 */
+	var ASPECT_FUNCTION_STR = '';
+	var dummyAspect = {
+		target: 'h5.debug.dummyController',
+		pointCut: 'f',
+		interceptors: DUMMY_NO_VISIBLE_FUNCTION
+	};
+	compileAspects(dummyAspect);
+	h5.settings.aspects = [dummyAspect];
+	h5.core.controller(document, {
+		__name: 'h5.debug.dummyController',
+		f: function() {
+		// この関数にアスペクトを掛けた時のtoString()結果を利用する
+		}
+	}).initPromise.done(function() {
+		ASPECT_FUNCTION_STR = this.f.toString();
+		console.log(ASPECT_FUNCTION_STR);
+		this.dispose();
+	});
+	h5.settings.aspects = null;
 
 	// =========================================================================
 	//
@@ -718,11 +804,24 @@
 		 * @name h5.debug.developer.ControllerDebugController
 		 */
 		selectedController: null,
+
+		__init: function() {
+			// 既存のコントローラにコントローラ定義オブジェクトを持たせる(hifive1.1.8以前用)
+			// このコントローラがコントローラ定義オブジェクトを持ってるかどうかでhifiveのバージョン判定
+			if (!this.__controllerContext.controllerDef) {
+				// コントローラを取得(__initの時点なので、このコントローラは含まれていない)。
+				var controllers = h5.core.controllerManager.getAllControllers();
+				for ( var i = 0, l = controllers.length; i < l; i++) {
+					addControllerDef(controllers[i], controllers[i]);
+				}
+			}
+		},
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param context
 		 */
 		__ready: function(context) {
+
 			// 初期化処理
 			view.update(this.$find('.debug-controller .controll'), 'controller-controll');
 
@@ -916,16 +1015,21 @@
 				this.$find('.detail .tab-content>*').html('');
 				return;
 			}
+			// イベントハンドラ、メソッドは、コントローラ定義オブジェクトから取得する。
+			// hifive1.1.8以前では、コントローラ定義オブジェクトを持たないが、h5.core.controllerをフックしているので、
+			// デバッグコントローラバインド後にコントローラ化されたものは定義オブジェクトを持っている。
+			// また、デバッグコントローラがコントローラ化された時点でその前にバインドされていたコントローラにもコントローラ定義オブジェクトが無ければ持たせている
+
 			// イベントハンドラリスト
 			view.update(this.$find('.detail .tab-content .eventHandler'),
 					'controller-eventHandler', {
-						controller: controller,
+						controller: controller.__controllerContext.controllerDef,
 						_funcToStr: funcToStr
 					});
 
 			// メソッドリスト
 			view.update(this.$find('.detail .tab-content .method'), 'controller-method', {
-				controller: controller,
+				controller: controller.__controllerContext.controllerDef,
 				_funcToStr: funcToStr
 			});
 
@@ -1232,6 +1336,8 @@
 		}
 	};
 	// アスペクトを掛ける
+	// TODO アスペクトでやるのをやめる。
+	// アスペクトだと、メソッドがプロミスを返した時が分からない。(プロミスがresolve,rejectされた時に初めてpostに入るので。)
 	var lifeCycles = ['__ready', '__init', '__construct', '__unbind', '__dispose'];
 	var aspect = {
 		target: '*',
@@ -1373,11 +1479,32 @@
 	};
 	compileAspects(aspect);
 	h5.settings.aspects = [aspect];
+
+
+	// h5.core.controllerをフック
+	var orgController = h5.core.controller;
+	h5.core.controller = function(/* var_args */) {
+		var defObj = $.extend({}, arguments[1]);
+		var c = orgController.apply(this, arguments);
+		if (defObj && h5.u.str.startsWith(defObj.__name, 'h5.debug.developer')) {
+			return;
+		}
+		c.initPromise.done(function() {
+			if (!this.__controllerContext.controllerDefObj) {
+				// hifive1.1.8以前用
+				addControllerDef(this, defObj);
+			}
+		});
+		return c;
+	};
+
+
+
+
 	$(function() {
 		debugWindow = openDebugWindow();
 		h5.core.controller($(debugWindow.document).find('.h5debug'), debugController, {
 			win: debugWindow
 		});
 	});
-
 })();
