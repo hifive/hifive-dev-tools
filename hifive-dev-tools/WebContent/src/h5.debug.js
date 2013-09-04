@@ -751,6 +751,11 @@
 	};
 
 	/**
+	 * コントローラがコントローラ定義オブジェクトを持つか(hifive1.1.9以降かどうか)
+	 */
+	var CONTROLLER_HAS_CONTROLLER_DEF = true;
+
+	/**
 	 * アスペクトのかかった関数のtoString()結果を取得する。アスペクトが掛かっているかどうかの判定で使用する。
 	 */
 	var ASPECT_FUNCTION_STR = '';
@@ -763,6 +768,10 @@
 	h5.settings.aspects = [dummyAspect];
 	h5.core.controller(document, {
 		__name: 'h5.debug.dummyController',
+		__construct: function() {
+			// hifive1.1.8以前かどうか(controllerDefがあるか)を判定する
+			CONTROLLER_HAS_CONTROLLER_DEF = !!this.__controllerContext.controllerDef;
+		},
 		f: function() {
 		// この関数にアスペクトを掛けた時のtoString()結果を利用する
 		}
@@ -1480,26 +1489,24 @@
 	compileAspects(aspect);
 	h5.settings.aspects = [aspect];
 
-
-	// h5.core.controllerをフック
-	var orgController = h5.core.controller;
-	h5.core.controller = function(/* var_args */) {
-		var defObj = $.extend({}, arguments[1]);
-		var c = orgController.apply(this, arguments);
-		if (defObj && h5.u.str.startsWith(defObj.__name, 'h5.debug.developer')) {
-			return;
-		}
-		c.initPromise.done(function() {
-			if (!this.__controllerContext.controllerDefObj) {
-				// hifive1.1.8以前用
-				addControllerDef(this, defObj);
+	if (!CONTROLLER_HAS_CONTROLLER_DEF) {
+		// controllerDefを持たせるためにh5.core.controllerをフック(hifive1.1.8以前用)
+		var orgController = h5.core.controller;
+		h5.core.controller = function(/* var_args */) {
+			var defObj = $.extend({}, arguments[1]);
+			var c = orgController.apply(this, arguments);
+			if (defObj && h5.u.str.startsWith(defObj.__name, 'h5.debug.developer')) {
+				return;
 			}
-		});
-		return c;
-	};
-
-
-
+			c.initPromise.done(function() {
+				if (!this.__controllerContext.controllerDefObj) {
+					// hifive1.1.8以前用
+					addControllerDef(this, defObj);
+				}
+			});
+			return c;
+		};
+	}
 
 	$(function() {
 		debugWindow = openDebugWindow();
