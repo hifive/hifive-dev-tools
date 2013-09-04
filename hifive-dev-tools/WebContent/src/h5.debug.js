@@ -604,8 +604,14 @@
 		var body = null;
 		var devWindow = null;
 		if (useWindowOpen) {
-			devWindow = window.open(null,
+			devWindow = window.open(null, '1',
 					'width=910, height=700, menubar=no, toolbar=no, scrollbars=yes');
+			if (devWindow._h5debug) {
+				// 既に開いているものがあったら、それを閉じて別のものを開く
+				devWindow.close();
+				return openDebugWindow();
+			}
+			devWindow._h5debug = true;
 			body = devWindow.document.body;
 			$(body).html('').addClass('h5debug');
 		} else {
@@ -907,9 +913,7 @@
 		 * 左側の何もない箇所がクリックされたらコントローラの選択なしにする
 		 */
 		'{.h5debug} leftclick': function() {
-			this.setDetail();
-			this.$find('.controller-name').removeClass('selected');
-			this.removeOverlay(true);
+			this.unfocus();
 		},
 
 		/**
@@ -919,6 +923,15 @@
 		 * @param context
 		 */
 		'{document} h5controllerbound': function(context) {
+			this._h5controllerbound(context);
+		},
+		/**
+		 * openerがあればそっちのdocumentnにバインドする
+		 */
+		'{window.opener.document} h5controllerbound': function(context) {
+			this._h5controllerbound(context);
+		},
+		_h5controllerbound: function(context) {
 			var controller = context.evArg;
 			this.appendControllerList(controller);
 		},
@@ -930,7 +943,20 @@
 		 * @param context
 		 */
 		'{document} h5controllerunbound': function(context) {
+			this._h5controllerunbound(context);
+		},
+		/**
+		 * openerがあればそっちのdocumentnにバインドする
+		 */
+		'{window.opener.document} h5controllerunbound': function(context) {
+			this._h5controllerunbound(context);
+		},
+		_h5controllerunbound: function(context) {
 			var controller = context.evArg;
+			var $selected = this.$find('.selected');
+			if (context.evArg === this.getControllerFromElem($selected)) {
+				this.unfocus();
+			}
 			this.removeControllerList(controller);
 		},
 		/**
@@ -1122,6 +1148,16 @@
 			return $(el).data('h5debug-controller');
 		},
 		/**
+		 * コントローラの選択を解除
+		 * 
+		 * @memberOf h5.debug.developer.ControllerDebugController
+		 */
+		unfocus: function() {
+			this.setDetail();
+			this.$find('.controller-name').removeClass('selected');
+			this.removeOverlay(true);
+		},
+		/**
 		 * 引数に指定された要素にオーバレイ
 		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
@@ -1147,7 +1183,7 @@
 			});
 		},
 		/**
-		 * オーバレイの削除。deleteAllにtrueが指定されたボーダーだけのオーバーレイも削除
+		 * オーバレイの削除。deleteAllにtrueが指定された場合ボーダーだけのオーバーレイも削除
 		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
@@ -1158,7 +1194,6 @@
 				$('.h5debug-overlay:not(.borderOnly)').remove();
 			}
 		},
-
 		/**
 		 * コントローラをコントローラリストに追加
 		 * 
