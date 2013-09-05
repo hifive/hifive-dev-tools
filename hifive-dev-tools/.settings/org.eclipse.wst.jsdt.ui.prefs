@@ -1,5 +1,6 @@
 eclipse.preferences.version=1
 editor_save_participant_org.eclipse.wst.jsdt.ui.postsavelistener.cleanup=true
+formatter_profile=_H5_JS_WST_FORMATTER_PROFILE
 formatter_settings_version=11
 org.eclipse.wst.jsdt.ui.text.custom_code_templates=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?><templates/>
 sp_cleanup.add_default_serial_version_id=true
