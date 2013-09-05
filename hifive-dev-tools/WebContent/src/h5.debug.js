@@ -793,13 +793,14 @@
 
 		if (logArray.length > h5debugSettings.get('LogMaxNum')) {
 			logArray.shift();
+			if (target) {
+				// shift()で上に一つつづずれた分だけ、上にスクロールする
+				target.scrollTop -= $(target).find('.operation-log>li:last').outerHeight();
+			}
 		}
 		// 元々一番下までスクロールされていたら、追加後に一番下までスクロールする
 		if (scroll) {
 			target.scrollTop = target.scrollHeight - target.clientHeight;
-		} else if (target) {
-			// shift()で上に一つつづずれた分だけ、上にスクロールする
-			target.scrollTop -= $(target).find('.operation-log>li:last').outerHeight();
 		}
 	}
 
