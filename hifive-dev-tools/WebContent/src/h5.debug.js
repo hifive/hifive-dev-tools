@@ -783,13 +783,23 @@
 	 */
 	function addLogObject(logArray, logObj) {
 		logArray.push(logObj);
+		// 一番下までスクロールされているか
+		var scroll = false;
+		// 余裕を持たせて判定
+		var target = logArray._viewBindTarget;
+		if (target && target.scrollTop > target.scrollHeight - target.clientHeight - 30) {
+			scroll = true;
+		}
+
 		if (logArray.length > h5debugSettings.get('LogMaxNum')) {
 			logArray.shift();
 		}
-		// 一番下までスクロールする
-		if (debugWindow) {
-			var $log = $(debugWindow.document).find('.operation-log');
-			$log.scrollTop($log.find('ul').height());
+		// 元々一番下までスクロールされていたら、追加後に一番下までスクロールする
+		if (scroll) {
+			target.scrollTop = target.scrollHeight - target.clientHeight;
+		} else if (target) {
+			// shift()で上に一つつづずれた分だけ、上にスクロールする
+			target.scrollTop -= $(target).find('.operation-log>li:last').outerHeight();
 		}
 	}
 
@@ -827,6 +837,15 @@
 		return ary;
 	}
 
+	/**
+	 * ログをバインドする。ログ配列にバインド先の要素を持たせる。
+	 */
+	function bindLogArray(view, target, logAry) {
+		logAry._viewBindTarget = $(target)[0];
+		view.bind(target, {
+			logs: logAry
+		});
+	}
 	// =========================================================================
 	//
 	// Controller
@@ -1110,9 +1129,7 @@
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
 			view.update(this.$find('.detail .tab-content .log'), 'operation-log');
-			view.bind(this.$find('.detail .tab-content .log'), {
-				logs: logAry
-			});
+			bindLogArray(view, this.$find('.detail .tab-content .log'), logAry);
 
 			// その他情報
 			var childControllers = getChildControllers(controller);
@@ -1125,7 +1142,6 @@
 				childControllerNames: childControllerNames,
 				_formatDOM: formatDOM
 			});
-
 		},
 		/**
 		 * エレメントにコントローラを持たせる
@@ -1310,9 +1326,7 @@
 		__ready: function() {
 			var logAry = wholeOperationLogs;
 			view.update(this.rootElement, 'operation-log');
-			view.bind(this.rootElement, {
-				logs: logAry
-			});
+			bindLogArray(view, this.rootElement, logAry);
 		}
 	// TODO ログにフィルタを掛けたり、など
 	};
