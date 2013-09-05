@@ -15,8 +15,8 @@
 	 * window.openで開く場合はtrue、ページ上に表示するならfalse
 	 */
 	var useWindowOpen = h5.env.ua.isDesktop;
-	//	useWindowOpen = true;
-	//	useWindowOpen = false;
+	// useWindowOpen = true;
+	// useWindowOpen = false;
 
 	// =========================================================================
 	//
@@ -293,9 +293,14 @@
 			width: '100%'
 		}
 	}, {
-		selector: '.h5debug .tab-content>*:not(.active)',
+		selector: '.h5debug .tab-content>*',
 		rule: {
 			display: 'none'
+		}
+	}, {
+		selector: '.h5debug .tab-content>.active',
+		rule: {
+			display: 'block'
 		}
 	}];
 	/**
@@ -429,7 +434,6 @@
 
 	// --------------------- 動作ログ --------------------- //
 
-
 	// --------------------- デバッガ設定 --------------------- //
 	view
 			.register(
@@ -475,7 +479,7 @@
 	 * アスペクトが掛かっていて元の関数が見えない時に代用する関数
 	 */
 	var DUMMY_NO_VISIBLE_FUNCTION = function() {
-	//ダミー
+	// ダミー
 	};
 
 	/**
@@ -586,11 +590,11 @@
 		for ( var i = 0, len = specialObj.length; i < len; i++) {
 			var s = specialObj[i];
 			if (selector === s) {
-				//特殊オブジェクトそのものを指定された場合
+				// 特殊オブジェクトそのものを指定された場合
 				return h5.u.obj.getByPath(selector);
 			}
 			if (h5.u.str.startsWith(selector, s + '.')) {
-				//window. などドット区切りで続いている場合
+				// window. などドット区切りで続いている場合
 				return h5.u.obj.getByPath(selector);
 			}
 		}
@@ -663,7 +667,13 @@
 				for ( var p in rule) {
 					var key = hyphenate(p);
 					var val = rule[p];
-					sheet.addRule(selector, key + ':' + val);
+					try {
+						sheet.addRule(selector, key + ':' + val);
+					} catch (e) {
+						alert(selector);
+						alert(key);
+						alert(val)
+					}
 				}
 			}
 		}
@@ -842,10 +852,10 @@
 	 * ログをバインドする。ログ配列にバインド先の要素を持たせる。
 	 */
 	function bindLogArray(view, target, logAry) {
-		logAry._viewBindTarget = $(target)[0];
 		view.bind(target, {
 			logs: logAry
 		});
+		logAry._viewBindTarget = $(target)[0];
 	}
 	// =========================================================================
 	//
@@ -1069,7 +1079,7 @@
 			$target.each(function() {
 				var $option = $('<option>');
 				$option.data('h5debug-eventTarget', this);
-				//TODO outerHTML見せられても分からないので、どうするか考える
+				// TODO outerHTML見せられても分からないので、どうするか考える
 				$option.text(this.outerHTML != null ? this.outerHTML.substring(0, 20) : this);
 				$select.append($option);
 			});
@@ -1081,7 +1091,7 @@
 			var evName = $.trim($el.closest('li').find('.key').text()).match(/ (\S+)$/)[1];
 			var target = $el.closest('.menu').find('option:selected').data('h5debug-eventTarget');
 			if (target) {
-				//TODO evNameがmouse/keyboard/touch系ならネイティブのイベントでやる
+				// TODO evNameがmouse/keyboard/touch系ならネイティブのイベントでやる
 				$(target).trigger(evName);
 			} else {
 				alert('イベントターゲットがありません');
@@ -1235,7 +1245,7 @@
 			var $li = $(view.get('controller-list-part', {
 				name: controller.__name,
 				cls: isRoot ? 'root' : 'child'
-			}));
+			}), $ul[0].ownerDocument);
 			// データにコントローラを持たせる
 			this.setControllerToElem($li.children('.controller-name'), controller);
 			$ul.append($li);
@@ -1571,7 +1581,8 @@
 									wholeOperationLogsIndentLevel));
 
 							// promiseが返されてかつpendingならハンドラを登録
-							// TODO pendingのプロミスをメソッドが返した時にはpostに入ってこない。ログの表示方法はそれで大丈夫かどうか確認
+							// TODO
+							// pendingのプロミスをメソッドが返した時にはpostに入ってこない。ログの表示方法はそれで大丈夫かどうか確認
 							if (isPromise && ret.state() === 'pending') {
 								// pendingなら、resolve,rejectされたタイミングでログを出す
 								function doneHandler() {
@@ -1639,9 +1650,9 @@
 		};
 	}
 
-	//-------------------------------------------------
+	// -------------------------------------------------
 	// デバッガ設定変更時のイベント
-	//-------------------------------------------------
+	// -------------------------------------------------
 	h5debugSettings.addEventListener('change', function(e) {
 		for ( var p in e.props) {
 			var val = e.props[p].newValue;
@@ -1656,9 +1667,6 @@
 			}
 		}
 	});
-
-
-
 
 	$(function() {
 		debugWindow = openDebugWindow();
