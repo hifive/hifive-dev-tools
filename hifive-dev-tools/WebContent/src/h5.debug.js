@@ -16,7 +16,7 @@
 	 */
 	var useWindowOpen = h5.env.ua.isDesktop;
 	// useWindowOpen = true;
-//	 useWindowOpen = false;
+	//	 useWindowOpen = false;
 
 	// =========================================================================
 	//
@@ -109,7 +109,7 @@
 		rule: {
 			paddingLeft: 0,
 			margin: 0,
-			height:'100%',
+			height: '100%',
 			color: 'gray',
 			whiteSpace: 'nowrap',
 			overflow: 'auto'
@@ -692,7 +692,14 @@
 				w.close();
 				return openDebugWindow();
 			}
-			w._h5debug = true;
+			try {
+				w._h5debug = true;
+			} catch (e) {
+				// IEの場合既に開いているウィンドウがあったら書き込もうとするとエラーになる
+				w.close();
+				return openDebugWindow();
+			}
+
 			body = w.document.body;
 			$(body).addClass('h5debug');
 		} else {
@@ -1430,7 +1437,21 @@
 	 * @name h5.debug-developer.OperationLogController
 	 */
 	var operationLogController = {
+		/**
+		 * @memberOf h5.debug.developer.OperationLogController
+		 */
 		__name: 'h5.debug.developer.OperationLogController',
+		/**
+		 * 表示する条件を格納するオブジェクト
+		 *
+		 * @memberOf h5.debug.developer.OperationLogController
+		 */
+		_condition: {
+			filterReg: '',
+			filterShow: true,
+			filterHide: false,
+			hideCls: {}
+		},
 		__ready: function(context) {
 			view.update(this.rootElement, 'operation-log');
 			var logArray = context.args && context.args.logArray;
@@ -1440,8 +1461,12 @@
 		},
 		'.fixedControlls input[type="checkbox"] change': function(context, $el) {
 			var cls = $el.attr('name');
-			var $target = this.$find('.operation-log-list li.' + cls);
-			($el.prop('checked') ? this._showLi : this._hideLi).call(this, $target);
+			if ($el.prop('checked')) {
+				this._condition.hideCls[cls] = false;
+			} else {
+				this._condition.hideCls[cls] = true;
+			}
+			this.refresh();
 		},
 		/**
 		 * フィルタを掛ける
@@ -1458,6 +1483,9 @@
 			this._filter('');
 		},
 		_filter: function(str, isShow) {
+
+			//			var $target = this.$find('.operation-log-list li.' + cls);
+			//			($el.prop('checked') ? this._showLi : this._hideLi).call(this, $target);
 			var $li = this.$find('li');
 			this._showLi($li.filter('.filter-hidden'));
 			$li.removeClass('filter-hidden');
