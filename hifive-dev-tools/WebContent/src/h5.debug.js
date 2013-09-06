@@ -87,7 +87,8 @@
 		selector: '.h5debug .operation-log',
 		rule: {
 			paddingLeft: 0,
-			margin: 0
+			margin: 0,
+			color: 'gray'
 		}
 	}, {
 		selector: '.h5debug .operation-log .time',
