@@ -87,40 +87,69 @@
 		selector: '.h5debug .operation-log',
 		rule: {
 			paddingLeft: 0,
-			margin: 0,
-			color: 'gray'
+			margin: 0
 		}
 	}, {
-		selector: '.h5debug .operation-log .time',
+		selector: '.h5debug .operation-log .fixedControlls',
+		rule: {
+			paddingLeft: 0,
+			margin: 0,
+			position: 'fixed',
+			backgroundColor: '#fff',
+			border: 'solid 1px gray',
+			padding: '3px'
+
+		}
+	}, {
+		selector: '.h5debug .operation-log .fixedControlls+*',
+		rule: {
+			marginTop: '30px'
+
+		}
+	}, {
+		selector: '.h5debug .operation-log-list',
+		rule: {
+			paddingLeft: 0,
+			margin: 0,
+			color: 'gray',
+			whiteSpace: 'nowrap'
+		}
+	}, {
+		selector: '.h5debug .operation-log-list .time',
 		rule: {
 			marginRight: '1em'
 		}
 	}, {
-		selector: '.h5debug .operation-log .tag',
+		selector: '.h5debug .operation-log-list .tag',
 		rule: {
 			display: 'inline-block',
 			minWidth: '3em'
 		}
 	}, {
-		selector: '.h5debug .operation-log .promiseState',
+		selector: '.h5debug .operation-log-list .promiseState',
 		rule: {
 			display: 'inline-block',
 			marginRight: '0.5em'
 		}
 	}, {
-		selector: '.h5debug .operation-log .message.lifecycle',
+		selector: '.h5debug .operation-log-list .message.lifecycle',
 		rule: {
-			color: '#006B89'
+			color: '#2EB3EE'
 		}
 	}, {
-		selector: '.h5debug .operation-log .message.event',
+		selector: '.h5debug .operation-log-list .message.event',
 		rule: {
 			color: '#008348'
 		}
 	}, {
-		selector: '.h5debug .operation-log .message.private',
+		selector: '.h5debug .operation-log-list .message.private',
 		rule: {
 			color: '#B2532E'
+		}
+	}, {
+		selector: '.h5debug .operation-log-list .message.public',
+		rule: {
+			color: '#006B89'
 		}
 	},
 	/*
@@ -325,8 +354,8 @@
 	var SPECIAL_H5DEBUG_STYLE = {
 		IE: [{
 			// スタイルの調整(IE用)
-			// IEだと、外側の要素にpaddingが設定してあっても、height:100%にしたときに外側のpadding分が無視される？
-			// (でも外枠がbodyの時は表示されていない様子)
+			// IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
+			// その分を調整する。
 			selector: '.h5debug .tab-content .tab-content',
 			rule: {
 				paddingBottom: '60px'
@@ -402,7 +431,7 @@
 	view.register('controllerDebugWrapper',
 			'<div class="left ovfAuto"></div><div class="right ovfHidden"></div>');
 	// 操作パネル
-	view.register('controller-controll', '<div class="controll"></div>');
+	view.register('controller-controll', '<div class="fixedControlls"></div>');
 
 	// コントローラリストul
 	view.register('controller-list', '<ul class="controllerlist"></ul>');
@@ -414,10 +443,10 @@
 	// 詳細情報画面
 	view.register('controller-detail', '<div class="detail"><ul class="nav nav-tabs">'
 			+ '<li class="active" data-tab-page="eventHandler">イベントハンドラ</li>'
-			+ '<li data-tab-page="method">メソッド</li>' + '<li data-tab-page="log">ログ</li>'
+			+ '<li data-tab-page="method">メソッド</li>' + '<li data-tab-page="operation-log">ログ</li>'
 			+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
 			+ '<div class="active eventHandler"></div>' + '<div class="method"></div>'
-			+ '<div class="log"></div>' + '<div class="otherInfo"></div></div>');
+			+ '<div class="operation-log"></div>' + '<div class="otherInfo"></div></div>');
 
 	// イベントハンドラリスト
 	view
@@ -438,7 +467,13 @@
 	view
 			.register(
 					'operation-log',
-					'<ul class="operation-log liststyle-none no-padding" data-h5-loop-context="logs"><li>'
+					'<div class="fixedControlls">'
+							+ '<input type="checkbox" id="operation-log-controlls-event"checked name="event"/><label for="operation-log-controlls-event">イベント</label>'
+							+ '<input type="checkbox" id="operation-log-controlls-public" checked name="public" /><label for="operation-log-controlls-public">パブリック</label>'
+							+ '<input type="checkbox" id="operation-log-controlls-private" checked name="private" /><label for="operation-log-controlls-private">プライベート</label>'
+							+ '<input type="checkbox" id="operation-log-controlls-lifecycle" checked name="lifecycle"/><label for="operation-log-controlls-lifecycle">ライフサイクル</label>'
+							+ '</div>'
+							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"><li class="operation-log-list" data-h5-bind="class:cls">'
 							+ '<span data-h5-bind="time" class="time"></span>'
 							+ '<span data-h5-bind="text:tag;style(margin-left):indentLevel" class="tag"></span>'
 							+ '<span data-h5-bind="promiseState" class="promiseState"></span>'
@@ -1165,6 +1200,15 @@
 				this.$find('.detail .tab-content>*').html('');
 				return;
 			}
+
+			// 詳細ビューに表示されているコントローラをアンバインド
+			var controllers = h5.core.controllerManager.getControllers(this.$find('.detail'), {
+				deep: true
+			});
+			for ( var i = 0, l = controllers.length; i < l; i++) {
+				controllers[i].dispose();
+			}
+
 			// イベントハンドラ、メソッドは、コントローラ定義オブジェクトから取得する。
 			// hifive1.1.8以前では、コントローラ定義オブジェクトを持たないが、h5.core.controllerをフックしているので、
 			// デバッグコントローラバインド後にコントローラ化されたものは定義オブジェクトを持っている。
@@ -1185,8 +1229,13 @@
 
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
-			view.update(this.$find('.detail .tab-content .log'), 'operation-log');
-			bindLogArray(view, this.$find('.detail .tab-content .log'), logAry);
+			view.update(this.$find('.operation-log'), 'operation-log');
+			bindLogArray(view, this.$find('.operation-log'), logAry);
+			try {
+				h5.core.controller(this.$find('.operation-log'), operationLogController);
+			} catch (e) {
+				console.log(e)
+			}
 
 			// その他情報
 			var childControllers = getChildControllers(controller);
@@ -1374,7 +1423,6 @@
 
 	/**
 	 * 全体の動作ログコントローラ<br>
-	 * TODO コントローラ別、ロジック別でやっていることと共通にする。
 	 * 
 	 * @name h5.debug-developer.OperationLogController
 	 */
@@ -1384,8 +1432,12 @@
 			var logAry = wholeOperationLogs;
 			view.update(this.rootElement, 'operation-log');
 			bindLogArray(view, this.rootElement, logAry);
+		},
+		'.fixedControlls input[type="checkbox"] change': function(context, $el) {
+			var cls = $el.attr('name');
+			this.$find('.operation-log-list .' + cls).children().css('display',
+					$el.prop('checked') ? 'inline' : 'none');
 		}
-	// TODO ログにフィルタを掛けたり、など
 	};
 
 	/**
@@ -1555,6 +1607,8 @@
 								cls = 'lifecycle';
 							} else if (fName.indexOf('_') === 0) {
 								cls = 'private';
+							} else {
+								cls = 'public';
 							}
 							if (!ctrlOrLogic._h5debugContext.debugLog) {
 								ctrlOrLogic._h5debugContext.debugLog = createLogArray();
@@ -1591,6 +1645,8 @@
 									cls = 'lifecycle';
 								} else if (fName.indexOf('_') === 0) {
 									cls = 'private';
+								} else {
+									cls = 'public';
 								}
 							}
 							// プロミスの判定
