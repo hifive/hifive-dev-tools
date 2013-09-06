@@ -16,7 +16,7 @@
 	 */
 	var useWindowOpen = h5.env.ua.isDesktop;
 	// useWindowOpen = true;
-	// useWindowOpen = false;
+//	 useWindowOpen = false;
 
 	// =========================================================================
 	//
@@ -87,23 +87,21 @@
 		selector: '.h5debug .operation-log',
 		rule: {
 			paddingLeft: 0,
-			margin: 0
+			margin: 0,
+			height: '100%',
+			paddingBottom: '49px',
+			overflow: 'visible!important',
+			boxSizing: 'border-box',
+			'-moz-boxSizing': 'border-box'
 		}
 	}, {
 		selector: '.h5debug .operation-log .fixedControlls',
 		rule: {
 			paddingLeft: 0,
 			margin: 0,
-			position: 'fixed',
 			backgroundColor: '#fff',
 			border: 'solid 1px gray',
 			padding: '3px'
-
-		}
-	}, {
-		selector: '.h5debug .operation-log .fixedControlls+*',
-		rule: {
-			marginTop: '30px'
 
 		}
 	}, {
@@ -111,28 +109,30 @@
 		rule: {
 			paddingLeft: 0,
 			margin: 0,
+			height:'100%',
 			color: 'gray',
-			whiteSpace: 'nowrap'
+			whiteSpace: 'nowrap',
+			overflow: 'auto'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list .time',
+		selector: '.h5debug .operation-log-list>li .time',
 		rule: {
 			marginRight: '1em'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list .tag',
+		selector: '.h5debug .operation-log-list>li .tag',
 		rule: {
 			display: 'inline-block',
 			minWidth: '3em'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list .promiseState',
+		selector: '.h5debug .operation-log-list>li .promiseState',
 		rule: {
 			display: 'inline-block',
 			marginRight: '0.5em'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list .message.lifecycle',
+		selector: '.h5debug .operation-log-list>li .message.lifecycle',
 		rule: {
 			color: '#2EB3EE'
 		}
@@ -142,12 +142,12 @@
 			color: '#008348'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list .message.private',
+		selector: '.h5debug .operation-log-list>li .message.private',
 		rule: {
 			color: '#B2532E'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list .message.public',
+		selector: '.h5debug .operation-log-list>li .message.public',
 		rule: {
 			color: '#006B89'
 		}
@@ -474,8 +474,10 @@
 							+ '<input type="checkbox" id="operation-log-controlls-public" checked name="public" /><label for="operation-log-controlls-public">パブリック</label>'
 							+ '<input type="checkbox" id="operation-log-controlls-private" checked name="private" /><label for="operation-log-controlls-private">プライベート</label>'
 							+ '<input type="checkbox" id="operation-log-controlls-lifecycle" checked name="lifecycle"/><label for="operation-log-controlls-lifecycle">ライフサイクル</label>'
+							+ '<br>'
+							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '</div>'
-							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"><li class="operation-log-list" data-h5-bind="class:cls">'
+							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"><li data-h5-bind="class:cls">'
 							+ '<span data-h5-bind="time" class="time"></span>'
 							+ '<span data-h5-bind="text:tag;style(margin-left):indentLevel" class="tag"></span>'
 							+ '<span data-h5-bind="promiseState" class="promiseState"></span>'
@@ -1440,6 +1442,41 @@
 			var cls = $el.attr('name');
 			var $target = this.$find('.operation-log-list li.' + cls);
 			($el.prop('checked') ? this._showLi : this._hideLi).call(this, $target);
+		},
+		/**
+		 * フィルタを掛ける
+		 *
+		 * @memberOf h5.debug.developer.OperationLogController
+		 */
+		'button.filter-show click': function(context) {
+			this._filter(this.$find('input.filter[type="text"]').val(), true);
+		},
+		'button.filter-hide click': function(context) {
+			this._filter(this.$find('input.filter[type="text"]').val());
+		},
+		'button.filter-clear click': function(context) {
+			this._filter('');
+		},
+		_filter: function(str, isShow) {
+			var $li = this.$find('li');
+			this._showLi($li.filter('.filter-hidden'));
+			$li.removeClass('filter-hidden');
+			if (!str) {
+				this.$find('.filter-clear').attr('disabled', 'disabled');
+				return;
+			}
+			this.$find('.filter-clear').removeAttr('disabled');
+			var reg = getRegex(str);
+			// フィルタによって隠されてる要素を一度表示
+			this._showLi($li.filter('.filter-hidden'));
+			$li.each(function() {
+				var $this = $(this);
+				if (!isShow !== !$this.find('.message').text().match(reg)) {
+					$this.addClass('filter-hidden');
+				}
+			});
+			// フィルタにマッチしたものを隠す
+			this._hideLi($li.filter('.filter-hidden'));
 		},
 		_hideLi: function($li) {
 			// children()に対して、none/inlineの切り替え。
