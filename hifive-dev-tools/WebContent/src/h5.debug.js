@@ -105,6 +105,12 @@
 
 		}
 	}, {
+		selector: '.h5debug .operation-log .fixedControlls input.filter[disabled]',
+		rule: {
+			backgroundColor: '#fff',
+			fontWeight: 'bold'
+		}
+	}, {
 		selector: '.h5debug .operation-log-list',
 		rule: {
 			paddingLeft: 0,
@@ -888,7 +894,10 @@
 		// 一番下までスクロールされているか
 		var scroll = false;
 		// 余裕を持たせて判定
-		var target = logArray._viewBindTarget;
+		var target = null;
+		if (logArray._viewBindTarget && $(logArray._viewBindTarget).css('display') !== 'none') {
+			target = $(logArray._viewBindTarget).find('.operation-log-list')[0];
+		}
 		if (target && target.scrollTop > target.scrollHeight - target.clientHeight - 30) {
 			scroll = true;
 		}
@@ -904,6 +913,8 @@
 		if (scroll) {
 			target.scrollTop = target.scrollHeight - target.clientHeight;
 		}
+		// ターゲットに対してログが追加されたことをtriggerして通知
+		$(target).trigger('logAppended');
 	}
 
 	/**
@@ -1447,9 +1458,8 @@
 		 * @memberOf h5.debug.developer.OperationLogController
 		 */
 		_condition: {
-			filterReg: '',
-			filterShow: true,
-			filterHide: false,
+			filterStr: '',
+			exclude: false,
 			hideCls: {}
 		},
 		__ready: function(context) {
@@ -1457,6 +1467,7 @@
 			var logArray = context.args && context.args.logArray;
 			if (logArray) {
 				bindLogArray(view, this.rootElement, logArray);
+				logArray._viewBindTarget = this.rootElement;
 			}
 		},
 		'.fixedControlls input[type="checkbox"] change': function(context, $el) {
@@ -1474,46 +1485,70 @@
 		 * @memberOf h5.debug.developer.OperationLogController
 		 */
 		'button.filter-show click': function(context) {
-			this._filter(this.$find('input.filter[type="text"]').val(), true);
-		},
-		'button.filter-hide click': function(context) {
-			this._filter(this.$find('input.filter[type="text"]').val());
-		},
-		'button.filter-clear click': function(context) {
-			this._filter('');
-		},
-		_filter: function(str, isShow) {
-
-			//			var $target = this.$find('.operation-log-list li.' + cls);
-			//			($el.prop('checked') ? this._showLi : this._hideLi).call(this, $target);
-			var $li = this.$find('li');
-			this._showLi($li.filter('.filter-hidden'));
-			$li.removeClass('filter-hidden');
-			if (!str) {
-				this.$find('.filter-clear').attr('disabled', 'disabled');
+			var val = this.$find('input.filter[type="text"]').val();
+			if (!val) {
 				return;
 			}
+			this._condition.filterStr = val;
+			this._condition.exclude = false;
+			this.refresh();
+			this.$find('input.filter[type="text"],.filter-show,.filter-hide').attr('disabled',
+					'disabled');
 			this.$find('.filter-clear').removeAttr('disabled');
+		},
+		'button.filter-hide click': function(context) {
+			var val = this.$find('input.filter[type="text"]').val();
+			if (!val) {
+				return;
+			}
+			this._condition.filterStr = val;
+			this._condition.exclude = true;
+			this.refresh();
+			this.$find('input.filter[type="text"],.filter-show,.filter-hide').attr('disabled',
+					'disabled');
+			this.$find('.filter-clear').removeAttr('disabled');
+		},
+		'button.filter-clear click': function(context) {
+			this._condition.filterStr = '';
+			this.refresh();
+			this.$find('input.filter[type="text"],.filter-show,.filter-hide')
+					.removeAttr('disabled');
+			this.$find('.filter-clear').attr('disabled', 'disabled');
+		},
+		'{rootElement} logAppended': function() {
+			// 更新時は最後のliについてだけやればいい
+			this.refresh(this.$find('li:last'));
+		},
+		refresh: function($li) {
+			$li = $li || this.$find('li');
+			$li.css('display', '');
+			this._regFilter($li);
+			this._clsFilter($li);
+		},
+		_regFilter: function($li) {
+			var str = this._condition.filterStr;
+			if (!str) {
+				return;
+			}
+			var isExclude = this._condition.exclude;
 			var reg = getRegex(str);
 			// フィルタによって隠されてる要素を一度表示
-			this._showLi($li.filter('.filter-hidden'));
+			var $hiddenLi = $();
 			$li.each(function() {
 				var $this = $(this);
-				if (!isShow !== !$this.find('.message').text().match(reg)) {
-					$this.addClass('filter-hidden');
+				if (isExclude !== !$this.find('.message').text().match(reg)) {
+					$hiddenLi = $hiddenLi.add($this);
 				}
 			});
 			// フィルタにマッチしたものを隠す
-			this._hideLi($li.filter('.filter-hidden'));
+			$hiddenLi.css('display', 'none');
 		},
-		_hideLi: function($li) {
-			// children()に対して、none/inlineの切り替え。
-			// 元のLIをdisplay:noneにすると、復活するときにちゃんと復活できない(chromeで確認)
-			// (liはdisplay:list-itemのはずなのに、その通りに復活するとリストの中身がdisplay:inline-blockのような表示になって元通りにならない)
-			$li.children().css('display', 'none');
-		},
-		_showLi: function($li) {
-			$li.children().css('display', 'inline');
+		_clsFilter: function($li) {
+			for ( var cls in this._condition.hideCls) {
+				if (this._condition.hideCls[cls]) {
+					$li.filter('.' + cls).css('display', 'none');
+				}
+			}
 		}
 	};
 
@@ -1611,6 +1646,7 @@
 		 */
 		__ready: function() {
 			bindLogArray(this.view, this.$find('.operation-log.whole'), wholeOperationLogs);
+			wholeOperationLogs._viewBindTarget = this.$find('.operation-log.whole')[0];
 		},
 
 		/**
