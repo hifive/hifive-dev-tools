@@ -210,13 +210,22 @@
 			overflow: 'auto'
 		}
 	}, {
+		selector: '.h5debug .ovfAuto',
+		rule: {
+			overflow: 'auto'
+		}
+	}, {
+		selector: '.h5debug .ovfHidden',
+		rule: {
+			overflow: 'hidden'
+		}
+	}, {
 		selector: '.h5debug .left',
 		rule: {
 			height: '100%',
 			width: '350px',
 			border: '1px solid #20B5FF',
 			float: 'left',
-			overflow: 'auto',
 			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
 			'-ms-box-sizing': 'border-box',
@@ -230,7 +239,6 @@
 			border: '1px solid #20B5FF',
 			marginLeft: '-1px',
 			float: 'left',
-			overflow: 'auto',
 			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
 			'-ms-box-sizing': 'border-box',
@@ -312,8 +320,20 @@
 			display: 'block'
 		}
 	}];
+
+	var SPECIAL_H5DEBUG_STYLE = {
+		IE: [{
+			// スタイルの調整(IE用)
+			// IEだと、外側の要素にpaddingが設定してあっても、height:100%にしたときに外側のpadding分が無視される？
+			// (でも外枠がbodyの時は表示されていない様子)
+			selector: '.h5debug .tab-content .tab-content',
+			rule: {
+				paddingBottom: '60px'
+			}
+		}]
+	};
 	/**
-	 * デバッグするページ側のスタイル
+	 * デバッグ対象になるページ側のスタイル
 	 */
 	var H5PAGE_STYLE = [{
 		selector: '.h5debug-overlay',
@@ -378,7 +398,8 @@
 
 	// --------------------- コントローラ --------------------- //
 	// コントローラデバッグ画面
-	view.register('controllerDebugWrapper', '<div class="left"></div><div class="right"></div>');
+	view.register('controllerDebugWrapper',
+			'<div class="left ovfAuto"></div><div class="right ovfHidden"></div>');
 	// 操作パネル
 	view.register('controller-controll', '<div class="controll"></div>');
 
@@ -530,7 +551,7 @@
 	// =============================
 	/**
 	 * h5.scopedglobals.jsからコピペ
-	 *
+	 * 
 	 * @private
 	 * @param value 値
 	 * @returns 配列化された値、ただし引数がnullまたはundefinedの場合はそのまま
@@ -543,7 +564,7 @@
 	}
 	/**
 	 * h5.core.__compileAspectsからコピペ
-	 *
+	 * 
 	 * @param {Object|Object[]} aspects アスペクト設定
 	 */
 	function compileAspects(aspects) {
@@ -562,7 +583,7 @@
 	}
 	/**
 	 * h5scopedglobals.jsからコピペ
-	 *
+	 * 
 	 * @private
 	 * @param {String} str 文字列
 	 * @returns {String} エスケープ済文字列
@@ -572,7 +593,7 @@
 	}
 	/**
 	 * h5scopedglobals.jsからコピペ
-	 *
+	 * 
 	 * @private
 	 * @param {String|RegExp} target 値
 	 * @returns {RegExp} オブジェクト
@@ -617,25 +638,30 @@
 	 */
 	function openDebugWindow() {
 		var body = null;
-		var devWindow = null;
+		var w = null;
 		if (useWindowOpen) {
-			devWindow = window.open(null, '1',
-					'width=910, height=700, menubar=no, toolbar=no, scrollbars=yes');
-			if (devWindow._h5debug) {
+			// Firefoxは'about:blank'で開くとDOM追加した後に要素が消されてしまう
+			// IEの場合はnullで開くとDocmodeがquirksになり、'about:blank'で開くとちゃんと9モードになる
+			// chromeの場合はどちらでもいい
+			// IEの場合だけ'about:blank'を使うようにしている
+			var url = h5.env.ua.isIE ? 'about:blank' : null;
+			w = window.open(url, '1',
+					'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
+			if (w._h5debug) {
 				// 既に開いているものがあったら、それを閉じて別のものを開く
-				devWindow.close();
+				w.close();
 				return openDebugWindow();
 			}
-			devWindow._h5debug = true;
-			body = devWindow.document.body;
-			$(body).html('').addClass('h5debug');
+			w._h5debug = true;
+			body = w.document.body;
+			$(body).addClass('h5debug');
 		} else {
 			// モバイル用の擬似ウィンドウを開く
-			devWindow = window;
+			w = window;
 			body = document.body;
 			view.append(body, 'wrapper');
 		}
-		return devWindow;
+		return w;
 	}
 
 	/**
@@ -646,19 +672,27 @@
 			return '-' + s.toLowerCase();
 		});
 	}
-	function setCSS(devWindow, styleDef) {
+	function setCSS(devWindow, styleDef, specialStyleDef) {
 		// ウィンドウが開きっぱなしの時はスタイル追加はしない
 		var doc = devWindow.document;
 		if ($(doc).find('style.h5debug-style').length && devWindow != window) {
 			return;
+		}
+		var cssArray = styleDef;
+		if (specialStyleDef) {
+			for ( var p in specialStyleDef) {
+				if (h5.env.ua['is' + p]) {
+					cssArray = cssArray.concat(specialStyleDef[p]);
+				}
+			}
 		}
 		var style = doc.createElement('style');
 		$(style).addClass('h5debug-style');
 		doc.getElementsByTagName('head')[0].appendChild(style);
 		var sheet = doc.styleSheets[doc.styleSheets.length - 1];
 		if (sheet.insertRule) {
-			for ( var i = 0, l = styleDef.length; i < l; i++) {
-				var def = styleDef[i];
+			for ( var i = 0, l = cssArray.length; i < l; i++) {
+				var def = cssArray[i];
 				var selector = def.selector;
 				var rule = def.rule;
 				var cssStr = selector + '{';
@@ -671,8 +705,8 @@
 				sheet.insertRule(cssStr, sheet.cssRules.length);
 			}
 		} else {
-			for ( var i = 0, l = styleDef.length; i < l; i++) {
-				var def = styleDef[i];
+			for ( var i = 0, l = cssArray.length; i < l; i++) {
+				var def = cssArray[i];
 				var selector = def.selector;
 				var rule = def.rule;
 				for ( var p in rule) {
@@ -765,7 +799,7 @@
 
 	/**
 	 * Dateをフォーマット
-	 *
+	 * 
 	 * @param {Date} date
 	 */
 	function timeFormat(date) {
@@ -784,7 +818,7 @@
 	}
 	/**
 	 * ログメッセージオブジェクトを作成
-	 *
+	 * 
 	 * @param message
 	 * @param cls
 	 */
@@ -877,7 +911,7 @@
 	/**
 	 * コントローラデバッグコントローラ<br>
 	 * デバッグコントローラの子コントローラ
-	 *
+	 * 
 	 * @name h5.debug.developer.ControllerDebugController
 	 */
 	var controllerDebugController = {
@@ -895,7 +929,7 @@
 		$info: null,
 		/**
 		 * 選択中のコントローラ
-		 *
+		 * 
 		 * @name h5.debug.developer.ControllerDebugController
 		 */
 		selectedController: null,
@@ -921,7 +955,7 @@
 			view.update(this.$find('.debug-controller .controll'), 'controller-controll');
 
 			this.win = context.args.win;
-			setCSS(this.win, H5DEBUG_STYLE);
+			setCSS(this.win, H5DEBUG_STYLE, SPECIAL_H5DEBUG_STYLE);
 			setCSS(window, H5PAGE_STYLE);
 			// コントローラの詳細表示エリア
 			view.append(this.$find('.left'), 'controller-controll');
@@ -936,7 +970,7 @@
 		},
 		/**
 		 * オープン時のイベント
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
 		'{.h5debug} open': function() {
@@ -944,7 +978,7 @@
 		},
 		/**
 		 * クローズ時のイベント
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
 		'{.h5debug} close': function() {
@@ -959,7 +993,7 @@
 
 		/**
 		 * コントローラが新たにバインドされた
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param context
 		 */
@@ -979,7 +1013,7 @@
 
 		/**
 		 * コントローラがアンバインドされた
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 * @param context
 		 */
@@ -1002,7 +1036,7 @@
 		},
 		/**
 		 * マウスオーバーでコントローラのバインド先オーバレイ表示(PC用)
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param context
 		 * @param $el
@@ -1018,7 +1052,7 @@
 		},
 		/**
 		 * マウスアウト
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param context
 		 * @param $el
@@ -1031,7 +1065,7 @@
 		},
 		/**
 		 * コントローラリスト上のコントローラをクリック
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param context
 		 * @param $el
@@ -1052,7 +1086,7 @@
 		},
 		/**
 		 * イベントハンドラにマウスオーバーで選択(PC用)
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
 		' .eventHandler li:not(.selected) mouseover': function(context, $el) {
@@ -1060,7 +1094,7 @@
 		},
 		/**
 		 * イベントハンドラをクリックで選択(タブレット用)
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.DebugController
 		 */
 		'.eventHandler li:not(.selected) click': function(context, $el) {
@@ -1068,7 +1102,7 @@
 		},
 		/**
 		 * イベントハンドラの選択
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param $el
 		 */
@@ -1121,7 +1155,7 @@
 		},
 		/**
 		 * 詳細画面(右側画面)をコントローラを基に作成。nullが渡されたら空白にする
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param controller
 		 */
@@ -1167,7 +1201,7 @@
 		},
 		/**
 		 * エレメントにコントローラを持たせる
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param el
 		 * @param controller
@@ -1177,7 +1211,7 @@
 		},
 		/**
 		 * エレメントに覚えさせたコントローラを取得する
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param el
 		 * @returns {Controller}
@@ -1187,7 +1221,7 @@
 		},
 		/**
 		 * コントローラの選択を解除
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
 		unfocus: function() {
@@ -1197,7 +1231,7 @@
 		},
 		/**
 		 * 引数に指定された要素にオーバレイ
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
 		overlay: function(elem, classNames) {
@@ -1222,7 +1256,7 @@
 		},
 		/**
 		 * オーバレイの削除。deleteAllにtrueが指定された場合ボーダーだけのオーバーレイも削除
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
 		removeOverlay: function(deleteAll) {
@@ -1234,7 +1268,7 @@
 		},
 		/**
 		 * コントローラをコントローラリストに追加
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param controller
 		 */
@@ -1272,7 +1306,7 @@
 		},
 		/**
 		 * コントローラをコントローラリストから削除
-		 *
+		 * 
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param controller
 		 */
@@ -1304,7 +1338,7 @@
 
 	/**
 	 * デバッガの設定を行うコントローラ
-	 *
+	 * 
 	 * @name h5.debug.developer.SettingController
 	 */
 	var settingController = {
@@ -1340,7 +1374,7 @@
 	/**
 	 * 全体の動作ログコントローラ<br>
 	 * TODO コントローラ別、ロジック別でやっていることと共通にする。
-	 *
+	 * 
 	 * @name h5.debug-developer.OperationLogController
 	 */
 	var operationLogController = {
@@ -1355,7 +1389,7 @@
 
 	/**
 	 * タブコントローラ タブ表示切替をサポートする
-	 *
+	 * 
 	 * @name h5.debug.developer.TabController
 	 */
 	var tabController = {
@@ -1387,7 +1421,7 @@
 
 	/**
 	 * デバッグコントローラ
-	 *
+	 * 
 	 * @name h5.debug.developer.DebugController
 	 */
 	var debugController = {
