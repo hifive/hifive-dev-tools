@@ -1438,8 +1438,17 @@
 		},
 		'.fixedControlls input[type="checkbox"] change': function(context, $el) {
 			var cls = $el.attr('name');
-			this.$find('.operation-log-list .' + cls).children().css('display',
-					$el.prop('checked') ? 'inline' : 'none');
+			var $target = this.$find('.operation-log-list li.' + cls);
+			($el.prop('checked') ? this._showLi : this._hideLi).call(this, $target);
+		},
+		_hideLi: function($li) {
+			// children()に対して、none/inlineの切り替え。
+			// 元のLIをdisplay:noneにすると、復活するときにちゃんと復活できない(chromeで確認)
+			// (liはdisplay:list-itemのはずなのに、その通りに復活するとリストの中身がdisplay:inline-blockのような表示になって元通りにならない)
+			$li.children().css('display', 'none');
+		},
+		_showLi: function($li) {
+			$li.children().css('display', 'inline');
 		}
 	};
 
