@@ -419,12 +419,14 @@
 					'<div class="h5debug-upper-right"><div class="h5debug-controllBtn showhideBtn hideTool">↑</div><div class="h5debug-controllBtn opencloseBtn closeTool">×</div></div><div class="h5debug posfix" style="position:fix; left:0; top:0;"></div>');
 
 	// ルートのタブ
-	view.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
-			+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
-			+ '<li data-tab-page="operation-log">動作ログ</li>'
-			+ '<li data-tab-page="settings">デバッガ設定</li>' + '</ul><div class="tab-content">'
-			+ '<div class="active debug-controller columnLayoutWrapper"></div>'
-			+ '<div class="operation-log"></div>' + '<div class="settings"></div>' + '</div>');
+	view
+			.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
+					+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
+					+ '<li data-tab-page="operation-log">動作ログ</li>'
+					+ '<li data-tab-page="settings">デバッガ設定</li>' + '</ul><div class="tab-content">'
+					+ '<div class="active debug-controller columnLayoutWrapper"></div>'
+					+ '<div class="operation-log whole"></div>' + '<div class="settings"></div>'
+					+ '</div>');
 
 	// --------------------- コントローラ --------------------- //
 	// コントローラデバッグ画面
@@ -1107,7 +1109,10 @@
 		 * @param $el
 		 */
 		'.controllerlist .controller-name click': function(context, $el) {
-			context.event.preventDefault();
+			if ($el.hasClass('selected')) {
+				// 既に選択済み
+				return;
+			}
 			var controller = this.getControllerFromElem($el);
 			this.$find('.controller-name').removeClass('selected');
 			$el.addClass('selected');
@@ -1229,13 +1234,9 @@
 
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
-			view.update(this.$find('.operation-log'), 'operation-log');
-			bindLogArray(view, this.$find('.operation-log'), logAry);
-			try {
-				h5.core.controller(this.$find('.operation-log'), operationLogController);
-			} catch (e) {
-				console.log(e)
-			}
+			h5.core.controller(this.$find('.operation-log'), operationLogController, {
+				logArray: logAry
+			});
 
 			// その他情報
 			var childControllers = getChildControllers(controller);
@@ -1275,7 +1276,7 @@
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
 		unfocus: function() {
-			this.setDetail();
+			this.setDetail(null);
 			this.$find('.controller-name').removeClass('selected');
 			this.removeOverlay(true);
 		},
@@ -1428,10 +1429,12 @@
 	 */
 	var operationLogController = {
 		__name: 'h5.debug.developer.OperationLogController',
-		__ready: function() {
-			var logAry = wholeOperationLogs;
+		__ready: function(context) {
 			view.update(this.rootElement, 'operation-log');
-			bindLogArray(view, this.rootElement, logAry);
+			var logArray = context.args && context.args.logArray;
+			if (logArray) {
+				bindLogArray(view, this.rootElement, logArray);
+			}
 		},
 		'.fixedControlls input[type="checkbox"] change': function(context, $el) {
 			var cls = $el.attr('name');
@@ -1509,7 +1512,9 @@
 			_controllerDebugController: {
 			// rootElementは__constructで追加してから設定している
 			},
-			_operationLogController: {},
+			_operationLogController: {
+
+			},
 			_settingsController: {}
 		},
 		/**
@@ -1526,6 +1531,12 @@
 			this.__meta._controllerDebugController.rootElement = this.$find('.debug-controller');
 			this.__meta._operationLogController.rootElement = this.$find('.operation-log');
 			this.__meta._settingsController.rootElement = this.$find('.settings');
+		},
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 */
+		__ready: function() {
+			bindLogArray(this.view, this.$find('.operation-log.whole'), wholeOperationLogs);
 		},
 
 		/**
