@@ -25,6 +25,8 @@
 	// =========================================================================
 	var LOG_INDENT_WIDTH = 10;
 
+	var LIFECYCLE_METHODS = ['__construct', '__init', '__ready', '__unbind', '__dispose'];
+
 	/**
 	 * デバッグツールのスタイル
 	 */
@@ -457,19 +459,19 @@
 			+ '<div class="operation-log"></div>' + '<div class="otherInfo"></div></div>');
 
 	// イベントハンドラリスト
-	view
-			.register(
-					'controller-eventHandler',
-					'<ul class="liststyle-none no-padding">[% if(controller){for(var p in controller){ if(p.indexOf(\' \')!==-1){ %]'
-							+ '<li><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span><span class="key">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
-							+ '[% } }} %]</ul>');
+//	view
+//			.register(
+//					'controller-eventHandler',
+//					'<ul class="liststyle-none no-padding">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
+//							+ '<li><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span><span class="key">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
+//							+ '[% } }} %]</ul>');
 	// メソッドリスト
 	view
 			.register(
 					'controller-method',
-					'<ul class="liststyle-none no-padding">[% if(controller){for(var p in controller){ if(p.indexOf(\' \')===-1 && "function"===typeof controller[p]){ %]'
+					'<ul class="liststyle-none no-padding">[% for(var i = 0, l = methods.length; i < l; i++){ var p = methods[i];%]'
 							+ '<li><span class="name">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
-							+ '[% } }} %]</ul>');
+							+ '[% } %]</ul>');
 
 	// 動作ログ(コントローラ、ロジック、全体、で共通)
 	view
@@ -708,6 +710,9 @@
 
 			body = w.document.body;
 			$(body).addClass('h5debug');
+
+			// タイトルの設定
+			w.document.title = 'hifive Developer Tools';
 		} else {
 			// モバイル用の擬似ウィンドウを開く
 			w = window;
@@ -936,7 +941,7 @@
 		// 子コントローラを探して再帰的に追加
 		for ( var p in defObj) {
 			if (h5.u.str.endsWith(p, 'Controller') && p !== 'rootController'
-					&& p !== 'parentController') {
+					&& p !== 'parentController' && defObj[p]) {
 				addControllerDef(controller[p], defObj[p]);
 			}
 		}
@@ -1240,15 +1245,51 @@
 			// また、デバッグコントローラがコントローラ化された時点でその前にバインドされていたコントローラにもコントローラ定義オブジェクトが無ければ持たせている
 
 			// イベントハンドラリスト
+			var eventHandlers = [];
+			// メソッドリスト
+			// lifecycle, public, privateの順でソート
+			// lifecycleはライフサイクルの実行順、public、privateは辞書順
+			var privateMethods = [];
+			var publicMethods = [];
+			var lifecycleMethods = [];
+			var methods = [];
+			for ( var p in controller.__controllerContext.controllerDef) {
+				if ($.isFunction(controller.__controllerContext.controllerDef[p])) {
+					if (p.indexOf(' ') !== -1) {
+						// イベントハンドラ
+						eventHandlers.push(p);
+					} else {
+						// メソッド
+						// lifecycleかpublicかprivateかを判定する
+						if ($.inArray(p, LIFECYCLE_METHODS) !== -1) {
+							lifecycleMethods.push(p);
+						} else if (h5.u.str.startsWith(p, '_')) {
+							privateMethods.push(p);
+						} else {
+							publicMethods.push(p);
+						}
+					}
+				}
+			}
+			// ソート
+			eventHandlers.sort();
+			lifecycleMethods.sort(function(a, b) {
+				return $.inArray(a, LIFECYCLE_METHODS) > $.inArray(b, LIFECYCLE_METHODS);
+			});
+			privateMethods.sort();
+			publicMethods.sort();
+			var methods = lifecycleMethods.concat(publicMethods).concat(privateMethods);
+
 			view.update(this.$find('.detail .tab-content .eventHandler'),
 					'controller-eventHandler', {
 						controller: controller.__controllerContext.controllerDef,
+						eventHandlers: eventHandlers,
 						_funcToStr: funcToStr
 					});
 
-			// メソッドリスト
 			view.update(this.$find('.detail .tab-content .method'), 'controller-method', {
 				controller: controller.__controllerContext.controllerDef,
+				methods: methods,
 				_funcToStr: funcToStr
 			});
 
@@ -1707,7 +1748,6 @@
 	// アスペクトを掛ける
 	// TODO アスペクトでやるのをやめる。
 	// アスペクトだと、メソッドがプロミスを返した時が分からない。(プロミスがresolve,rejectされた時に初めてpostに入るので。)
-	var lifeCycles = ['__ready', '__init', '__construct', '__unbind', '__dispose'];
 	var aspect = {
 		target: '*',
 		interceptors: h5.u
@@ -1724,7 +1764,7 @@
 							var cls = '';
 							if (fName.indexOf(' ') !== -1) {
 								cls = ' event';
-							} else if ($.inArray(fName, lifeCycles) !== -1) {
+							} else if ($.inArray(fName, LIFECYCLE_METHODS) !== -1) {
 								cls = 'lifecycle';
 							} else if (fName.indexOf('_') === 0) {
 								cls = 'private';
@@ -1750,6 +1790,10 @@
 						},
 						function(invocation, data) {
 							var ctrlOrLogic = invocation.target;
+							if(!ctrlOrLogic.__controllerContext){
+								// メソッド内でdisposeされた場合は何もしない
+								return;
+							}
 							if (h5.u.str.startsWith(ctrlOrLogic.__name, 'h5.debug.developer')) {
 								return;
 							}
@@ -1762,7 +1806,7 @@
 							} else {
 								if (fName.indexOf(' ') !== -1) {
 									cls = ' event';
-								} else if ($.inArray(fName, lifeCycles) !== -1) {
+								} else if ($.inArray(fName, LIFECYCLE_METHODS) !== -1) {
 									cls = 'lifecycle';
 								} else if (fName.indexOf('_') === 0) {
 									cls = 'private';
