@@ -1816,7 +1816,7 @@
 							}
 							// プロミスの判定
 							var ret = invocation.result;
-							var isPromise = ret && $.isFunction(ret.promise)
+							var isPromise = ret && $.isFunction(ret.promise) && !h5.u.obj.isJQueryObject(ret)
 									&& $.isFunction(ret.done) && $.isFunction(ret.fail);
 							var promiseState = '';
 							var tag = 'END';
