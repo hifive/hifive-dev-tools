@@ -1545,6 +1545,14 @@
 			this.setDetail(logic);
 		},
 		/**
+		 * オープン時のイベント
+		 *
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 */
+		'{.h5debug} open': function() {
+			this.refreshLogicList();
+		},
+		/**
 		 * 左側の何もない箇所がクリックされたらコントローラの選択なしにする
 		 *
 		 * @memberOf h5.debug.developer.LogicDebugController
@@ -1876,12 +1884,12 @@
 				return;
 			}
 			var $navTabs = $el.parent();
-			$navTabs.find('.active').removeClass('active');
+			$navTabs.find('>.active').removeClass('active');
 			$el.addClass('active');
 			var targetContent = $el.data('tab-page');
 			var $tabContentsRoot = $el.closest('.nav-tabs').next();
-			$tabContentsRoot.find('.active').removeClass('active');
-			$tabContentsRoot.find('.' + targetContent).addClass('active');
+			$tabContentsRoot.find('>.active').removeClass('active');
+			$tabContentsRoot.find('>.' + targetContent).addClass('active');
 			this.trigger('tabChange', targetContent);
 		}
 	};
