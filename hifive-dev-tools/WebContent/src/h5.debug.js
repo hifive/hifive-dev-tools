@@ -203,6 +203,33 @@
 			backgroundColor: 'rgba(170,237,255,0.4)'
 		}
 	},
+
+	/*
+	 * ロジックリスト
+	 */
+	{
+		selector: '.h5debug .debug-logic .logiclist',
+		rule: {
+			paddingTop: 0,
+			paddingLeft: '1.2em'
+		}
+	}, {
+		selector: '.h5debug .debug-logic .logiclist .logic-name',
+		rule: {
+			cursor: 'default'
+		}
+	}, {
+		selector: '.h5debug .debug-logic .logiclist .logic-name.selected',
+		rule: {
+			backgroundColor: 'rgba(170,237,255,1)!important'
+		}
+	}, {
+		selector: '.h5debug .debug-logic .logiclist .logic-name:hover',
+		rule: {
+			backgroundColor: 'rgba(170,237,255,0.4)'
+		}
+	},
+
 	/*
 	 * イベントハンドラ
 	 */
@@ -430,9 +457,11 @@
 	view
 			.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
 					+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
+					+ '<li data-tab-page="debug-logic">ロジック</li>'
 					+ '<li data-tab-page="operation-log">動作ログ</li>'
 					+ '<li data-tab-page="settings">デバッガ設定</li>' + '</ul><div class="tab-content">'
 					+ '<div class="active debug-controller columnLayoutWrapper"></div>'
+					+ '<div class="active debug-logic columnLayoutWrapper"></div>'
 					+ '<div class="operation-log whole"></div>' + '<div class="settings"></div>'
 					+ '</div>');
 
@@ -440,8 +469,6 @@
 	// コントローラデバッグ画面
 	view.register('controllerDebugWrapper',
 			'<div class="left ovfAuto"></div><div class="right ovfHidden"></div>');
-	// 操作パネル
-	view.register('controller-controll', '<div class="fixedControlls"></div>');
 
 	// コントローラリストul
 	view.register('controller-list', '<ul class="controllerlist"></ul>');
@@ -461,18 +488,59 @@
 	// イベントハンドラリスト
 	view
 			.register(
-					'controller-eventHandler',
+					'eventHandler-list',
 					'<ul class="liststyle-none no-padding">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
 							+ '<li><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span><span class="key">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
 							+ '[% } %]</ul>');
 
-	// メソッドリスト
+	// メソッドリスト(コントローラ、ロジック、共通)
 	view
 			.register(
-					'controller-method',
+					'method-list',
 					'<ul class="liststyle-none no-padding">[% for(var i = 0, l = methods.length; i < l; i++){ var p = methods[i];%]'
-							+ '<li><span class="name">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
+							+ '<li><span class="name">[%= p %]</span><pre class="value">[%= _funcToStr(defObj[p]) %]</pre></li>'
 							+ '[% } %]</ul>');
+	// その他情報
+	view
+			.register(
+					'controller-otherInfo',
+					'<dl><dt>名前</dt><dd>[%= controller.__name %]</dd>'
+							+ '<dt> ルートコントローラか</dt><dd>[%= controller.__controllerContext.isRoot %]</dd>'
+							+ '<dt>ルート要素</dt><dd>[%= _formatDOM(controller.rootElement)  %]</dd>'
+							+ '<dt>ルートコントローラ</dt><dd>[%= controller.rootController.__name %]</dd>'
+							+ '<dt>親コントローラ</dt><dd>[%= controller.parentController && controller.parentController.__name || "なし" %]</dd>'
+							+ '<dt>子コントローラ一覧</dt><dd>[% if(!childControllerNames.length){ %]なし'
+							+ '[% }else{ %]<ul class="no-padding">[% for(var i = 0, l = childControllerNames.length; i < l; i++){ %]<li>[%= childControllerNames[i] %]</li>[% } %]</ul>[% } %]</dd>'
+							+ '<dt>テンプレートパス一覧</dt><dd>[% if(!controller.__templates){ %]なし'
+							+ '[% }else{ %]<ul class="no-padding">[% var templates = typeof controller.__templates === "string"? [controller.__templates]: controller.__templates; '
+							+ 'for(var i = 0, l = templates.length; i < l; i++){ %]<li>[%= templates[i] %]</li>[% } %]</ul>[% } %]</dd>'
+							+ '<dt>有効なテンプレートID一覧</dt><dd>[% if(!$.isEmptyObject(controller.view.__view.__cachedTemplates)){ %]なし'
+							+ '[% }else{ %]<ul class="no-padding">[% for(var p in controller.view.__view.__cachedTemplates){ %]<li>[%= p %]p</li>[% } %]</ul>[% } %]</dd>'
+							+ '</dl>');
+
+	// --------------------- ロジック --------------------- //
+	// コントローラデバッグ画面
+	view.register('logicDebugWrapper',
+			'<div class="left ovfAuto"></div><div class="right ovfHidden"></div>');
+
+	// ロジックリストul
+	view.register('logic-list', '<ul class="logiclist"></ul>');
+
+	// ロジックリストli
+	view.register('logic-list-part', '<li><span class="logic-name">[%= name %]</span></li>');
+
+
+	// 詳細情報画面
+	view.register('logic-detail', '<div class="detail"><ul class="nav nav-tabs">'
+			+ '<li class="active" data-tab-page="method">メソッド</li>'
+			+ '<li data-tab-page="operation-log">ログ</li>'
+			+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
+			+ '<div class="active method"></div>' + '<div class="operation-log"></div>'
+			+ '<div class="otherInfo"></div></div>');
+
+	// その他情報
+	view.register('logic-otherInfo', '<dl><dt>名前</dt><dd>[%= defObj.__name %]</dd>'
+			+ '<dt>所属するコントローラ名</dt><dd>[%= controllerName %]</dd>' + '</dl>');
 
 	// 動作ログ(コントローラ、ロジック、全体、で共通)
 	view
@@ -493,28 +561,9 @@
 							+ '<span class="message" data-h5-bind="text:message; class:cls"></span>'
 							+ '</li></ul>');
 
-	// その他情報
-	view
-			.register(
-					'controller-otherInfo',
-					'<dl><dt>名前</dt><dd>[%= controller.__name %]</dd>'
-							+ '<dt> ルートコントローラか</dt><dd>[%= controller.__controllerContext.isRoot %]</dd>'
-							+ '<dt>ルート要素</dt><dd>[%= _formatDOM(controller.rootElement)  %]</dd>'
-							+ '<dt>ルートコントローラ</dt><dd>[%= controller.rootController.__name %]</dd>'
-							+ '<dt>親コントローラ</dt><dd>[%= controller.parentController && controller.parentController.__name || "なし" %]</dd>'
-							+ '<dt>子コントローラ一覧</dt><dd>[% if(!childControllerNames.length){ %]なし'
-							+ '[% }else{ %]<ul class="no-padding">[% for(var i = 0, l = childControllerNames.length; i < l; i++){ %]<li>[%= childControllerNames[i] %]</li>[% } %]</ul>[% } %]</dd>'
-							+ '<dt>テンプレートパス一覧</dt><dd>[% if(!controller.__templates){ %]なし'
-							+ '[% }else{ %]<ul class="no-padding">[% var templates = typeof controller.__templates === "string"? [controller.__templates]: controller.__templates; '
-							+ 'for(var i = 0, l = templates.length; i < l; i++){ %]<li>[%= templates[i] %]</li>[% } %]</ul>[% } %]</dd>'
-							+ '<dt>有効なテンプレートID一覧</dt><dd>[% if(!$.isEmptyObject(controller.view.__view.__cachedTemplates)){ %]なし'
-							+ '[% }else{ %]<ul class="no-padding">[% for(var p in controller.view.__view.__cachedTemplates){ %]<li>[%= p %]p</li>[% } %]</ul>[% } %]</dd>'
-							+ '</dl>');
 
 	// オーバレイ
 	view.register('overlay', '<div class="h5debug-overlay [%= cls %]"></div>');
-
-	// --------------------- 動作ログ --------------------- //
 
 	// --------------------- デバッガ設定 --------------------- //
 	view
@@ -533,7 +582,7 @@
 	var h5debugSettings = h5.core.data.createObservableItem({
 		LogMaxNum: {
 			type: 'integer',
-			defaultValue: 10,
+			defaultValue: 1000,
 			constraint: {
 				notNull: true,
 				min: 0
@@ -1009,13 +1058,10 @@
 		__ready: function(context) {
 
 			// 初期化処理
-			view.update(this.$find('.debug-controller .controll'), 'controller-controll');
-
 			this.win = context.args.win;
 			setCSS(this.win, H5DEBUG_STYLE, SPECIAL_H5DEBUG_STYLE);
 			setCSS(window, H5PAGE_STYLE);
 			// コントローラの詳細表示エリア
-			view.append(this.$find('.left'), 'controller-controll');
 			view.append(this.$find('.left'), 'controller-list');
 			view.append(this.$find('.right'), 'controller-detail');
 
@@ -1058,7 +1104,7 @@
 			this._h5controllerbound(context);
 		},
 		/**
-		 * openerがあればそっちのdocumentnにバインドする
+		 * openerがあればそっちのdocumentにバインドする
 		 */
 		'{window.opener.document} h5controllerbound': function(context) {
 			this._h5controllerbound(context);
@@ -1078,7 +1124,7 @@
 			this._h5controllerunbound(context);
 		},
 		/**
-		 * openerがあればそっちのdocumentnにバインドする
+		 * openerがあればそっちのdocumentにバインドする
 		 */
 		'{window.opener.document} h5controllerunbound': function(context) {
 			this._h5controllerunbound(context);
@@ -1245,7 +1291,6 @@
 			var privateMethods = [];
 			var publicMethods = [];
 			var lifecycleMethods = [];
-			var methods = [];
 			for ( var p in controller.__controllerContext.controllerDef) {
 				if ($.isFunction(controller.__controllerContext.controllerDef[p])) {
 					if (p.indexOf(' ') !== -1) {
@@ -1273,15 +1318,14 @@
 			publicMethods.sort();
 			var methods = lifecycleMethods.concat(publicMethods).concat(privateMethods);
 
-			view.update(this.$find('.detail .tab-content .eventHandler'),
-					'controller-eventHandler', {
-						controller: controller.__controllerContext.controllerDef,
-						eventHandlers: eventHandlers,
-						_funcToStr: funcToStr
-					});
-
-			view.update(this.$find('.detail .tab-content .method'), 'controller-method', {
+			view.update(this.$find('.detail .tab-content .eventHandler'), 'eventHandler-list', {
 				controller: controller.__controllerContext.controllerDef,
+				eventHandlers: eventHandlers,
+				_funcToStr: funcToStr
+			});
+
+			view.update(this.$find('.detail .tab-content .method'), 'method-list', {
+				defObj: controller.__controllerContext.controllerDef,
 				methods: methods,
 				_funcToStr: funcToStr
 			});
@@ -1439,6 +1483,230 @@
 			// 詳細画面を空にする
 			this.setDetail(null);
 		}
+	};
+
+	// TODO コントローラデバッグコントローラと共通化
+	/**
+	 * ロジックのデバッグコントローラ
+	 *
+	 * @name h5.debug.developer.LogicnDebugController
+	 */
+	var logicDebugController = {
+		/**
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 */
+		__name: 'h5.debug.developer.LogicDebugController',
+
+		/**
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 */
+		_logicList: h5.core.data.createObservableArray(),
+
+		/**
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 */
+		selectedLogic: null,
+
+		/**
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 * @param context
+		 */
+		__ready: function(context) {
+			// 初期化処理
+			this.win = context.args.win;
+			setCSS(this.win, H5DEBUG_STYLE, SPECIAL_H5DEBUG_STYLE);
+			setCSS(window, H5PAGE_STYLE);
+			// コントローラの詳細表示エリア
+			view.append(this.$find('.left'), 'logic-list');
+			view.append(this.$find('.right'), 'logic-detail');
+			// 1秒待ってからロジックを取得する
+			var that = this;
+			setTimeout(function() {
+				that.refreshControllerList();
+			}, 1000);
+		},
+		/**
+		 * ロジックリスト上のロジックをクリック
+		 *
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 * @param context
+		 * @param $el
+		 */
+		'.logiclist .logic-name click': function(context, $el) {
+			if ($el.hasClass('selected')) {
+				// 既に選択済み
+				return;
+			}
+			var logic = this.getLogicFromElem($el);
+			this.$find('.logic-name').removeClass('selected');
+			$el.addClass('selected');
+			this.selectedLogic = logic;
+
+			this.setDetail(logic);
+		},
+		/**
+		 * 左側の何もない箇所がクリックされたらコントローラの選択なしにする
+		 *
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 */
+		'{.h5debug} leftclick': function() {
+			this.unfocus();
+		},
+		/**
+		 * コントローラからロジックを取りだしてリストに追加
+		 *
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 * @param controller
+		 */
+		appendLogicListByController: function(controller) {
+			if (h5.u.str.startsWith(controller.__name, 'h5.debug.developer')) {
+				// デバッグ用にバインドしたコントローラは無視
+				return;
+			}
+			// コントローラの名前
+			var controllerName = controller.__name;
+
+			$ul = this.$find('.logiclist:first');
+
+			// ロジックの列挙
+			var logics = [];
+			for ( var p in controller) {
+				if (h5.u.str.endsWith(p, 'Logic') && $.inArray(this[p], this._logicList) === -1) {
+					var logic = controller[p];
+					logics.push(logic);
+					// コントローラ名とログ用のObserbableArrayを持たせる
+					logic._h5debugContext = {
+						controllerName: controllerName,
+						debugLog: createLogArray()
+					};
+					var $li = $(view.get('logic-list-part', {
+						name: logic.__name,
+					}), $ul[0].ownerDocument);
+
+					// データにロジックを持たせる
+					this.setLogicToElem($li.children('.logic-name'), logic);
+
+					$ul.append($li);
+				}
+			}
+
+			// 子コントローラも追加
+			var childControllers = getChildControllers(controller);
+			if (childControllers.length) {
+				for ( var i = 0, l = childControllers.length; i < l; i++) {
+					this.appendLogicListByController(childControllers[i]);
+				}
+			}
+		},
+
+		/**
+		 * エレメントにロジックを持たせる
+		 *
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 * @param el
+		 * @param logic
+		 */
+		setLogicToElem: function(el, logic) {
+			$(el).data('h5debug-logic', logic);
+		},
+		/**
+		 * エレメントに覚えさせたロジックを取得する
+		 *
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 * @param el
+		 * @returns {Logic}
+		 */
+		getLogicFromElem: function(el) {
+			return $(el).data('h5debug-logic');
+		},
+		/**
+		 * 詳細画面(右側画面)をロジックを基に作成。nullが渡されたら空白にする
+		 *
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 * @param controller
+		 */
+		setDetail: function(logic) {
+			if (logic == null) {
+				this.$find('.detail .tab-content>*').html('');
+				return;
+			}
+
+			// 詳細ビューに表示されているコントローラをアンバインド
+			var controllers = h5.core.controllerManager.getControllers(this.$find('.detail'), {
+				deep: true
+			});
+			for ( var i = 0, l = controllers.length; i < l; i++) {
+				controllers[i].dispose();
+			}
+
+			// メソッドリスト
+			// public, privateの順でソート
+			// lifecycleはライフサイクルの実行順、public、privateは辞書順
+			var privateMethods = [];
+			var publicMethods = [];
+			var ignoreMethods = ['own', 'ownWithOrg', 'deferred'];
+			for ( var p in logic) {
+				if ($.isFunction(logic[p])) {
+					// メソッド
+					// lifecycleかpublicかprivateかを判定する
+					if ($.inArray(p, ignoreMethods) !== -1) {
+						continue;
+					} else if (h5.u.str.startsWith(p, '_')) {
+						privateMethods.push(p);
+					} else {
+						publicMethods.push(p);
+					}
+				}
+			}
+			// ソート
+			privateMethods.sort();
+			publicMethods.sort();
+			var methods = publicMethods.concat(privateMethods);
+			var logicDef = logic.__logicContext.logicDef;
+			view.update(this.$find('.detail .tab-content .method'), 'method-list', {
+				defObj: logicDef,
+				methods: methods,
+				_funcToStr: funcToStr
+			});
+
+			// ログ
+			var logAry = logic._h5debugContext.debugLog;
+			h5.core.controller(this.$find('.operation-log'), operationLogController, {
+				logArray: logAry
+			});
+
+			// その他情報
+			view.update(this.$find('.detail .tab-content .otherInfo'), 'logic-otherInfo', {
+				defObj: logicDef,
+				controllerName: logic._h5debugContext.controllerName
+			});
+		},
+		/**
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 */
+		refreshControllerList: function() {
+			// コントローラ全て(ルートコントローラのみ)を取得
+			var controllers = h5.core.controllerManager.getAllControllers();
+			this.$find('.logiclist').remove();
+			view.append(this.$find('.left'), 'logic-list');
+
+			// li要素を追加してデータ属性にコントローラを持たせる
+			for ( var i = 0, l = controllers.length; i < l; i++) {
+				this.appendLogicListByController(controllers[i]);
+			}
+
+			// 詳細画面を空にする
+			this.setDetail(null);
+		},
+		/**
+		 * ロジックの選択を解除
+		 *
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 */
+		unfocus: function() {
+			this.setDetail(null);
+			this.$find('.logic-name').removeClass('selected');
+		},
 	};
 
 	/**
@@ -1639,6 +1907,10 @@
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 */
+		_logicDebugController: logicDebugController,
+		/**
+		 * @memberOf h5.debug.developer.DebugController
+		 */
 		_tabController: tabController,
 		/**
 		 * @memberOf h5.debug.developer.DebugController
@@ -1655,9 +1927,8 @@
 			_controllerDebugController: {
 			// rootElementは__constructで追加してから設定している
 			},
-			_operationLogController: {
-
-			},
+			_logicDebugController: {},
+			_operationLogController: {},
 			_settingsController: {}
 		},
 		/**
@@ -1670,8 +1941,10 @@
 			// 全体を包むタブの中身を追加
 			view.append(this.rootElement, 'debug-tab');
 			view.append(this.$find('.debug-controller'), 'controllerDebugWrapper');
+			view.append(this.$find('.debug-logic'), 'logicDebugWrapper');
 			view.append(this.$find('.settings'), 'settings');
 			this.__meta._controllerDebugController.rootElement = this.$find('.debug-controller');
+			this.__meta._logicDebugController.rootElement = this.$find('.debug-logic');
 			this.__meta._operationLogController.rootElement = this.$find('.operation-log');
 			this.__meta._settingsController.rootElement = this.$find('.settings');
 		},
@@ -1783,8 +2056,9 @@
 						},
 						function(invocation, data) {
 							var ctrlOrLogic = invocation.target;
-							if (!ctrlOrLogic.__controllerContext) {
-								// メソッド内でdisposeされた場合は何もしない
+							if (h5.u.str.endsWith(ctrlOrLogic.__name, 'Controller')
+									&& !ctrlOrLogic.__controllerContext) {
+								// コントローラでかつメソッド内でdisposeされた場合は何もしない
 								return;
 							}
 							if (h5.u.str.startsWith(ctrlOrLogic.__name, 'h5.debug.developer')) {
