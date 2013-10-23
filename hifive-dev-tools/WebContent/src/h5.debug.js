@@ -805,20 +805,13 @@
 	}
 
 	/**
-	 * DOM要素を"div#id.cls1 cls2"の形式の文字列に変換
+	 * DOM要素を"div#id.cls1.cls2"の形式の文字列に変換
 	 */
 	function formatDOM(elm) {
-		var $elm = $(elm);
-		var id = $elm.attr('id') || '';
-		if (id) {
-			id = '#' + id;
-		}
-		var cls = $elm.attr('class') || '';
-		if (cls) {
-			cls = '.' + cls;
-		}
-		var tagName = $elm[0].tagName.toLocaleLowerCase();
-		return tagName + id + cls;
+		var tagName = elm.tagName;
+		var id = elm.id;
+		var cls = elm.className;
+		return tagName.toLowerCase() + (id && '#' + id) + (cls && '.' + cls.replace(/\s/g, '.'));
 	}
 
 	/**
@@ -896,9 +889,7 @@
 	 * 第2引数のログメッセージオブジェクトを第1引数のObservableArrayに追加する。 最大数を超えないようにする
 	 */
 	function addLogObject(logArray, logObj) {
-		var start = new Date().getTime();
 		logArray.push(logObj);
-		console.log(new Date().getTime() - start);
 		// 一番下までスクロールされているか
 		var scroll = false;
 		//		// 余裕を持たせて判定
@@ -1193,8 +1184,7 @@
 			$target.each(function() {
 				var $option = $('<option>');
 				$option.data('h5debug-eventTarget', this);
-				// TODO outerHTML見せられても分からないので、どうするか考える
-				$option.text(this.outerHTML != null ? this.outerHTML.substring(0, 20) : this);
+				$option.text(formatDOM(this));
 				$select.append($option);
 			});
 		},
