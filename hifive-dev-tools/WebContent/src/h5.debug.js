@@ -16,7 +16,7 @@
 	 */
 	var useWindowOpen = h5.env.ua.isDesktop;
 	// useWindowOpen = true;
-	//	 useWindowOpen = false;
+	//		 useWindowOpen = false;
 
 	// =========================================================================
 	//
@@ -459,12 +459,13 @@
 			+ '<div class="operation-log"></div>' + '<div class="otherInfo"></div></div>');
 
 	// イベントハンドラリスト
-//	view
-//			.register(
-//					'controller-eventHandler',
-//					'<ul class="liststyle-none no-padding">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
-//							+ '<li><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span><span class="key">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
-//							+ '[% } }} %]</ul>');
+	view
+			.register(
+					'controller-eventHandler',
+					'<ul class="liststyle-none no-padding">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
+							+ '<li><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span><span class="key">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
+							+ '[% } %]</ul>');
+
 	// メソッドリスト
 	view
 			.register(
@@ -497,16 +498,16 @@
 			.register(
 					'controller-otherInfo',
 					'<dl><dt>名前</dt><dd>[%= controller.__name %]</dd>'
-							+ '<dt>isRoot</dt><dd>[%= controller.__controllerContext.isRoot %]</dd>'
-							+ '<dt>rootElement</dt><dd>[%= _formatDOM(controller.rootElement)  %]</dd>'
-							+ '<dt>rootController</dt><dd>[%= controller.rootController.__name %]</dd>'
-							+ '<dt>parentController</dt><dd>[%= controller.parentController && controller.parentController.__name || "なし" %]</dd>'
-							+ '<dt>childController</dt><dd>[% if(!childControllerNames.length){ %]なし'
+							+ '<dt> ルートコントローラか</dt><dd>[%= controller.__controllerContext.isRoot %]</dd>'
+							+ '<dt>ルート要素</dt><dd>[%= _formatDOM(controller.rootElement)  %]</dd>'
+							+ '<dt>ルートコントローラ</dt><dd>[%= controller.rootController.__name %]</dd>'
+							+ '<dt>親コントローラ</dt><dd>[%= controller.parentController && controller.parentController.__name || "なし" %]</dd>'
+							+ '<dt>子コントローラ一覧</dt><dd>[% if(!childControllerNames.length){ %]なし'
 							+ '[% }else{ %]<ul class="no-padding">[% for(var i = 0, l = childControllerNames.length; i < l; i++){ %]<li>[%= childControllerNames[i] %]</li>[% } %]</ul>[% } %]</dd>'
-							+ '<dt>__templates</dt><dd>[% if(!controller.__templates){ %]なし'
+							+ '<dt>テンプレートパス一覧</dt><dd>[% if(!controller.__templates){ %]なし'
 							+ '[% }else{ %]<ul class="no-padding">[% var templates = typeof controller.__templates === "string"? [controller.__templates]: controller.__templates; '
 							+ 'for(var i = 0, l = templates.length; i < l; i++){ %]<li>[%= templates[i] %]</li>[% } %]</ul>[% } %]</dd>'
-							+ '<dt>有効なテンプレートID</dt><dd>[% if(!$.isEmptyObject(controller.view.__view.__cachedTemplates)){ %]なし'
+							+ '<dt>有効なテンプレートID一覧</dt><dd>[% if(!$.isEmptyObject(controller.view.__view.__cachedTemplates)){ %]なし'
 							+ '[% }else{ %]<ul class="no-padding">[% for(var p in controller.view.__view.__cachedTemplates){ %]<li>[%= p %]p</li>[% } %]</ul>[% } %]</dd>'
 							+ '</dl>');
 
@@ -532,7 +533,7 @@
 	var h5debugSettings = h5.core.data.createObservableItem({
 		LogMaxNum: {
 			type: 'integer',
-			defaultValue: 1000,
+			defaultValue: 10,
 			constraint: {
 				notNull: true,
 				min: 0
@@ -895,12 +896,14 @@
 	 * 第2引数のログメッセージオブジェクトを第1引数のObservableArrayに追加する。 最大数を超えないようにする
 	 */
 	function addLogObject(logArray, logObj) {
+		var start = new Date().getTime();
 		logArray.push(logObj);
+		console.log(new Date().getTime() - start);
 		// 一番下までスクロールされているか
 		var scroll = false;
-		// 余裕を持たせて判定
+		//		// 余裕を持たせて判定
 		var target = null;
-		if (logArray._viewBindTarget && $(logArray._viewBindTarget).css('display') !== 'none') {
+		if (logArray._viewBindTarget && $(logArray._viewBindTarget)[0].style.display !== 'none') {
 			target = $(logArray._viewBindTarget).find('.operation-log-list')[0];
 		}
 		if (target && target.scrollTop > target.scrollHeight - target.clientHeight - 30) {
@@ -1790,7 +1793,7 @@
 						},
 						function(invocation, data) {
 							var ctrlOrLogic = invocation.target;
-							if(!ctrlOrLogic.__controllerContext){
+							if (!ctrlOrLogic.__controllerContext) {
 								// メソッド内でdisposeされた場合は何もしない
 								return;
 							}
@@ -1816,8 +1819,9 @@
 							}
 							// プロミスの判定
 							var ret = invocation.result;
-							var isPromise = ret && $.isFunction(ret.promise) && !h5.u.obj.isJQueryObject(ret)
-									&& $.isFunction(ret.done) && $.isFunction(ret.fail);
+							var isPromise = ret && $.isFunction(ret.promise)
+									&& !h5.u.obj.isJQueryObject(ret) && $.isFunction(ret.done)
+									&& $.isFunction(ret.fail);
 							var promiseState = '';
 							var tag = 'END';
 							if (isPromise) {
