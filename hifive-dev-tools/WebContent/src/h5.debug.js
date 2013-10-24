@@ -461,7 +461,7 @@
 					+ '<li data-tab-page="operation-log">動作ログ</li>'
 					+ '<li data-tab-page="settings">デバッガ設定</li>' + '</ul><div class="tab-content">'
 					+ '<div class="active debug-controller columnLayoutWrapper"></div>'
-					+ '<div class="active debug-logic columnLayoutWrapper"></div>'
+					+ '<div class="debug-logic columnLayoutWrapper"></div>'
 					+ '<div class="operation-log whole"></div>' + '<div class="settings"></div>'
 					+ '</div>');
 
@@ -556,7 +556,7 @@
 							+ '</div>'
 							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"><li data-h5-bind="class:cls">'
 							+ '<span data-h5-bind="time" class="time"></span>'
-							+ '<span data-h5-bind="text:tag;style(margin-left):indentLevel" class="tag"></span>'
+							+ '<span data-h5-bind="text:tag;style(margin-left):indentWidth" class="tag"></span>'
 							+ '<span data-h5-bind="promiseState" class="promiseState"></span>'
 							+ '<span class="message" data-h5-bind="text:message; class:cls"></span>'
 							+ '</li></ul>');
@@ -820,13 +820,7 @@
 				for ( var p in rule) {
 					var key = hyphenate(p);
 					var val = rule[p];
-					try {
-						sheet.addRule(selector, key + ':' + val);
-					} catch (e) {
-						alert(selector);
-						alert(key);
-						alert(val)
-					}
+					sheet.addRule(selector, key + ':' + val);
 				}
 			}
 		}
@@ -930,7 +924,7 @@
 			message: message,
 			tag: tag + ':',
 			promiseState: promiseState,
-			indentLevel: indentLevel * LOG_INDENT_WIDTH
+			indentWidth: indentLevel * LOG_INDENT_WIDTH
 		};
 	}
 
@@ -1650,16 +1644,14 @@
 			// メソッドリスト
 			// public, privateの順でソート
 			// lifecycleはライフサイクルの実行順、public、privateは辞書順
+			var logicDef = logic.__logicContext.logicDef;
 			var privateMethods = [];
 			var publicMethods = [];
-			var ignoreMethods = ['own', 'ownWithOrg', 'deferred'];
-			for ( var p in logic) {
-				if ($.isFunction(logic[p])) {
+			for ( var p in logicDef) {
+				if ($.isFunction(logicDef[p])) {
 					// メソッド
 					// lifecycleかpublicかprivateかを判定する
-					if ($.inArray(p, ignoreMethods) !== -1) {
-						continue;
-					} else if (h5.u.str.startsWith(p, '_')) {
+					if (h5.u.str.startsWith(p, '_')) {
 						privateMethods.push(p);
 					} else {
 						publicMethods.push(p);
@@ -1670,7 +1662,6 @@
 			privateMethods.sort();
 			publicMethods.sort();
 			var methods = publicMethods.concat(privateMethods);
-			var logicDef = logic.__logicContext.logicDef;
 			view.update(this.$find('.detail .tab-content .method'), 'method-list', {
 				defObj: logicDef,
 				methods: methods,
@@ -2022,152 +2013,133 @@
 	// アスペクトを掛ける
 	// TODO アスペクトでやるのをやめる。
 	// アスペクトだと、メソッドがプロミスを返した時が分からない。(プロミスがresolve,rejectされた時に初めてpostに入るので。)
+	var preTarget = null;
 	var aspect = {
 		target: '*',
-		interceptors: h5.u
-				.createInterceptor(
-						function(invocation, data) {
-							var ctrlOrLogic = invocation.target;
-							if (h5.u.str.startsWith(ctrlOrLogic.__name, 'h5.debug.developer')) {
-								return invocation.proceed();
-							}
-							ctrlOrLogic._h5debugContext = ctrlOrLogic._h5debugContext || {};
-							ctrlOrLogic._h5debugContext.methodTreeIndentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel || 0;
-							var indentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel;
-							var fName = invocation.funcName;
-							var cls = '';
-							if (fName.indexOf(' ') !== -1) {
-								cls = ' event';
-							} else if ($.inArray(fName, LIFECYCLE_METHODS) !== -1) {
-								cls = 'lifecycle';
-							} else if (fName.indexOf('_') === 0) {
-								cls = 'private';
-							} else {
-								cls = 'public';
-							}
-							if (!ctrlOrLogic._h5debugContext.debugLog) {
-								ctrlOrLogic._h5debugContext.debugLog = createLogArray();
-							}
-							var logObj = createLogObject(fName, cls, 'BEGIN', '',
-									ctrlOrLogic.__name, indentLevel);
-							ctrlOrLogic._h5debugContext.methodTreeIndentLevel += 1;
-							data.logObj = logObj;
-							addLogObject(ctrlOrLogic._h5debugContext.debugLog, logObj);
+		interceptors: h5.u.createInterceptor(function(invocation, data) {
+			var target = invocation.target;
+			if (h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
+				// デバッグコントローラなら何もしない
+				return invocation.proceed();
+			}
 
-							// コントローラ全部、ロジック全部の横断動作ログ
-							addLogObject(wholeOperationLogs, createLogObject(ctrlOrLogic.__name
-									+ '#' + fName, cls, 'BEGIN', '', ctrlOrLogic.__name,
-									wholeOperationLogsIndentLevel));
-							wholeOperationLogsIndentLevel += 1;
+			// ControllerDebugControllerまたはLogicDebugControllerがバインドされる前にバインドされたコントローラの場合
+			// _h5debugContextがないので追加
+			target._h5debugContext = target._h5debugContext || {};
+			// ログのインデントレベルを設定
+			target._h5debugContext.indentLevel = target._h5debugContext.indentLevel || 0;
+			var indentLevel = target._h5debugContext.indentLevel;
+			// 関数名を取得して、種類を判別
+			var fName = invocation.funcName;
+			var cls = '';
+			if (fName.indexOf(' ') !== -1 && target.__controllerContext) {
+				// コントローラかつ空白を含むメソッドの場合はイベントハンドラ
+				cls = ' event';
+			} else if ($.inArray(fName, LIFECYCLE_METHODS) !== -1 && target.__controllerContext) {
+				// ライフサイクルメソッド
+				cls = 'lifecycle';
+			} else if (fName.indexOf('_') === 0) {
+				// '_'始まりならprivate
+				cls = 'private';
+			} else {
+				// それ以外はpublic
+				cls = 'public';
+			}
 
-							return invocation.proceed();
-						},
-						function(invocation, data) {
-							var ctrlOrLogic = invocation.target;
-							if (h5.u.str.endsWith(ctrlOrLogic.__name, 'Controller')
-									&& !ctrlOrLogic.__controllerContext) {
-								// コントローラでかつメソッド内でdisposeされた場合は何もしない
-								return;
-							}
-							if (h5.u.str.startsWith(ctrlOrLogic.__name, 'h5.debug.developer')) {
-								return;
-							}
-							ctrlOrLogic._h5debugContext = ctrlOrLogic._h5debugContext || {};
-							ctrlOrLogic._h5debugContext.methodTreeIndentLevel = ctrlOrLogic._h5debugContext.methodTreeIndentLevel || 0;
-							var cls = '';
-							var fName = invocation.funcName;
-							if (data.logObj) {
-								cls = data.logObj.cls;
-							} else {
-								if (fName.indexOf(' ') !== -1) {
-									cls = ' event';
-								} else if ($.inArray(fName, LIFECYCLE_METHODS) !== -1) {
-									cls = 'lifecycle';
-								} else if (fName.indexOf('_') === 0) {
-									cls = 'private';
-								} else {
-									cls = 'public';
-								}
-							}
-							// プロミスの判定
-							var ret = invocation.result;
-							var isPromise = ret && $.isFunction(ret.promise)
-									&& !h5.u.obj.isJQueryObject(ret) && $.isFunction(ret.done)
-									&& $.isFunction(ret.fail);
-							var promiseState = '';
-							var tag = 'END';
-							if (isPromise) {
-								tag = 'DFD';
-								// すでにresolve,rejectされていたら状態を表示
-								if (ret.state() === 'resolved') {
-									promiseState = '(RESOLVED)'
-								} else if (ret.state() === 'rejected') {
-									promiseState = '(REJECTED)';
-								}
-							}
+			// BEGINを出力したターゲットのログを覚えておいてENDの出力場所が分かるようにする
+			// 全体の動作ログ以外で、ログを出した場所を覚えさせておく
+			data.beginLog = [];
 
-							// ログオブジェクトの登録
-							ctrlOrLogic._h5debugContext.methodTreeIndentLevel -= 1;
-							ctrlOrLogic._h5debugContext.debugLog = ctrlOrLogic._h5debugContext.debugLog
-									|| createLogArray();
-							addLogObject(ctrlOrLogic._h5debugContext.debugLog, createLogObject(
-									fName, cls, tag, promiseState, ctrlOrLogic.__name,
-									ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
+			// ログを保持する配列をターゲットに持たせる
+			if (!target._h5debugContext.debugLog) {
+				target._h5debugContext.debugLog = createLogArray();
+			}
 
-							// コントローラ全部、ロジック全部の横断動作ログにログオブジェクトの登録
-							wholeOperationLogsIndentLevel -= 1;
-							if (wholeOperationLogsIndentLevel < 0) {
-								wholeOperationLogsIndentLevel = 0;
-							}
-							addLogObject(wholeOperationLogs, createLogObject(ctrlOrLogic.__name
-									+ '#' + fName, cls, tag, promiseState, ctrlOrLogic.__name,
-									wholeOperationLogsIndentLevel));
+			// 呼び出し元のターゲットにもログを出す
+			if (preTarget && preTarget !== target) {
+				var logObj = createLogObject(target.__name + '#' + fName, cls, 'BEGIN', '',
+						target.__name, preTarget._h5debugContext.indentLevel);
+				addLogObject(preTarget._h5debugContext.debugLog, logObj);
+				preTarget._h5debugContext.indentLevel += 1;
+				data.beginLog.push({
+					target: preTarget,
+					logObj: logObj
+				});
+			}
 
-							// promiseが返されてかつpendingならハンドラを登録
-							// TODO
-							// pendingのプロミスをメソッドが返した時にはpostに入ってこない。ログの表示方法はそれで大丈夫かどうか確認
-							if (isPromise && ret.state() === 'pending') {
-								// pendingなら、resolve,rejectされたタイミングでログを出す
-								function doneHandler() {
-									addLogObject(
-											ctrlOrLogic._h5debugContext.debugLog,
-											createLogObject(
-													fName,
-													cls,
-													tag,
-													'(RESOLVED)',
-													ctrlOrLogic.__name,
-													ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
-									addLogObject(wholeOperationLogs, createLogObject(
-											ctrlOrLogic.__name + '#' + fName, cls, tag,
-											'(RESOLVED)', ctrlOrLogic.__name,
-											wholeOperationLogsIndentLevel));
-								}
-								function failHandler() {
-									addLogObject(
-											ctrlOrLogic._h5debugContext.debugLog,
-											createLogObject(
-													fName,
-													cls,
-													tag,
-													'(REJECTED)',
-													ctrlOrLogic.__name,
-													ctrlOrLogic._h5debugContext.methodTreeIndentLevel));
-									addLogObject(wholeOperationLogs, createLogObject(
-											ctrlOrLogic.__name + '#' + fName, cls, tag,
-											'(REJECTED)', ctrlOrLogic.__name,
-											wholeOperationLogsIndentLevel));
-								}
-								if ($.isFunction(promise._h5UnwrappedCall)) {
-									// h5なdeferredなら_h5UnwrapepedCallを使って登録
-									promise._h5UnwrappedCall('done', doneHandler);
-									promise._h5UnwrappedCall('fail', failHandler);
-								} else {
-									promise.done(doneHandler);
-									promise.fail(failHandler);
-								}
-							}
-						}),
+			// ターゲットのログ
+			var logObj = createLogObject(fName, cls, 'BEGIN', '', target.__name, indentLevel);
+			data.logObj = logObj;
+			addLogObject(target._h5debugContext.debugLog, logObj);
+			target._h5debugContext.indentLevel += 1;
+			data.beginLog.push({
+				target: target,
+				logObj: logObj
+			});
+
+			// コントローラ全部、ロジック全部の横断動作ログ
+			addLogObject(wholeOperationLogs, createLogObject(target.__name + '#' + fName, cls,
+					'BEGIN', '', target.__name, wholeOperationLogsIndentLevel));
+			wholeOperationLogsIndentLevel += 1;
+
+			preTarget = target;
+			return invocation.proceed();
+		}, function(invocation, data) {
+			var target = invocation.target;
+			if (h5.u.str.endsWith(target.__name, 'Controller') && !target.__controllerContext) {
+				// コントローラでかつメソッド内でdisposeされた場合は何もしない
+				return;
+			}
+			if (h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
+				return;
+			}
+			target._h5debugContext = target._h5debugContext || {};
+			target._h5debugContext.indentLevel = target._h5debugContext.indentLevel || 0;
+			var cls = '';
+			var fName = invocation.funcName;
+
+			// プロミスの判定
+			// penddingのプロミスを返した時はPOSTに入ってこないので、RESOLVEDかREJECTEDのどっちかになる。
+			var ret = invocation.result;
+			var isPromise = ret && $.isFunction(ret.promise) && !h5.u.obj.isJQueryObject(ret)
+					&& $.isFunction(ret.done) && $.isFunction(ret.fail);
+			var promiseState = '';
+			var tag = 'END';
+			if (isPromise) {
+				tag = 'DFD';
+				// すでにresolve,rejectされていたら状態を表示
+				if (ret.state() === 'resolved') {
+					promiseState = '(RESOLVED)';
+				} else if (ret.state() === 'rejected') {
+					promiseState = '(REJECTED)';
+				}
+			}
+
+			// BEGINのログを出したターゲット(コントローラまたはロジック)にログを出す
+			if (data.beginLog) {
+				for ( var i = 0, l = data.beginLog.length; i < l; i++) {
+					var t = data.beginLog[i].target;
+					var logObj = $.extend({}, data.beginLog[i].logObj);
+					logObj.tag = tag;
+					logObj.promiseState = promiseState;
+					// プロミスならインデントを現在のインデント箇所で表示
+					logObj.indentWidth = isPromise ? 0 : logObj.indentWidth;
+					addLogObject(t._h5debugContext.debugLog, logObj);
+					t._h5debugContext.indentLevel -= 1;
+				}
+			}
+
+			// コントローラ全部、ロジック全部の横断動作ログにログオブジェクトの登録
+			wholeOperationLogsIndentLevel -= 1;
+			if (wholeOperationLogsIndentLevel < 0) {
+				wholeOperationLogsIndentLevel = 0;
+			}
+			var logObjFull = createLogObject(target.__name + '#' + fName, cls, tag, promiseState,
+					target.__name, wholeOperationLogsIndentLevel);
+			addLogObject(wholeOperationLogs, logObjFull);
+
+			preTarget = null;
+		}),
 		pointCut: '*'
 	};
 	compileAspects(aspect);
