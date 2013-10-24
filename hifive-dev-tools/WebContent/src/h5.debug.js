@@ -2078,9 +2078,11 @@
 			});
 
 			// コントローラ全部、ロジック全部の横断動作ログ
-			addLogObject(wholeOperationLogs, createLogObject(target.__name + '#' + fName, cls,
-					'BEGIN', '', target.__name, wholeOperationLogsIndentLevel));
-			wholeOperationLogsIndentLevel += 1;
+			var wholeLog = createLogObject(target.__name + '#' + fName, cls, 'BEGIN', '',
+					target.__name, wholeOperationLogsIndentLevel);
+			wholeOperationLogsIndentLevel++;
+			addLogObject(wholeOperationLogs, wholeLog);
+			data.wholeLog = wholeLog;
 
 			preTarget = target;
 			return invocation.proceed();
@@ -2130,14 +2132,12 @@
 			}
 
 			// コントローラ全部、ロジック全部の横断動作ログにログオブジェクトの登録
+			var wholeLog = $.extend({}, data.wholeLog);
+			wholeLog.tag = tag;
+			wholeLog.promiseState = promiseState;
+			wholeLog.indentWidth = isPromise ? 0 : wholeLog.indentWidth;
+			addLogObject(wholeOperationLogs, wholeLog);
 			wholeOperationLogsIndentLevel -= 1;
-			if (wholeOperationLogsIndentLevel < 0) {
-				wholeOperationLogsIndentLevel = 0;
-			}
-			var logObjFull = createLogObject(target.__name + '#' + fName, cls, tag, promiseState,
-					target.__name, wholeOperationLogsIndentLevel);
-			addLogObject(wholeOperationLogs, logObjFull);
-
 			preTarget = null;
 		}),
 		pointCut: '*'
