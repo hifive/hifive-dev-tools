@@ -547,10 +547,10 @@
 			.register(
 					'operation-log',
 					'<div class="fixedControlls">[% var id; var seq = new Date().getTime(); %]'
-							+ '[% id = "operation-log-controlls-event_" + seq++ %]<input type="checkbox" id="[%= id %]"checked name="event"/><label for="[%= id %]">イベント</label>'
-							+ '[% id = "operation-log-controlls-public_" + seq++ %]<input type="checkbox" id="[%= id %]" checked name="public" /><label for="[%= id %]">パブリック</label>'
-							+ '[% id = "operation-log-controlls-private_" + seq++ %]<input type="checkbox" id="[%= id %]" checked name="private" /><label for="[%= id %]">プライベート</label>'
-							+ '[% id = "operation-log-controlls-lifecycle_" + seq++ %]<input type="checkbox" id="[%= id %]" checked name="lifecycle"/><label for="[%= id %]">ライフサイクル</label>'
+							+ '[% id = "operation-log-controlls-event_" + seq %]<input type="checkbox" id="[%= id %]"checked name="event"/><label for="[%= id %]">イベント</label>'
+							+ '[% id = "operation-log-controlls-public_" + seq %]<input type="checkbox" id="[%= id %]" checked name="public" /><label for="[%= id %]">パブリック</label>'
+							+ '[% id = "operation-log-controlls-private_" + seq %]<input type="checkbox" id="[%= id %]" checked name="private" /><label for="[%= id %]">プライベート</label>'
+							+ '[% id = "operation-log-controlls-lifecycle_" + seq %]<input type="checkbox" id="[%= id %]" checked name="lifecycle"/><label for="[%= id %]">ライフサイクル</label>'
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '</div>'
