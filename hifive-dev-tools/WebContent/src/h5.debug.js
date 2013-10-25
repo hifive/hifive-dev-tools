@@ -179,52 +179,26 @@
 		}
 	},
 	/*
-	 * コントローラリスト
+	 * コントローラ・ロジックリスト
 	 */
 	{
-		selector: '.h5debug .debug-controller .controllerlist',
+		selector: '.h5debug .debug-controller .targetlist',
 		rule: {
 			paddingTop: 0,
 			paddingLeft: '1.2em'
 		}
 	}, {
-		selector: '.h5debug .debug-controller .controllerlist .controller-name',
+		selector: '.h5debug .debug-controller .targetlist .target-name',
 		rule: {
 			cursor: 'default'
 		}
 	}, {
-		selector: '.h5debug .debug-controller .controllerlist .controller-name.selected',
+		selector: '.h5debug .debug-controller .targetlist .target-name.selected',
 		rule: {
 			backgroundColor: 'rgba(170,237,255,1)!important'
 		}
 	}, {
-		selector: '.h5debug .debug-controller .controllerlist .controller-name:hover',
-		rule: {
-			backgroundColor: 'rgba(170,237,255,0.4)'
-		}
-	},
-
-	/*
-	 * ロジックリスト
-	 */
-	{
-		selector: '.h5debug .debug-logic .logiclist',
-		rule: {
-			paddingTop: 0,
-			paddingLeft: '1.2em'
-		}
-	}, {
-		selector: '.h5debug .debug-logic .logiclist .logic-name',
-		rule: {
-			cursor: 'default'
-		}
-	}, {
-		selector: '.h5debug .debug-logic .logiclist .logic-name.selected',
-		rule: {
-			backgroundColor: 'rgba(170,237,255,1)!important'
-		}
-	}, {
-		selector: '.h5debug .debug-logic .logiclist .logic-name:hover',
+		selector: '.h5debug .debug-controller .targetlist .target-name:hover',
 		rule: {
 			backgroundColor: 'rgba(170,237,255,0.4)'
 		}
@@ -457,11 +431,9 @@
 	view
 			.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
 					+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
-					+ '<li data-tab-page="debug-logic">ロジック</li>'
 					+ '<li data-tab-page="operation-log">動作ログ</li>'
 					+ '<li data-tab-page="settings">デバッガ設定</li>' + '</ul><div class="tab-content">'
 					+ '<div class="active debug-controller columnLayoutWrapper"></div>'
-					+ '<div class="debug-logic columnLayoutWrapper"></div>'
 					+ '<div class="operation-log whole"></div>' + '<div class="settings"></div>'
 					+ '</div>');
 
@@ -471,14 +443,14 @@
 			'<div class="left ovfAuto"></div><div class="right ovfHidden"></div>');
 
 	// コントローラリストul
-	view.register('controller-list', '<ul class="controllerlist"></ul>');
+	view.register('target-list', '<ul class="targetlist"></ul>');
 
 	// コントローラリストli
-	view.register('controller-list-part',
-			'<li><span class="controller-name [%= cls %]">[%= name %]</span></li>');
+	view.register('target-list-part',
+			'<li><span class="target-name [%= cls %]">[%= name %]</span></li>');
 
 	// 詳細情報画面
-	view.register('controller-detail', '<div class="detail"><ul class="nav nav-tabs">'
+	view.register('controller-detail', '<div class="detail controller-detail"><ul class="nav nav-tabs">'
 			+ '<li class="active" data-tab-page="eventHandler">イベントハンドラ</li>'
 			+ '<li data-tab-page="method">メソッド</li>' + '<li data-tab-page="operation-log">ログ</li>'
 			+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
@@ -519,19 +491,9 @@
 							+ '</dl>');
 
 	// --------------------- ロジック --------------------- //
-	// コントローラデバッグ画面
-	view.register('logicDebugWrapper',
-			'<div class="left ovfAuto"></div><div class="right ovfHidden"></div>');
-
-	// ロジックリストul
-	view.register('logic-list', '<ul class="logiclist"></ul>');
-
-	// ロジックリストli
-	view.register('logic-list-part', '<li><span class="logic-name">[%= name %]</span></li>');
-
 
 	// 詳細情報画面
-	view.register('logic-detail', '<div class="detail"><ul class="nav nav-tabs">'
+	view.register('logic-detail', '<div class="detail logic-detail"><ul class="nav nav-tabs">'
 			+ '<li class="active" data-tab-page="method">メソッド</li>'
 			+ '<li data-tab-page="operation-log">ログ</li>'
 			+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
@@ -540,7 +502,7 @@
 
 	// その他情報
 	view.register('logic-otherInfo', '<dl><dt>名前</dt><dd>[%= defObj.__name %]</dd>'
-			+ '<dt>所属するコントローラ名</dt><dd>[%= controllerName %]</dd>' + '</dl>');
+			+ '<dt>ロジックインスタンスの名前</dt><dd>[%= instanceName %]</dd>' + '</dl>');
 
 	// 動作ログ(コントローラ、ロジック、全体、で共通)
 	view
@@ -858,16 +820,19 @@
 	}
 
 	/**
-	 * コントローラが持つ子コントローラを取得
+	 * コントローラが持つ子コントローラの定義されたプロパティキーのリストを返す
+	 *
+	 * @param {Controller} controller
+	 * @returns {String[]}
 	 */
-	function getChildControllers(controller) {
+	function getChildControllerProperties(controller) {
 		var ret = [];
 		for ( var prop in controller) {
 			var target = controller[prop];
 			if (h5.u.str.endsWith(prop, 'Controller') && prop !== 'rootController'
 					&& prop !== 'parentController' && !$.isFunction(target)
 					&& (target && !target.__controllerContext.isRoot)) {
-				ret.push(target);
+				ret.push(prop);
 			}
 		}
 		return ret;
@@ -1028,11 +993,11 @@
 		 */
 		$info: null,
 		/**
-		 * 選択中のコントローラ
+		 * 選択中のコントローラまたはロジック
 		 *
 		 * @name h5.debug.developer.ControllerDebugController
 		 */
-		selectedController: null,
+		selectedTarget: null,
 
 		__init: function() {
 			// 既存のコントローラにコントローラ定義オブジェクトを持たせる(hifive1.1.8以前用)
@@ -1056,8 +1021,9 @@
 			setCSS(this.win, H5DEBUG_STYLE, SPECIAL_H5DEBUG_STYLE);
 			setCSS(window, H5PAGE_STYLE);
 			// コントローラの詳細表示エリア
-			view.append(this.$find('.left'), 'controller-list');
+			view.append(this.$find('.left'), 'target-list');
 			view.append(this.$find('.right'), 'controller-detail');
+			view.append(this.$find('.right'), 'logic-detail');
 
 			// 1秒待ってからコントローラを取得する
 			var that = this;
@@ -1097,6 +1063,7 @@
 		'{document} h5controllerbound': function(context) {
 			this._h5controllerbound(context);
 		},
+
 		/**
 		 * openerがあればそっちのdocumentにバインドする
 		 */
@@ -1105,7 +1072,7 @@
 		},
 		_h5controllerbound: function(context) {
 			var controller = context.evArg;
-			this.appendControllerList(controller);
+			this.appendTargetToList(controller);
 		},
 
 		/**
@@ -1126,7 +1093,7 @@
 		_h5controllerunbound: function(context) {
 			var controller = context.evArg;
 			var $selected = this.$find('.selected');
-			if (context.evArg === this.getControllerFromElem($selected)) {
+			if (context.evArg === this.getTargetFromElem($selected)) {
 				this.unfocus();
 			}
 			this.removeControllerList(controller);
@@ -1138,11 +1105,11 @@
 		 * @param context
 		 * @param $el
 		 */
-		'.controllerlist .controller-name mouseover': function(context, $el) {
+		'.targetlist .target-name mouseover': function(context, $el) {
 			if (hasTouchEvent) {
 				return;
 			}
-			var controller = this.getControllerFromElem($el);
+			var controller = this.getTargetFromElem($el);
 			this.removeOverlay();
 			this.overlay(controller.rootElement, controller.__controllerContext.isRoot ? 'root'
 					: 'child');
@@ -1154,12 +1121,34 @@
 		 * @param context
 		 * @param $el
 		 */
-		'.controllerlist .controller-name mouseout': function(context, $el) {
+		'.targetlist .target-name mouseout': function(context, $el) {
 			if (hasTouchEvent) {
 				return;
 			}
 			this.removeOverlay();
 		},
+
+
+		/**
+		 * ロジックリスト上のロジックをクリック
+		 *
+		 * @memberOf h5.debug.developer.LogicDebugController
+		 * @param context
+		 * @param $el
+		 */
+		'.logiclist .logic-name click': function(context, $el) {
+			if ($el.hasClass('selected')) {
+				// 既に選択済み
+				return;
+			}
+			var logic = this.getLogicFromElem($el);
+			this.$find('.logic-name').removeClass('selected');
+			$el.addClass('selected');
+			this.selectedLogic = logic;
+
+			this.setDetail(logic);
+		},
+
 		/**
 		 * コントローラリスト上のコントローラをクリック
 		 *
@@ -1167,17 +1156,17 @@
 		 * @param context
 		 * @param $el
 		 */
-		'.controllerlist .controller-name click': function(context, $el) {
+		'.targetlist .target-name click': function(context, $el) {
 			if ($el.hasClass('selected')) {
 				// 既に選択済み
 				return;
 			}
-			var controller = this.getControllerFromElem($el);
-			this.$find('.controller-name').removeClass('selected');
+			var target = this.getTargetFromElem($el);
+			this.$find('.target-name').removeClass('selected');
 			$el.addClass('selected');
-			this.selectedController = controller;
+			this.selectedTarget = target;
 
-			this.setDetail(controller);
+			this.setDetail(target);
 
 			// 選択したコントローラのルートエレメントについてボーダーだけのオーバレイを作成
 			this.removeOverlay(true);
@@ -1209,7 +1198,7 @@
 		selectEventHandler: function($el) {
 			this.$find('.eventHandler li').removeClass('selected');
 			$el.addClass('selected');
-			var controller = this.getControllerFromElem(this.$find('.controller-name.selected'));
+			var controller = this.getTargetFromElem(this.$find('.target-name.selected'));
 			var key = $.trim($el.find('.key').text());
 			var $target = getTargetFromEventHandlerKey(key, controller);
 
@@ -1253,13 +1242,13 @@
 			}
 		},
 		/**
-		 * 詳細画面(右側画面)をコントローラを基に作成。nullが渡されたら空白にする
+		 * 詳細画面(右側画面)をコントローラまたはロジックを基に作成。nullが渡されたら空白にする
 		 *
 		 * @memberOf h5.debug.developer.ControllerDebugController
-		 * @param controller
+		 * @param target
 		 */
-		setDetail: function(controller) {
-			if (controller == null) {
+		setDetail: function(target) {
+			if (target == null) {
 				this.$find('.detail .tab-content>*').html('');
 				return;
 			}
@@ -1271,6 +1260,24 @@
 			for ( var i = 0, l = controllers.length; i < l; i++) {
 				controllers[i].dispose();
 			}
+
+			// コントローラの場合はコントローラの詳細ビューを表示
+			if (target.__controllerContext) {
+				this._showControllerDetail(target);
+			} else {
+				// ロジックの場合はロジックの詳細ビューを表示
+				this._showLogicDetail(target);
+			}
+		},
+		/**
+		 * コントローラの詳細表示
+		 *
+		 * @memberOf h5.debug.developer.ControllerDebugController
+		 * @param controller
+		 */
+		_showControllerDetail: function(controller) {
+			this.$find('.logic-detail').css('display', 'none');
+			this.$find('.controller-detail').css('display', 'block');
 
 			// イベントハンドラ、メソッドは、コントローラ定義オブジェクトから取得する。
 			// hifive1.1.8以前では、コントローラ定義オブジェクトを持たないが、h5.core.controllerをフックしているので、
@@ -1312,13 +1319,13 @@
 			publicMethods.sort();
 			var methods = lifecycleMethods.concat(publicMethods).concat(privateMethods);
 
-			view.update(this.$find('.detail .tab-content .eventHandler'), 'eventHandler-list', {
+			view.update(this.$find('.controller-detail .tab-content .eventHandler'), 'eventHandler-list', {
 				controller: controller.__controllerContext.controllerDef,
 				eventHandlers: eventHandlers,
 				_funcToStr: funcToStr
 			});
 
-			view.update(this.$find('.detail .tab-content .method'), 'method-list', {
+			view.update(this.$find('.controller-detail .tab-content .method'), 'method-list', {
 				defObj: controller.__controllerContext.controllerDef,
 				methods: methods,
 				_funcToStr: funcToStr
@@ -1326,50 +1333,101 @@
 
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.operation-log'), operationLogController, {
+			h5.core.controller(this.$find('.controller-detail .operation-log'), operationLogController, {
 				logArray: logAry
 			});
 
 			// その他情報
-			var childControllers = getChildControllers(controller);
+			var childControllerProperties = getChildControllerProperties(controller);
 			var childControllerNames = [];
-			for ( var i = 0, l = childControllers.length; i < l; i++) {
-				childControllerNames.push(childControllers[i].__name);
+			for ( var i = 0, l = childControllerProperties.length; i < l; i++) {
+				childControllerNames.push(controller[childControllerProperties[i]].__name);
 			}
-			view.update(this.$find('.detail .tab-content .otherInfo'), 'controller-otherInfo', {
+			view.update(this.$find('.controller-detail .tab-content .otherInfo'), 'controller-otherInfo', {
 				controller: controller,
 				childControllerNames: childControllerNames,
 				_formatDOM: formatDOM
 			});
 		},
+
 		/**
-		 * エレメントにコントローラを持たせる
+		 * ロジックの詳細表示
+		 *
+		 * @memberOf h5.debug.developer.ControllerDebugController
+		 * @param logic
+		 */
+		_showLogicDetail: function(logic) {
+			this.$find('.logic-detail').css('display', 'block');
+			this.$find('.controller-detail').css('display', 'none');
+
+			// メソッドリスト
+			// public, privateの順で辞書順ソート
+			var privateMethods = [];
+			var publicMethods = [];
+			for ( var p in logic.__logicContext.logicDef) {
+				if ($.isFunction(logic.__logicContext.logicDef[p])) {
+					// メソッド
+					// publicかprivateかを判定する
+					if (h5.u.str.startsWith(p, '_')) {
+						privateMethods.push(p);
+					} else {
+						publicMethods.push(p);
+					}
+				}
+			}
+
+			// ソート
+			privateMethods.sort();
+			publicMethods.sort();
+			var methods = publicMethods.concat(privateMethods);
+
+			view.update(this.$find('.logic-detail .tab-content .method'), 'method-list', {
+				defObj: logic.__logicContext.logicDef,
+				methods: methods,
+				_funcToStr: funcToStr
+			});
+
+			// ログ
+			var logAry = logic._h5debugContext.debugLog;
+			h5.core.controller(this.$find('.logic-detail .operation-log'), operationLogController, {
+				logArray: logAry
+			});
+
+			// その他情報
+			view.update(this.$find('.logic-detail .tab-content .otherInfo'), 'logic-otherInfo', {
+				defObj: logic.__logicContext.logicDef,
+				instanceName: logic._h5debugContext.instanceName
+			});
+		},
+
+		/**
+		 * エレメントにコントローラまたはロジックを持たせる
 		 *
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param el
-		 * @param controller
+		 * @param target
 		 */
-		setControllerToElem: function(el, controller) {
-			$(el).data('h5debug-controller', controller);
+		setTargetToElem: function(el, target) {
+			$(el).data('h5debug-target', target);
 		},
 		/**
-		 * エレメントに覚えさせたコントローラを取得する
+		 * エレメントに覚えさせたコントローラまたはロジックを取得する
 		 *
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 * @param el
-		 * @returns {Controller}
+		 * @returns {Controller|Logic}
 		 */
-		getControllerFromElem: function(el) {
-			return $(el).data('h5debug-controller');
+		getTargetFromElem: function(el) {
+			return $(el).data('h5debug-target');
 		},
 		/**
-		 * コントローラの選択を解除
+		 * 選択を解除
 		 *
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
 		unfocus: function() {
 			this.setDetail(null);
-			this.$find('.controller-name').removeClass('selected');
+			this.$find('.target-name').removeClass('selected');
 			this.removeOverlay(true);
 		},
 		/**
@@ -1410,41 +1468,80 @@
 			}
 		},
 		/**
-		 * コントローラをコントローラリストに追加
+		 * コントローラまたはロジックをコントローラリストに追加
 		 *
 		 * @memberOf h5.debug.developer.ControllerDebugController
-		 * @param controller
+		 * @param target
 		 */
-		appendControllerList: function(controller, $ul) {
-			if (h5.u.str.startsWith(controller.__name, 'h5.debug.developer')) {
+		appendTargetToList: function(target, $ul) {
+			if (h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
 				// デバッグ用にバインドしたコントローラは無視
 				return;
 			}
-			// コントローラに_h5debugContextを持たせる
-			controller._h5debugContext = controller._h5debugContext || {};
+			// _h5debugContextを持たせる
+			target._h5debugContext = target._h5debugContext || {};
 
-			$ul = $ul || this.$find('.controllerlist:first');
-			// コントローラにログ用のObservableArrayを持たせる
-			if (!controller._h5debugContext.debugLog) {
-				controller._h5debugContext.debugLog = createLogArray();
+			$ul = $ul || this.$find('.targetlist:first');
+			// ログ用のObservableArrayを持たせる
+			if (!target._h5debugContext.debugLog) {
+				target._h5debugContext.debugLog = createLogArray();
 			}
 
-			var isRoot = controller.__controllerContext.isRoot;
-			var $li = $(view.get('controller-list-part', {
-				name: controller.__name,
-				cls: isRoot ? 'root' : 'child'
-			}), $ul[0].ownerDocument);
-			// データにコントローラを持たせる
-			this.setControllerToElem($li.children('.controller-name'), controller);
-			$ul.append($li);
-
-			// 子コントローラも追加
-			var childControllers = getChildControllers(controller);
-			if (childControllers.length) {
-				for ( var i = 0, l = childControllers.length; i < l; i++) {
-					view.append($li, 'controller-list');
-					this.appendControllerList(childControllers[i], $li.find('ul:last'));
+			if (target.__controllerContext) {
+				// コントローラの場合
+				var isRoot = target.__controllerContext.isRoot;
+				var $li = $(view.get('target-list-part', {
+					name: target.__name,
+					cls: isRoot ? 'root' : 'child'
+				}), $ul[0].ownerDocument);
+				// データにコントローラを持たせる
+				this.setTargetToElem($li.children('.target-name'), target);
+				$ul.append($li);
+				// 子コントローラも追加
+				var childControllerProperties = getChildControllerProperties(target);
+				if (childControllerProperties.length) {
+					for ( var i = 0, l = childControllerProperties.length; i < l; i++) {
+						// 『コントローラ名#定義名』を覚えさせておく
+						var p = childControllerProperties[i];
+						var controller = target[p];
+						controller._h5debugContext = controller._h5debugContext || {};
+						controller._h5debugContext.instanceName = target.__name + '#' + p;
+						view.append($li, 'target-list');
+						this.appendTargetToList(controller, $li.find('ul:last'));
+					}
 				}
+				// ロジックを列挙して追加
+				var isAppendedLogiccUl = false;
+				for ( var p in target) {
+					if (h5.u.str.endsWith(p, 'Logic')) {
+						// ロジックがある場合、ロジックのulを追加
+						if (!isAppendedLogiccUl) {
+							view.append($li, 'target-list');
+							isAppendedLogiccUl = true;
+						}
+						// 『コントローラ名#定義名』を覚えさせておく
+						target[p]._h5debugContext = target[p]._h5debugContext || {};
+						target[p]._h5debugContext.instanceName = target.__name + '#' + p;
+						this.appendTargetToList(target[p], $li.find('ul:last'));
+					}
+				}
+			} else {
+				// ロジックの場合
+				// コントローラ名とログ用のObserbableArrayを持たせる
+				target._h5debugContext = target._h5debugContext || {
+					name: target.__name + '#' + p,
+					debugLog: createLogArray()
+				};
+				var $li = $(view.get('target-list-part', {
+					name: target.__name,
+					cls: 'root'
+				}), $ul[0].ownerDocument);
+
+				// データにロジックを持たせる
+				this.setTargetToElem($li.children('.target-name'), target);
+
+				// 子コントローラの後にロジック追加
+				$ul.append($li);
 			}
 		},
 		/**
@@ -1455,8 +1552,8 @@
 		 */
 		removeControllerList: function(controller) {
 			var that = this;
-			this.$find('.controllerlist .controller-name').each(function() {
-				if (that.getControllerFromElem(this) === controller) {
+			this.$find('.targetlist .target-name').each(function() {
+				if (that.getTargetFromElem(this) === controller) {
 					$(this).closest('li').remove();
 					return false;
 				}
@@ -1466,12 +1563,12 @@
 		refreshControllerList: function() {
 			// コントローラ全て(ルートコントローラのみ)を取得
 			var controllers = h5.core.controllerManager.getAllControllers();
-			this.$find('.controllerlist').remove();
-			view.append(this.$find('.left'), 'controller-list');
+			this.$find('.targetlist').remove();
+			view.append(this.$find('.left'), 'target-list');
 
 			// li要素を追加してデータ属性にコントローラを持たせる
 			for ( var i = 0, l = controllers.length; i < l; i++) {
-				this.appendControllerList(controllers[i]);
+				this.appendTargetToList(controllers[i]);
 			}
 
 			// 詳細画面を空にする
@@ -1486,39 +1583,7 @@
 	 * @name h5.debug.developer.LogicnDebugController
 	 */
 	var logicDebugController = {
-		/**
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 */
-		__name: 'h5.debug.developer.LogicDebugController',
 
-		/**
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 */
-		_logicList: h5.core.data.createObservableArray(),
-
-		/**
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 */
-		selectedLogic: null,
-
-		/**
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 * @param context
-		 */
-		__ready: function(context) {
-			// 初期化処理
-			this.win = context.args.win;
-			setCSS(this.win, H5DEBUG_STYLE, SPECIAL_H5DEBUG_STYLE);
-			setCSS(window, H5PAGE_STYLE);
-			// コントローラの詳細表示エリア
-			view.append(this.$find('.left'), 'logic-list');
-			view.append(this.$find('.right'), 'logic-detail');
-			// 1秒待ってからロジックを取得する
-			var that = this;
-			setTimeout(function() {
-				that.refreshControllerList();
-			}, 1000);
-		},
 		/**
 		 * ロジックリスト上のロジックをクリック
 		 *
@@ -1553,52 +1618,6 @@
 		 */
 		'{.h5debug} leftclick': function() {
 			this.unfocus();
-		},
-		/**
-		 * コントローラからロジックを取りだしてリストに追加
-		 *
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 * @param controller
-		 */
-		appendLogicListByController: function(controller) {
-			if (h5.u.str.startsWith(controller.__name, 'h5.debug.developer')) {
-				// デバッグ用にバインドしたコントローラは無視
-				return;
-			}
-			// コントローラの名前
-			var controllerName = controller.__name;
-
-			$ul = this.$find('.logiclist:first');
-
-			// ロジックの列挙
-			var logics = [];
-			for ( var p in controller) {
-				if (h5.u.str.endsWith(p, 'Logic') && $.inArray(this[p], this._logicList) === -1) {
-					var logic = controller[p];
-					logics.push(logic);
-					// コントローラ名とログ用のObserbableArrayを持たせる
-					logic._h5debugContext = {
-						controllerName: controllerName,
-						debugLog: createLogArray()
-					};
-					var $li = $(view.get('logic-list-part', {
-						name: logic.__name,
-					}), $ul[0].ownerDocument);
-
-					// データにロジックを持たせる
-					this.setLogicToElem($li.children('.logic-name'), logic);
-
-					$ul.append($li);
-				}
-			}
-
-			// 子コントローラも追加
-			var childControllers = getChildControllers(controller);
-			if (childControllers.length) {
-				for ( var i = 0, l = childControllers.length; i < l; i++) {
-					this.appendLogicListByController(childControllers[i]);
-				}
-			}
 		},
 
 		/**
@@ -1677,26 +1696,10 @@
 			// その他情報
 			view.update(this.$find('.detail .tab-content .otherInfo'), 'logic-otherInfo', {
 				defObj: logicDef,
-				controllerName: logic._h5debugContext.controllerName
+				instanceName: logic._h5debugContext.instanceName
 			});
 		},
-		/**
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 */
-		refreshControllerList: function() {
-			// コントローラ全て(ルートコントローラのみ)を取得
-			var controllers = h5.core.controllerManager.getAllControllers();
-			this.$find('.logiclist').remove();
-			view.append(this.$find('.left'), 'logic-list');
 
-			// li要素を追加してデータ属性にコントローラを持たせる
-			for ( var i = 0, l = controllers.length; i < l; i++) {
-				this.appendLogicListByController(controllers[i]);
-			}
-
-			// 詳細画面を空にする
-			this.setDetail(null);
-		},
 		/**
 		 * ロジックの選択を解除
 		 *
@@ -1903,10 +1906,7 @@
 		 * @memberOf h5.debug.developer.DebugController
 		 */
 		_controllerDebugController: controllerDebugController,
-		/**
-		 * @memberOf h5.debug.developer.DebugController
-		 */
-		_logicDebugController: logicDebugController,
+
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 */
@@ -1926,7 +1926,6 @@
 			_controllerDebugController: {
 			// rootElementは__constructで追加してから設定している
 			},
-			_logicDebugController: {},
 			_operationLogController: {},
 			_settingsController: {}
 		},
@@ -1940,10 +1939,8 @@
 			// 全体を包むタブの中身を追加
 			view.append(this.rootElement, 'debug-tab');
 			view.append(this.$find('.debug-controller'), 'controllerDebugWrapper');
-			view.append(this.$find('.debug-logic'), 'logicDebugWrapper');
 			view.append(this.$find('.settings'), 'settings');
 			this.__meta._controllerDebugController.rootElement = this.$find('.debug-controller');
-			this.__meta._logicDebugController.rootElement = this.$find('.debug-logic');
 			this.__meta._operationLogController.rootElement = this.$find('.operation-log');
 			this.__meta._settingsController.rootElement = this.$find('.settings');
 		},
