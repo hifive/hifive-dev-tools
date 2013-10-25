@@ -546,11 +546,11 @@
 	view
 			.register(
 					'operation-log',
-					'<div class="fixedControlls">'
-							+ '<input type="checkbox" id="operation-log-controlls-event"checked name="event"/><label for="operation-log-controlls-event">イベント</label>'
-							+ '<input type="checkbox" id="operation-log-controlls-public" checked name="public" /><label for="operation-log-controlls-public">パブリック</label>'
-							+ '<input type="checkbox" id="operation-log-controlls-private" checked name="private" /><label for="operation-log-controlls-private">プライベート</label>'
-							+ '<input type="checkbox" id="operation-log-controlls-lifecycle" checked name="lifecycle"/><label for="operation-log-controlls-lifecycle">ライフサイクル</label>'
+					'<div class="fixedControlls">[% var id; var seq = new Date().getTime(); %]'
+							+ '[% id = "operation-log-controlls-event_" + seq++ %]<input type="checkbox" id="[%= id %]"checked name="event"/><label for="[%= id %]">イベント</label>'
+							+ '[% id = "operation-log-controlls-public_" + seq++ %]<input type="checkbox" id="[%= id %]" checked name="public" /><label for="[%= id %]">パブリック</label>'
+							+ '[% id = "operation-log-controlls-private_" + seq++ %]<input type="checkbox" id="[%= id %]" checked name="private" /><label for="[%= id %]">プライベート</label>'
+							+ '[% id = "operation-log-controlls-lifecycle_" + seq++ %]<input type="checkbox" id="[%= id %]" checked name="lifecycle"/><label for="[%= id %]">ライフサイクル</label>'
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '</div>'
