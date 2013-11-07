@@ -23,6 +23,7 @@
 	// Constants
 	//
 	// =========================================================================
+	var OLD_IE_BLANK_URL = 'blankForOldIE.html';
 	var LOG_INDENT_WIDTH = 10;
 
 	var LIFECYCLE_METHODS = ['__construct', '__init', '__ready', '__unbind', '__dispose'];
@@ -41,11 +42,24 @@
 			zIndex: 20000
 		}
 	}, {
+		selector: '.h5debugHTML', // IE8-用にHTML要素にもスタイルを当てる
+		rule: {
+			height: '100%',
+			width: '903px',
+			margin: 0,
+			padding: 0
+		}
+	}, {
 		selector: '.h5debug.posfix',
 		rule: {
 			position: 'fixed',
 			top: 0,
 			left: 0
+		}
+	}, {
+		selector: '.h5debug .debug-tab',
+		rule: {
+			height: '100%'
 		}
 	}, {
 		selector: '.h5debug-upper-right',
@@ -176,6 +190,14 @@
 		selector: '.h5debug .debug-controller .controll',
 		rule: {
 			paddingLeft: '30px'
+		}
+	},
+	/*
+	 * コントローラのデバッグ
+	 */{
+		selector: '.h5debug .debug-controller .controller-detail',
+		rule: {
+			height: '100%'
 		}
 	},
 	/*
@@ -361,15 +383,15 @@
 	}];
 
 	var SPECIAL_H5DEBUG_STYLE = {
-		IE: [{
-			// スタイルの調整(IE用)
-			// IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
-			// その分を調整する。
-			selector: '.h5debug .tab-content .tab-content',
-			rule: {
-				paddingBottom: '60px'
-			}
-		}]
+//		IE: [{
+//			// スタイルの調整(IE用)
+//			// IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
+//			// その分を調整する。
+//			selector: '.h5debug .tab-content .tab-content',
+//			rule: {
+////				paddingBottom: '60px'
+//			}
+//		}]
 	};
 	/**
 	 * デバッグ対象になるページ側のスタイル
@@ -696,6 +718,22 @@
 	}
 
 	/**
+	 * h5.debug.jsが設置されているフォルダを取得
+	 * (古いIEのためのblankページを取得するために必要)
+	 */
+	function getThiScriptPath(){
+		var ret = '';
+		$('script').each(function(){
+			var match = this.src.match(/(^|.*\/)h5\.debug\.js$/);
+			if(match){
+				ret = match[1];
+				return false;
+			}
+		});
+		return ret;
+	}
+
+	/**
 	 * デバッグウィンドウを開く
 	 */
 	function openDebugWindow() {
@@ -703,10 +741,12 @@
 		var w = null;
 		if (useWindowOpen) {
 			// Firefoxは'about:blank'で開くとDOM追加した後に要素が消されてしまう
-			// IEの場合はnullで開くとDocmodeがquirksになり、'about:blank'で開くとちゃんと9モードになる
+			// IE9の場合はnullで開くとDocmodeがquirksになり、'about:blank'で開くとちゃんと9モードになる
 			// chromeの場合はどちらでもいい
-			// IEの場合だけ'about:blank'を使うようにしている
-			var url = h5.env.ua.isIE ? 'about:blank' : null;
+			// IE9の場合だけ'about:blank'を使うようにしている
+			// IE7,8の場合は、about:blankでもnullや空文字でも、Docmodeがquirksになる
+			// そのため、IE7,8はDocmode指定済みの空のhtmlを開く
+			var url = h5.env.ua.isIE ? (h5.env.ua.browserVersion >= 9? 'about:blank': getThiScriptPath() + OLD_IE_BLANK_URL) : null;
 			w = window.open(url, '1',
 					'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
 			if (w._h5debug) {
@@ -724,6 +764,7 @@
 
 			body = w.document.body;
 			$(body).addClass('h5debug');
+			$(w.document.getElementsByTagName('html')).addClass('h5debugHTML');
 
 			// タイトルの設定
 			w.document.title = 'hifive Developer Tools';
@@ -1026,6 +1067,7 @@
 			view.append(this.$find('.left'), 'target-list');
 			view.append(this.$find('.right'), 'controller-detail');
 			view.append(this.$find('.right'), 'logic-detail');
+			this.$find('.right>.detail').css('display', 'none');
 
 			// この時点ですでにバインドされているコントローラがあった場合、h5controllerboundイベントで拾えないので
 			// コントローラリストの更新を行う
@@ -1697,7 +1739,7 @@
 		unfocus: function() {
 			this.setDetail(null);
 			this.$find('.logic-name').removeClass('selected');
-		},
+		}
 	};
 
 	/**
