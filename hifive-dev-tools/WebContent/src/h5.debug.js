@@ -1089,7 +1089,7 @@
 		},
 		_h5controllerunbound: function(controller) {
 			var $selected = this.$find('.selected');
-			if (context.evArg === this.getTargetFromElem($selected)) {
+			if (controller === this.getTargetFromElem($selected)) {
 				this.unfocus();
 			}
 			this.removeControllerList(controller);
@@ -1105,10 +1105,12 @@
 			if (hasTouchEvent) {
 				return;
 			}
-			var controller = this.getTargetFromElem($el);
+			var target = this.getTargetFromElem($el);
 			this.removeOverlay();
-			this.overlay(controller.rootElement, controller.__controllerContext.isRoot ? 'root'
-					: 'child');
+			if (target.__controllerContext) {
+				this.overlay(target.rootElement, target.__controllerContext.isRoot ? 'root'
+						: 'child');
+			}
 		},
 		/**
 		 * マウスアウト
@@ -1164,10 +1166,12 @@
 
 			this.setDetail(target);
 
-			// 選択したコントローラのルートエレメントについてボーダーだけのオーバレイを作成
 			this.removeOverlay(true);
-			this.overlay(controller.rootElement, [
-					controller.__controllerContext.isRoot ? 'root' : 'child', 'borderOnly']);
+			if (target.__controllerContext) {
+				// 選択したものがコントローラの場合、コントローラのルートエレメントについてボーダーだけのオーバレイを作成
+				this.overlay(target.rootElement, [
+						target.__controllerContext.isRoot ? 'root' : 'child', 'borderOnly']);
+			}
 		},
 		/**
 		 * イベントハンドラにマウスオーバーで選択(PC用)
