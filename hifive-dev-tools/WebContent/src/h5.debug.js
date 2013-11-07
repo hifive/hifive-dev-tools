@@ -450,12 +450,14 @@
 			'<li><span class="target-name [%= cls %]">[%= name %]</span></li>');
 
 	// 詳細情報画面
-	view.register('controller-detail', '<div class="detail controller-detail"><ul class="nav nav-tabs">'
-			+ '<li class="active" data-tab-page="eventHandler">イベントハンドラ</li>'
-			+ '<li data-tab-page="method">メソッド</li>' + '<li data-tab-page="operation-log">ログ</li>'
-			+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
-			+ '<div class="active eventHandler"></div>' + '<div class="method"></div>'
-			+ '<div class="operation-log"></div>' + '<div class="otherInfo"></div></div>');
+	view.register('controller-detail',
+			'<div class="detail controller-detail"><ul class="nav nav-tabs">'
+					+ '<li class="active" data-tab-page="eventHandler">イベントハンドラ</li>'
+					+ '<li data-tab-page="method">メソッド</li>'
+					+ '<li data-tab-page="operation-log">ログ</li>'
+					+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
+					+ '<div class="active eventHandler"></div>' + '<div class="method"></div>'
+					+ '<div class="operation-log"></div>' + '<div class="otherInfo"></div></div>');
 
 	// イベントハンドラリスト
 	view
@@ -1025,19 +1027,15 @@
 			view.append(this.$find('.right'), 'controller-detail');
 			view.append(this.$find('.right'), 'logic-detail');
 
-			// 1秒待ってからコントローラを取得する
-			var that = this;
-			setTimeout(function() {
-				that.refreshControllerList();
-			}, 1000);
-		},
-		/**
-		 * オープン時のイベント
-		 *
-		 * @memberOf h5.debug.developer.ControllerDebugController
-		 */
-		'{.h5debug} open': function() {
-			this.refreshControllerList();
+			// この時点ですでにバインドされているコントローラがあった場合、h5controllerboundイベントで拾えないので
+			// コントローラリストの更新を行う
+			// TODO すでにバインド済みのコントローラに対してはアスペクトを掛けられないので、ログが出ない。
+			// コントローラ化済みのものに対してログを出すようにする機構が必要。
+			// h5controllerboundが上がってくるのは__initの後、__readyの前なので、__initはその前に書き換える必要がある
+			var controllers = h5.core.controllerManager.getAllControllers();
+			for ( var i = 0, l = controllers.length; i < l; i++) {
+				this._h5controllerbound(controllers[i]);
+			}
 		},
 		/**
 		 * クローズ時のイベント
@@ -1061,17 +1059,16 @@
 		 * @param context
 		 */
 		'{document} h5controllerbound': function(context) {
-			this._h5controllerbound(context);
+			this._h5controllerbound(context.evArg);
 		},
 
 		/**
 		 * openerがあればそっちのdocumentにバインドする
 		 */
 		'{window.opener.document} h5controllerbound': function(context) {
-			this._h5controllerbound(context);
+			this._h5controllerbound(context.evArg);
 		},
-		_h5controllerbound: function(context) {
-			var controller = context.evArg;
+		_h5controllerbound: function(controller) {
 			this.appendTargetToList(controller);
 		},
 
@@ -1082,16 +1079,15 @@
 		 * @param context
 		 */
 		'{document} h5controllerunbound': function(context) {
-			this._h5controllerunbound(context);
+			this._h5controllerunbound(context.evArg);
 		},
 		/**
 		 * openerがあればそっちのdocumentにバインドする
 		 */
 		'{window.opener.document} h5controllerunbound': function(context) {
-			this._h5controllerunbound(context);
+			this._h5controllerunbound(context.evArg);
 		},
-		_h5controllerunbound: function(context) {
-			var controller = context.evArg;
+		_h5controllerunbound: function(controller) {
 			var $selected = this.$find('.selected');
 			if (context.evArg === this.getTargetFromElem($selected)) {
 				this.unfocus();
@@ -1319,11 +1315,12 @@
 			publicMethods.sort();
 			var methods = lifecycleMethods.concat(publicMethods).concat(privateMethods);
 
-			view.update(this.$find('.controller-detail .tab-content .eventHandler'), 'eventHandler-list', {
-				controller: controller.__controllerContext.controllerDef,
-				eventHandlers: eventHandlers,
-				_funcToStr: funcToStr
-			});
+			view.update(this.$find('.controller-detail .tab-content .eventHandler'),
+					'eventHandler-list', {
+						controller: controller.__controllerContext.controllerDef,
+						eventHandlers: eventHandlers,
+						_funcToStr: funcToStr
+					});
 
 			view.update(this.$find('.controller-detail .tab-content .method'), 'method-list', {
 				defObj: controller.__controllerContext.controllerDef,
@@ -1333,9 +1330,10 @@
 
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.controller-detail .operation-log'), operationLogController, {
-				logArray: logAry
-			});
+			h5.core.controller(this.$find('.controller-detail .operation-log'),
+					operationLogController, {
+						logArray: logAry
+					});
 
 			// その他情報
 			var childControllerProperties = getChildControllerProperties(controller);
@@ -1343,11 +1341,12 @@
 			for ( var i = 0, l = childControllerProperties.length; i < l; i++) {
 				childControllerNames.push(controller[childControllerProperties[i]].__name);
 			}
-			view.update(this.$find('.controller-detail .tab-content .otherInfo'), 'controller-otherInfo', {
-				controller: controller,
-				childControllerNames: childControllerNames,
-				_formatDOM: formatDOM
-			});
+			view.update(this.$find('.controller-detail .tab-content .otherInfo'),
+					'controller-otherInfo', {
+						controller: controller,
+						childControllerNames: childControllerNames,
+						_formatDOM: formatDOM
+					});
 		},
 
 		/**
@@ -1389,9 +1388,10 @@
 
 			// ログ
 			var logAry = logic._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.logic-detail .operation-log'), operationLogController, {
-				logArray: logAry
-			});
+			h5.core.controller(this.$find('.logic-detail .operation-log'), operationLogController,
+					{
+						logArray: logAry
+					});
 
 			// その他情報
 			view.update(this.$find('.logic-detail .tab-content .otherInfo'), 'logic-otherInfo', {
@@ -1558,21 +1558,6 @@
 					return false;
 				}
 			});
-		},
-
-		refreshControllerList: function() {
-			// コントローラ全て(ルートコントローラのみ)を取得
-			var controllers = h5.core.controllerManager.getAllControllers();
-			this.$find('.targetlist').remove();
-			view.append(this.$find('.left'), 'target-list');
-
-			// li要素を追加してデータ属性にコントローラを持たせる
-			for ( var i = 0, l = controllers.length; i < l; i++) {
-				this.appendTargetToList(controllers[i]);
-			}
-
-			// 詳細画面を空にする
-			this.setDetail(null);
 		}
 	};
 
