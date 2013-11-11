@@ -36,7 +36,7 @@
 		rule: {
 			backgroundColor: 'rgba(255,255,255,0.8)',
 			height: '100%',
-			width: '903px',
+			width: '100%',
 			margin: 0,
 			padding: 0,
 			zIndex: 20000
@@ -45,7 +45,7 @@
 		selector: '.h5debugHTML', // IE8-用にHTML要素にもスタイルを当てる
 		rule: {
 			height: '100%',
-			width: '903px',
+			width: '100%',
 			margin: 0,
 			padding: 0
 		}
@@ -283,10 +283,10 @@
 	}, {
 		selector: '.h5debug .left',
 		rule: {
+			float: 'left',
 			height: '100%',
 			width: '350px',
 			border: '1px solid #20B5FF',
-			float: 'left',
 			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
 			'-ms-box-sizing': 'border-box',
@@ -296,10 +296,8 @@
 		selector: '.h5debug .right',
 		rule: {
 			height: '100%',
-			width: '550px',
 			border: '1px solid #20B5FF',
-			marginLeft: '-1px',
-			float: 'left',
+			borderLeft: 'none',
 			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
 			'-ms-box-sizing': 'border-box',
