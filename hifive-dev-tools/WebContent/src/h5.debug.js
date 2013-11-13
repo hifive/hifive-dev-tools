@@ -34,7 +34,7 @@
 	var H5DEBUG_STYLE = [{
 		selector: '.h5debug',
 		rule: {
-			backgroundColor: 'rgba(255,255,255,0.8)',
+			backgroundColor: 'rgba(255,255,255,0.8)', // iframe版を考慮して背景に透過指定
 			height: '100%',
 			width: '100%',
 			margin: 0,
@@ -70,20 +70,6 @@
 			left: '810px',
 			width: '100px',
 			textAlign: 'right'
-		}
-	}, {
-		selector: '.h5debug-controllBtn',
-		rule: {
-			display: 'inline-block',
-			cursor: 'pointer',
-			fontSize: '30px',
-			fontWeight: 'bold',
-			textAlign: 'center',
-			lineHeight: '30px',
-			width: '32px',
-			height: '32px',
-			margin: 2,
-			backgroundColor: 'rgba(128,255,198,0.4)'
 		}
 	}, {
 		selector: '.h5debug .liststyle-none',
@@ -207,7 +193,11 @@
 		selector: '.h5debug .debug-controller .targetlist',
 		rule: {
 			paddingTop: 0,
-			paddingLeft: '1.2em'
+			paddingLeft: '1.2em',
+			// IE7用
+			'*paddingLeft': 0,
+			'*position': 'relative',
+			'*left': '-1.2em'
 		}
 	}, {
 		selector: '.h5debug .debug-controller .targetlist .target-name',
@@ -217,12 +207,12 @@
 	}, {
 		selector: '.h5debug .debug-controller .targetlist .target-name.selected',
 		rule: {
-			backgroundColor: 'rgba(170,237,255,1)!important'
+			background: 'rgb(170,237,255)!important'
 		}
 	}, {
 		selector: '.h5debug .debug-controller .targetlist .target-name:hover',
 		rule: {
-			backgroundColor: 'rgba(170,237,255,0.4)'
+			background: 'rgb(220,247,254)'
 		}
 	},
 
@@ -232,12 +222,23 @@
 	{
 		selector: '.h5debug .debug-controller .eventHandler ul',
 		rule: {
-			listStyle: 'none'
+			listStyle: 'none',
+			margin: 0
 		}
 	}, {
 		selector: '.h5debug .debug-controller .eventHandler li.selected',
 		rule: {
-			backgroundColor: 'rgba(128,255,198,0.4)'
+			background: 'rgb(203,254,231)'
+		}
+	},
+	/*
+	 * メソッドリスト
+	 */
+	{
+		selector: '.h5debug .debug-controller .method ul',
+		rule: {
+			listStyle: 'none',
+			margin: 0
 		}
 	},
 	/*
@@ -257,13 +258,18 @@
 			wordWrap: 'break-word',
 			whiteSpace: 'pre',
 			whiteSpace: 'pre-wrap',
-			backgroundColor: 'rgba(245,245,245,0.5)',
-			border: '1px solid rgba(0,0,0,0.15)',
+			background: 'rgb(250,250,250)',
+			border: '1px solid rgb(213,213,213)',
 			'-webkit-border-radius': '4px',
 			'-moz-border-radius': '4px',
 			borderRadius: '4px',
 			fontFamily: 'Monaco,Menlo,Consolas,"Courier New",monospace',
 			fontSize: '12px'
+		}
+	}, {
+		selector: '.h5debug .selected pre',
+		rule: {
+			backgroundColor: 'rgb(226,252,240)'
 		}
 	}, {
 		selector: '.h5debug .debug-controller .detail',
@@ -285,12 +291,19 @@
 		rule: {
 			float: 'left',
 			height: '100%',
-			width: '350px',
+			maxWidth: '350px',
 			border: '1px solid #20B5FF',
 			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
 			'-ms-box-sizing': 'border-box',
-			'-o-box-sizing': 'border-box'
+			'-o-box-sizing': 'border-box',
+			// IE7用
+			'*position': 'absolute',
+			'*height': 'auto',
+			'*top': 0,
+			'*left': 0,
+			'*bottom': 0,
+			'*width': '350px'
 		}
 	}, {
 		selector: '.h5debug .right',
@@ -301,7 +314,15 @@
 			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
 			'-ms-box-sizing': 'border-box',
-			'-o-box-sizing': 'border-box'
+			'-o-box-sizing': 'border-box',
+			// IE7用
+			'*position': 'absolute',
+			'*height': 'auto',
+			'*width': 'auto',
+			'*top': 0,
+			'*left': '350px',
+			'*right': 0,
+			'*bottom': 0
 		}
 	}, {
 		selector: '.h5debug .eventHandler .menu',
@@ -358,7 +379,17 @@
 			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
 			'-ms-box-sizing': 'border-box',
-			'-o-box-sizing': 'border-box'
+			'-o-box-sizing': 'border-box',
+			// IE7用
+			'*position': 'absolute',
+			'*height': 'auto',
+			'*top': '26px',
+			'*left': 0,
+			'*bottom': 0,
+			'*right': '20px',
+			'*paddingBottom': 0,
+			'*overflow-y': 'auto',
+			'*overflow-x': 'hidden'
 		}
 	}, {
 		selector: '.h5debug .tab-content>*',
@@ -381,15 +412,15 @@
 	}];
 
 	var SPECIAL_H5DEBUG_STYLE = {
-//		IE: [{
-//			// スタイルの調整(IE用)
-//			// IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
-//			// その分を調整する。
-//			selector: '.h5debug .tab-content .tab-content',
-//			rule: {
-////				paddingBottom: '60px'
-//			}
-//		}]
+	//		IE: [{
+	//			// スタイルの調整(IE用)
+	//			// IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
+	//			// その分を調整する。
+	//			selector: '.h5debug .tab-content .tab-content',
+	//			rule: {
+	////				paddingBottom: '60px'
+	//			}
+	//		}]
 	};
 	/**
 	 * デバッグ対象になるページ側のスタイル
@@ -407,25 +438,32 @@
 	}, {
 		selector: '.h5debug-overlay.root',
 		rule: {
-			backgroundColor: 'rgba(64, 214, 255,0.4)',
-			border: '5px solid rgba(64, 214, 255, 1)'
+			background: 'rgb(64, 214, 255)',
+			opacity: '0.4',
+			filter: 'alpha(opacity=40)',
+			border: '5px solid rgb(64, 214, 255)'
 		}
 	}, {
 		selector: '.h5debug-overlay.child',
 		rule: {
-			backgroundColor: 'rgba(170,237,255,0.4)',
-			border: '5px dashed rgba(170, 237, 255, 1)'
+			background: 'rgb(170,237,255)',
+			opacity: '0.4',
+			filter: 'alpha(opacity=40)',
+			border: '5px dashed rgb(170, 237, 255)'
 		}
 	}, {
 		selector: '.h5debug-overlay.event-target',
 		rule: {
-			backgroundColor: 'rgba(128,255,198,0.3)',
-			border: '5px solid rgba(128,255,198,1)'
+			background: 'rgb(128,255,198)',
+			opacity: '0.3',
+			filter: 'alpha(opacity=30)',
+			border: '5px solid rgb(128,255,198)'
 		}
 	}, {
 		selector: '.h5debug-overlay.borderOnly',
 		rule: {
-			backgroundColor: 'transparent!important'
+			backgroundColor: 'transparent!important',
+			opacity: 1
 		}
 	}];
 
@@ -716,14 +754,13 @@
 	}
 
 	/**
-	 * h5.debug.jsが設置されているフォルダを取得
-	 * (古いIEのためのblankページを取得するために必要)
+	 * h5.debug.jsが設置されているフォルダを取得 (古いIEのためのblankページを取得するために必要)
 	 */
-	function getThiScriptPath(){
+	function getThiScriptPath() {
 		var ret = '';
-		$('script').each(function(){
+		$('script').each(function() {
 			var match = this.src.match(/(^|.*\/)h5\.debug\.js$/);
-			if(match){
+			if (match) {
 				ret = match[1];
 				return false;
 			}
@@ -744,7 +781,8 @@
 			// IE9の場合だけ'about:blank'を使うようにしている
 			// IE7,8の場合は、about:blankでもnullや空文字でも、Docmodeがquirksになる
 			// そのため、IE7,8はDocmode指定済みの空のhtmlを開く
-			var url = h5.env.ua.isIE ? (h5.env.ua.browserVersion >= 9? 'about:blank': getThiScriptPath() + OLD_IE_BLANK_URL) : null;
+			var url = h5.env.ua.isIE ? (h5.env.ua.browserVersion >= 9 ? 'about:blank'
+					: getThiScriptPath() + OLD_IE_BLANK_URL) : null;
 			w = window.open(url, '1',
 					'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
 			if (w._h5debug) {
