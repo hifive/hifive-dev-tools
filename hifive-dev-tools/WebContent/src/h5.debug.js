@@ -1983,6 +1983,9 @@
 			// innerHTMLを更新(html()メソッドが重いので、innerHTMLでやっている)
 			var html = createLogHTML(logArray, this._condition);
 			var logList = this.$find('.operation-log-list')[0];
+			if (!logList) {
+				return;
+			}
 			logList.innerHTML = html;
 
 			// 元々一番下までスクロールされていたら、一番下までスクロールする
