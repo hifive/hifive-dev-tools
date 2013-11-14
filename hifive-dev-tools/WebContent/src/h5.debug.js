@@ -15,8 +15,8 @@
 	 * window.openで開く場合はtrue、ページ上に表示するならfalse
 	 */
 	var useWindowOpen = h5.env.ua.isDesktop;
-	// useWindowOpen = true;
-	//		 useWindowOpen = false;
+	//	useWindowOpen = true;
+	//	useWindowOpen = false;
 
 	// =========================================================================
 	//
@@ -25,6 +25,10 @@
 	// =========================================================================
 	var OLD_IE_BLANK_URL = 'blankForOldIE.html';
 	var LOG_INDENT_WIDTH = 10;
+	// ログ出力の遅延時間(ms)
+	var LOG_DELAY = 100;
+	// ログ出力の最大遅延時間(ms)
+	var MAX_LOG_DELAY = 500;
 
 	var LIFECYCLE_METHODS = ['__construct', '__init', '__ready', '__unbind', '__dispose'];
 
@@ -576,12 +580,14 @@
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '</div>'
-							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"><li data-h5-bind="class:cls">'
-							+ '<span data-h5-bind="time" class="time"></span>'
-							+ '<span data-h5-bind="text:tag;style(margin-left):indentWidth" class="tag"></span>'
-							+ '<span data-h5-bind="promiseState" class="promiseState"></span>'
-							+ '<span class="message" data-h5-bind="text:message; class:cls"></span>'
-							+ '</li></ul>');
+							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"></ul>');
+
+	// 動作ログのli
+	view.register('operation-log-list-part', '<li class=[%= cls %]>'
+			+ '<span class="time">[%= time %]</span>'
+			+ '<span style="margin-left:[%= indentWidth %]" class="tag">[%= tag %]</span>'
+			+ '<span class="promiseState">[%= promiseState %]</span>'
+			+ '<span class="message [%= cls %]">[%= message %]</span></li>');
 
 
 	// オーバレイ
@@ -952,7 +958,7 @@
 		var h = formatDigit(date.getHours(), 2);
 		var m = formatDigit(date.getMinutes(), 2);
 		var s = formatDigit(date.getSeconds(), 2);
-		var ms = formatDigit(date.getMilliseconds(), 4);
+		var ms = formatDigit(date.getMilliseconds(), 3);
 		return h5.u.str.format('{0}:{1}:{2}.{3}', h, m, s, ms);
 	}
 	/**
@@ -973,34 +979,62 @@
 	}
 
 	/**
+	 * ログメッセージHTMLを作成
+	 */
+	function createLogHTML(logArray, filter) {
+		var reg = filter && filter.filterStr && getRegex(filter.filterStr);
+		var hideCls = filter && filter.hideCls;
+
+		var html = '';
+		// TODO view.getが重いので、文字列を直接操作する
+		// (view.get, str.formatを1000件回してIE10で20msくらい。ただの文字列結合なら10msくらい)
+
+		for ( var i = 0, l = logArray.length; i < l; i++) {
+			//			var part = view.get('operation-log-list-part', logArray.get(i));
+			var logObj = logArray.get(i);
+			//			h5.u.str.format(operationLogListPart, logObj.cls, logObj.time,
+			//					logObj.indentWidth, logObj.tag, logObj.promiseState, logObj.message);
+			var part = '<li class=' + logObj.cls + '>' + '<span class="time">' + logObj.time
+					+ '</span>' + '<span style="margin-left:' + logObj.indentWidth
+					+ 'px" class="tag">' + logObj.tag + '</span>' + '<span class="promiseState">'
+					+ logObj.promiseState + '</span>' + '<span class="message ' + logObj.cls + '">'
+					+ logObj.message + '</span></li>';
+			// フィルタにマッチしているか
+			if (reg && $('.message').text().match(reg)) {
+				html += $(part).css('display', 'none')[0].outerHTML;
+				continue;
+			}
+
+			// クラスのフィルタにマッチしているか
+			if (hideCls) {
+				for ( var cls in filter.hideCls) {
+					if (filter.hideCls[cls]) {
+						part = $(part).css('display', 'none')[0].outerHTML;
+						break;
+					}
+				}
+			}
+
+			html += part;
+		}
+		return html;
+	}
+
+	/**
 	 * 第2引数のログメッセージオブジェクトを第1引数のObservableArrayに追加する。 最大数を超えないようにする
 	 */
 	function addLogObject(logArray, logObj) {
+		// 追加
 		logArray.push(logObj);
-		// 一番下までスクロールされているか
-		var scroll = false;
-		//		// 余裕を持たせて判定
-		var target = null;
-		if (logArray._viewBindTarget && $(logArray._viewBindTarget)[0].style.display !== 'none') {
-			target = $(logArray._viewBindTarget).find('.operation-log-list')[0];
-		}
-		if (target && target.scrollTop > target.scrollHeight - target.clientHeight - 30) {
-			scroll = true;
-		}
-
+		// 最大保存件数を超えていたらshift
 		if (logArray.length > h5debugSettings.get('LogMaxNum')) {
 			logArray.shift();
-			if (target) {
-				// shift()で上に一つつづずれた分だけ、上にスクロールする
-				target.scrollTop -= $(target).find('.operation-log>li:last').outerHeight();
-			}
 		}
-		// 元々一番下までスクロールされていたら、追加後に一番下までスクロールする
-		if (scroll) {
-			target.scrollTop = target.scrollHeight - target.clientHeight;
-		}
-		// ターゲットに対してログが追加されたことをtriggerして通知
-		$(target).trigger('logAppended');
+		// dispatchEventでログがアップデートされたことを通知
+		// addLogObjectが呼ばれた時だけ更新したいので、カスタムイベントを使って通知している
+		logArray.dispatchEvent({
+			type: 'logUpdate'
+		});
 	}
 
 	/**
@@ -1037,15 +1071,6 @@
 		return ary;
 	}
 
-	/**
-	 * ログをバインドする。ログ配列にバインド先の要素を持たせる。
-	 */
-	function bindLogArray(view, target, logAry) {
-		view.bind(target, {
-			logs: logAry
-		});
-		logAry._viewBindTarget = $(target)[0];
-	}
 	// =========================================================================
 	//
 	// Controller
@@ -1642,141 +1667,141 @@
 			});
 		}
 	};
-
-	// TODO コントローラデバッグコントローラと共通化
-	/**
-	 * ロジックのデバッグコントローラ
-	 *
-	 * @name h5.debug.developer.LogicnDebugController
-	 */
-	var logicDebugController = {
-
-		/**
-		 * ロジックリスト上のロジックをクリック
-		 *
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 * @param context
-		 * @param $el
-		 */
-		'.logiclist .logic-name click': function(context, $el) {
-			if ($el.hasClass('selected')) {
-				// 既に選択済み
-				return;
-			}
-			var logic = this.getLogicFromElem($el);
-			this.$find('.logic-name').removeClass('selected');
-			$el.addClass('selected');
-			this.selectedLogic = logic;
-
-			this.setDetail(logic);
-		},
-		/**
-		 * オープン時のイベント
-		 *
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 */
-		'{.h5debug} open': function() {
-			this.refreshLogicList();
-		},
-		/**
-		 * 左側の何もない箇所がクリックされたらコントローラの選択なしにする
-		 *
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 */
-		'{.h5debug} leftclick': function() {
-			this.unfocus();
-		},
-
-		/**
-		 * エレメントにロジックを持たせる
-		 *
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 * @param el
-		 * @param logic
-		 */
-		setLogicToElem: function(el, logic) {
-			$(el).data('h5debug-logic', logic);
-		},
-		/**
-		 * エレメントに覚えさせたロジックを取得する
-		 *
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 * @param el
-		 * @returns {Logic}
-		 */
-		getLogicFromElem: function(el) {
-			return $(el).data('h5debug-logic');
-		},
-		/**
-		 * 詳細画面(右側画面)をロジックを基に作成。nullが渡されたら空白にする
-		 *
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 * @param controller
-		 */
-		setDetail: function(logic) {
-			if (logic == null) {
-				this.$find('.detail .tab-content>*').html('');
-				return;
-			}
-
-			// 詳細ビューに表示されているコントローラをアンバインド
-			var controllers = h5.core.controllerManager.getControllers(this.$find('.detail'), {
-				deep: true
-			});
-			for ( var i = 0, l = controllers.length; i < l; i++) {
-				controllers[i].dispose();
-			}
-
-			// メソッドリスト
-			// public, privateの順でソート
-			// lifecycleはライフサイクルの実行順、public、privateは辞書順
-			var logicDef = logic.__logicContext.logicDef;
-			var privateMethods = [];
-			var publicMethods = [];
-			for ( var p in logicDef) {
-				if ($.isFunction(logicDef[p])) {
-					// メソッド
-					// lifecycleかpublicかprivateかを判定する
-					if (h5.u.str.startsWith(p, '_')) {
-						privateMethods.push(p);
-					} else {
-						publicMethods.push(p);
-					}
-				}
-			}
-			// ソート
-			privateMethods.sort();
-			publicMethods.sort();
-			var methods = publicMethods.concat(privateMethods);
-			view.update(this.$find('.detail .tab-content .method'), 'method-list', {
-				defObj: logicDef,
-				methods: methods,
-				_funcToStr: funcToStr
-			});
-
-			// ログ
-			var logAry = logic._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.operation-log'), operationLogController, {
-				logArray: logAry
-			});
-
-			// その他情報
-			view.update(this.$find('.detail .tab-content .otherInfo'), 'logic-otherInfo', {
-				defObj: logicDef,
-				instanceName: logic._h5debugContext.instanceName
-			});
-		},
-
-		/**
-		 * ロジックの選択を解除
-		 *
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 */
-		unfocus: function() {
-			this.setDetail(null);
-			this.$find('.logic-name').removeClass('selected');
-		}
-	};
+	//
+	//	// TODO コントローラデバッグコントローラと共通化
+	//	/**
+	//	 * ロジックのデバッグコントローラ
+	//	 *
+	//	 * @name h5.debug.developer.LogicnDebugController
+	//	 */
+	//	var logicDebugController = {
+	//
+	//		/**
+	//		 * ロジックリスト上のロジックをクリック
+	//		 *
+	//		 * @memberOf h5.debug.developer.LogicDebugController
+	//		 * @param context
+	//		 * @param $el
+	//		 */
+	//		'.logiclist .logic-name click': function(context, $el) {
+	//			if ($el.hasClass('selected')) {
+	//				// 既に選択済み
+	//				return;
+	//			}
+	//			var logic = this.getLogicFromElem($el);
+	//			this.$find('.logic-name').removeClass('selected');
+	//			$el.addClass('selected');
+	//			this.selectedLogic = logic;
+	//
+	//			this.setDetail(logic);
+	//		},
+	//		/**
+	//		 * オープン時のイベント
+	//		 *
+	//		 * @memberOf h5.debug.developer.LogicDebugController
+	//		 */
+	//		'{.h5debug} open': function() {
+	//			this.refreshLogicList();
+	//		},
+	//		/**
+	//		 * 左側の何もない箇所がクリックされたらコントローラの選択なしにする
+	//		 *
+	//		 * @memberOf h5.debug.developer.LogicDebugController
+	//		 */
+	//		'{.h5debug} leftclick': function() {
+	//			this.unfocus();
+	//		},
+	//
+	//		/**
+	//		 * エレメントにロジックを持たせる
+	//		 *
+	//		 * @memberOf h5.debug.developer.LogicDebugController
+	//		 * @param el
+	//		 * @param logic
+	//		 */
+	//		setLogicToElem: function(el, logic) {
+	//			$(el).data('h5debug-logic', logic);
+	//		},
+	//		/**
+	//		 * エレメントに覚えさせたロジックを取得する
+	//		 *
+	//		 * @memberOf h5.debug.developer.LogicDebugController
+	//		 * @param el
+	//		 * @returns {Logic}
+	//		 */
+	//		getLogicFromElem: function(el) {
+	//			return $(el).data('h5debug-logic');
+	//		},
+	//		/**
+	//		 * 詳細画面(右側画面)をロジックを基に作成。nullが渡されたら空白にする
+	//		 *
+	//		 * @memberOf h5.debug.developer.LogicDebugController
+	//		 * @param controller
+	//		 */
+	//		setDetail: function(logic) {
+	//			if (logic == null) {
+	//				this.$find('.detail .tab-content>*').html('');
+	//				return;
+	//			}
+	//
+	//			// 詳細ビューに表示されているコントローラをアンバインド
+	//			var controllers = h5.core.controllerManager.getControllers(this.$find('.detail'), {
+	//				deep: true
+	//			});
+	//			for ( var i = 0, l = controllers.length; i < l; i++) {
+	//				controllers[i].dispose();
+	//			}
+	//
+	//			// メソッドリスト
+	//			// public, privateの順でソート
+	//			// lifecycleはライフサイクルの実行順、public、privateは辞書順
+	//			var logicDef = logic.__logicContext.logicDef;
+	//			var privateMethods = [];
+	//			var publicMethods = [];
+	//			for ( var p in logicDef) {
+	//				if ($.isFunction(logicDef[p])) {
+	//					// メソッド
+	//					// lifecycleかpublicかprivateかを判定する
+	//					if (h5.u.str.startsWith(p, '_')) {
+	//						privateMethods.push(p);
+	//					} else {
+	//						publicMethods.push(p);
+	//					}
+	//				}
+	//			}
+	//			// ソート
+	//			privateMethods.sort();
+	//			publicMethods.sort();
+	//			var methods = publicMethods.concat(privateMethods);
+	//			view.update(this.$find('.detail .tab-content .method'), 'method-list', {
+	//				defObj: logicDef,
+	//				methods: methods,
+	//				_funcToStr: funcToStr
+	//			});
+	//
+	//			// ログ
+	//			var logAry = logic._h5debugContext.debugLog;
+	//			h5.core.controller(this.$find('.operation-log'), operationLogController, {
+	//				logArray: logAry
+	//			});
+	//
+	//			// その他情報
+	//			view.update(this.$find('.detail .tab-content .otherInfo'), 'logic-otherInfo', {
+	//				defObj: logicDef,
+	//				instanceName: logic._h5debugContext.instanceName
+	//			});
+	//		},
+	//
+	//		/**
+	//		 * ロジックの選択を解除
+	//		 *
+	//		 * @memberOf h5.debug.developer.LogicDebugController
+	//		 */
+	//		unfocus: function() {
+	//			this.setDetail(null);
+	//			this.$find('.logic-name').removeClass('selected');
+	//		}
+	//	};
 
 	/**
 	 * デバッガの設定を行うコントローラ
@@ -1814,7 +1839,7 @@
 	};
 
 	/**
-	 * 全体の動作ログコントローラ<br>
+	 * ログコントローラ<br>
 	 *
 	 * @name h5.debug-developer.OperationLogController
 	 */
@@ -1833,12 +1858,41 @@
 			exclude: false,
 			hideCls: {}
 		},
+		/**
+		 * ログリストが一番下までスクロールされているかどうか
+		 *
+		 * @memberOf h5.debug.developer.OperationLogContorller
+		 */
+		_isScrollLast: false,
+
+		/**
+		 * ログ配列
+		 *
+		 * @memberOf h5.debug.developer.OperationLogContorller
+		 */
+		_logArray: null,
+
+		/**
+		 * @memberOf h5.debug.developer.OperationLogController
+		 * @param context.evArg.logArray logArray
+		 */
 		__ready: function(context) {
 			view.update(this.rootElement, 'operation-log');
-			var logArray = context.args && context.args.logArray;
-			if (logArray) {
-				bindLogArray(view, this.rootElement, logArray);
-				logArray._viewBindTarget = this.rootElement;
+			var $logBindTarget = this.$find('.operation-log-list');
+			// scrollイベントはバブリングしないので、要素追加後にbindでイベントハンドラを追加
+			$logBindTarget.bind('scroll', this.own(function(ev) {
+				var target = ev.target;
+				// 一番下までスクロールされているか。30pxの余裕を持たせて判定
+				this._isScrollLast = target.scrollTop > target.scrollHeight - target.clientHeight
+						- 30;
+			}));
+
+			this._logArray = context.args.logArray;
+			this._logArray._viewBindTarget = $logBindTarget[0];
+			// logArrayにハンドラを登録して、ログの更新があった時にdispatchEventしてもらう
+			this._logArray.addEventListener('logUpdate', this.own(this._update));
+			if (this._logArray.length) {
+				this._updateView();
 			}
 		},
 		'.fixedControlls input[type="checkbox"] change': function(context, $el) {
@@ -1886,9 +1940,64 @@
 					.removeAttr('disabled');
 			this.$find('.filter-clear').attr('disabled', 'disabled');
 		},
-		'{rootElement} logAppended': function() {
-			// 更新時は最後のliについてだけやればいい
-			this.refresh(this.$find('li:last'));
+		_update: function() {
+			if (!this.__controllerContext) {
+				// コントローラがdisposeされていたら何もしない(非同期で呼ばれるメソッドなのであり得る)
+				return;
+			}
+			// ログ出力箇所が表示されていなければ(タブがactiveになっていなければ)なにもしない
+			if (!$(this.rootElement).hasClass('active')) {
+				return;
+			}
+
+			// ログを更新する。
+			// 前のlogUpdateがLOG_DELAYミリ秒以内であれば、前のログも合わせてLOG_DELAYミリ秒後に表示する
+			// LOG_DELAYミリ秒の間隔をあけずに立て続けにlogUpdateが呼ばれた場合はログは出ない。
+			// LOG_DELAYミリ秒の間にlogUpdateが呼ばれなかった時に今まで溜まっていたログを出力する。
+			// ただし、MAX_LOG_DELAY経ったら、logUpdateの間隔に関わらずログを出力する
+
+			// LOG_DELAYミリ秒後に出力するタイマーをセットする。
+			// すでにタイマーがセット済みなら何もしない(セット済みのタイマーで出力する)
+			var logArray = this._logArray;
+			logArray._logUpdatedInMaxDelay = true;
+			if (logArray._logDelayTimer) {
+				clearTimeout(logArray._logDelayTimer);
+			}
+			logArray._logDelayTimer = setTimeout(this.own(function() {
+				this._updateView();
+			}), LOG_DELAY);
+		},
+		_updateView: function() {
+			// コントローラがdisposeされていたら何もしない(非同期で呼ばれるメソッドなのであり得る)
+			if (!this.__controllerContext) {
+				// コントローラがdisposeされていたら何もしない(非同期で呼ばれるメソッドなのであり得る)
+				return;
+			}
+			var logArray = this._logArray;
+			clearTimeout(logArray._logDelayTimer);
+			clearTimeout(logArray._logMaxDelayTimer);
+			logArray._logDelayTimer = null;
+			logArray._logMaxDelayTimer = null;
+
+			// ポップアップウィンドウのDOM生成がIEだと重いのでinnerHTMLでやっている。
+			// innerHTMLを更新(html()メソッドが重いので、innerHTMLでやっている)
+			var html = createLogHTML(logArray, this._condition);
+			var logList = this.$find('.operation-log-list')[0];
+			logList.innerHTML = html;
+
+			// 元々一番下までスクロールされていたら、一番下までスクロールする
+			if (this._isScrollLast) {
+				logList.scrollTop = logList.scrollHeight - logList.clientHeight;
+			}
+
+			// MAX_LOG_DELAYのタイマーをセットする
+			logArray._logUpdatedInMaxDelay = false;
+			logArray._logMaxDelayTimer = setTimeout(this.own(function() {
+				if (logArray._logUpdatedInMaxDelay) {
+					this._updateView();
+
+				}
+			}), MAX_LOG_DELAY);
 		},
 		refresh: function($li) {
 			$li = $li || this.$find('li');
@@ -2011,13 +2120,6 @@
 			this.__meta._operationLogController.rootElement = this.$find('.operation-log');
 			this.__meta._settingsController.rootElement = this.$find('.settings');
 		},
-		/**
-		 * @memberOf h5.debug.developer.DebugController
-		 */
-		__ready: function() {
-			bindLogArray(this.view, this.$find('.operation-log.whole'), wholeOperationLogs);
-			wholeOperationLogs._viewBindTarget = this.$find('.operation-log.whole')[0];
-		},
 
 		/**
 		 * 何もない箇所をクリック
@@ -2082,8 +2184,8 @@
 		target: '*',
 		interceptors: h5.u.createInterceptor(function(invocation, data) {
 			var target = invocation.target;
-			if (h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
-				// デバッグコントローラなら何もしない
+			if (!target.__name || h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
+				// __nameがない(===disposeされた)またはデバッグコントローラなら何もしない
 				return invocation.proceed();
 			}
 
@@ -2152,8 +2254,8 @@
 			return invocation.proceed();
 		}, function(invocation, data) {
 			var target = invocation.target;
-			if (h5.u.str.endsWith(target.__name, 'Controller') && !target.__controllerContext) {
-				// コントローラでかつメソッド内でdisposeされた場合は何もしない
+			if (!target.__name) {
+				// target.__nameがない(===disposeされた)場合は何もしない
 				return;
 			}
 			if (h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
@@ -2181,6 +2283,8 @@
 				}
 			}
 
+			var time = timeFormat(new Date());
+
 			// BEGINのログを出したターゲット(コントローラまたはロジック)にログを出す
 			if (data.beginLog) {
 				for ( var i = 0, l = data.beginLog.length; i < l; i++) {
@@ -2188,6 +2292,7 @@
 					var logObj = $.extend({}, data.beginLog[i].logObj);
 					logObj.tag = tag;
 					logObj.promiseState = promiseState;
+					logObj.time = time;
 					// プロミスならインデントを現在のインデント箇所で表示
 					logObj.indentWidth = isPromise ? 0 : logObj.indentWidth;
 					addLogObject(t._h5debugContext.debugLog, logObj);
@@ -2199,6 +2304,7 @@
 			var wholeLog = $.extend({}, data.wholeLog);
 			wholeLog.tag = tag;
 			wholeLog.promiseState = promiseState;
+			wholeLog.time = time;
 			wholeLog.indentWidth = isPromise ? 0 : wholeLog.indentWidth;
 			addLogObject(wholeOperationLogs, wholeLog);
 			wholeOperationLogsIndentLevel -= 1;
@@ -2250,7 +2356,9 @@
 	$(function() {
 		debugWindow = openDebugWindow();
 		h5.core.controller($(debugWindow.document).find('.h5debug'), debugController, {
-			win: debugWindow
+			win: debugWindow,
+			// 全体の動作ログ
+			logArray: wholeOperationLogs
 		});
 	});
 })();
