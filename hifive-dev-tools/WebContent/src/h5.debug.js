@@ -304,6 +304,16 @@
 			listStyle: 'none',
 			margin: 0
 		}
+	}, {
+		selector: '.h5debug .method-list .nocalled',
+		rule: {
+			background: '#6EB7DB'
+		}
+	}, {
+		selector: '.h5debug .method-list .called',
+		rule: {
+			background: '#CBE6F3'
+		}
 	},
 	/*
 	 * その他情報
@@ -314,7 +324,18 @@
 			margin: 0
 		}
 	}, {
-		selector: '.h5debug pre',
+		selector: '.h5debug .method-list .count',
+		rule: {
+			float: 'right',
+			fontWeight: 'bold',
+			fontSize: '30px',
+			position: 'relative',
+			top: '16px',
+			right: '10px',
+			color: '#888'
+		}
+	}, {
+		selector: '.h5debug .method-list pre',
 		rule: {
 			margin: '0 0 10px',
 			padding: '4px',
@@ -585,16 +606,17 @@
 	view
 			.register(
 					'eventHandler-list',
-					'<ul class="liststyle-none no-padding">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
-							+ '<li><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span><span class="key">[%= p %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
+					'<ul class="liststyle-none no-padding method-list">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
+							+ '<li class="[%= (countObj[p]?"called":"nocalled") %]"><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span>'
+							+ '<span class="key">[%= p %]</span><span class="count">[%= countObj[p] %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
 							+ '[% } %]</ul>');
 
 	// メソッドリスト(コントローラ、ロジック、共通)
 	view
 			.register(
 					'method-list',
-					'<ul class="liststyle-none no-padding">[% for(var i = 0, l = methods.length; i < l; i++){ var p = methods[i];%]'
-							+ '<li><span class="name">[%= p %]</span><pre class="value">[%= _funcToStr(defObj[p]) %]</pre></li>'
+					'<ul class="liststyle-none no-padding method-list">[% for(var i = 0, l = methods.length; i < l; i++){ var p = methods[i];%]'
+							+ '<li class="[%= (countObj[p]?"called":"nocalled") %]"><span class="name">[%= p %]</span><span class="count">[%= countObj[p] %]</span><pre class="value">[%= _funcToStr(defObj[p]) %]</pre></li>'
 							+ '[% } %]</ul>');
 	// その他情報
 	view
@@ -1445,17 +1467,18 @@
 			publicMethods.sort();
 			var methods = lifecycleMethods.concat(publicMethods).concat(privateMethods);
 
-			view.update(this.$find('.controller-detail .tab-content .eventHandler'),
-					'eventHandler-list', {
-						controller: controller.__controllerContext.controllerDef,
-						eventHandlers: eventHandlers,
-						_funcToStr: funcToStr
-					});
+			this._updateEventHandlerView({
+				controller: controller.__controllerContext.controllerDef,
+				eventHandlers: eventHandlers,
+				_funcToStr: funcToStr,
+				countObj: controller._h5debugContext.methodCount
+			});
 
-			view.update(this.$find('.controller-detail .tab-content .method'), 'method-list', {
+			this._updateMethodView({
 				defObj: controller.__controllerContext.controllerDef,
 				methods: methods,
-				_funcToStr: funcToStr
+				_funcToStr: funcToStr,
+				countObj: controller._h5debugContext.methodCount
 			});
 
 			// ログ
@@ -1477,6 +1500,22 @@
 						childControllerNames: childControllerNames,
 						_formatDOM: formatDOM
 					});
+		},
+		_updateEventHandlerView: function(obj) {
+			view.update(this.$find('.controller-detail .tab-content .eventHandler'),
+					'eventHandler-list', obj);
+		},
+		_updateMethodView: function(obj) {
+			view.update(this.$find('.controller-detail .tab-content .method'), 'method-list', obj);
+		},
+		/**
+		 * 表示中のタブが押されたら更新する
+		 */
+		'.detail>.nav-tabs>.active click': function(context, $el) {
+			if ($el.data('tab-page') === 'method' || $el.data('tab-page') === 'eventHandler') {
+				var target = this.getTargetFromElem(this.$find('.target-name.selected'));
+				this.setDetail(target);
+			}
 		},
 
 		/**
@@ -1513,7 +1552,8 @@
 			view.update(this.$find('.logic-detail .tab-content .method'), 'method-list', {
 				defObj: logic.__logicContext.logicDef,
 				methods: methods,
-				_funcToStr: funcToStr
+				_funcToStr: funcToStr,
+				countObj: logic._h5debugContext.methodCount
 			});
 
 			// ログ
@@ -1615,6 +1655,14 @@
 			// ログ用のObservableArrayを持たせる
 			if (!target._h5debugContext.debugLog) {
 				target._h5debugContext.debugLog = createLogArray();
+			}
+
+			// メソッド・イベントハンドラの実行回数を保持するオブジェクトを持たせる
+			target._h5debugContext.methodCount = {};
+			for ( var p in target) {
+				if ($.isFunction(target[p])) {
+					target._h5debugContext.methodCount[p] = 0;
+				}
 			}
 
 			if (target.__controllerContext) {
@@ -2412,14 +2460,23 @@
 				return invocation.proceed();
 			}
 
+			// 関数名を取得
+			var fName = invocation.funcName;
+
 			// ControllerDebugControllerまたはLogicDebugControllerがバインドされる前にバインドされたコントローラの場合
 			// _h5debugContextがないので追加
 			target._h5debugContext = target._h5debugContext || {};
 			// ログのインデントレベルを設定
 			target._h5debugContext.indentLevel = target._h5debugContext.indentLevel || 0;
+			// メソッドの呼び出し回数をカウント
+			if (!target._h5debugContext.methodCount) {
+				var methodCount = {};
+				methodCount[fName] = 0;
+				target._h5debugContext.methodCount = methodCount;
+			}
+			target._h5debugContext.methodCount[fName]++;
+
 			var indentLevel = target._h5debugContext.indentLevel;
-			// 関数名を取得して、種類を判別
-			var fName = invocation.funcName;
 			var cls = '';
 			if (fName.indexOf(' ') !== -1 && target.__controllerContext) {
 				// コントローラかつ空白を含むメソッドの場合はイベントハンドラ
