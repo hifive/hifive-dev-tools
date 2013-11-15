@@ -217,6 +217,12 @@
 		rule: {
 			color: '#ff0000'
 		}
+	}, {
+		selector: '.h5debug .console-log p.EXEPTION',
+		rule: {
+			color: '#ff0000',
+			fontWeight: 'bold'
+		}
 	},
 	/*
 	 * カラムレイアウトをコンテンツに持つタブコンテンツのラッパー
@@ -1823,23 +1829,41 @@
 	/**
 	 * デバッガの設定を行うコントローラ
 	 *
-	 * @name h5.debug.developer.SettingController
+	 * @name h5.debug.developer.SettingsController
 	 */
-	var settingController = {
+	var settingsController = {
 		/**
-		 * @memberOf h5.debug.developer.SettingController
+		 * @memberOf h5.debug.developer.SettingsController
 		 */
-		__name: 'h5.debug.developer.SettingController',
+		__name: 'h5.debug.developer.SettingsController',
 
 		/**
-		 * @memberOf h5.debug.developer.SettingController
+		 * @memberOf h5.debug.developer.SettingsController
 		 */
 		__ready: function() {
 			// settingsをバインドする
 			view.bind(this.rootElement, h5debugSettings);
+
+			// -------------------------------------------------
+			// デバッガ設定変更時のイベント
+			// -------------------------------------------------
+			h5debugSettings.addEventListener('change', function(e) {
+				for ( var p in e.props) {
+					var val = e.props[p].newValue;
+					switch (p) {
+					case 'LogMaxNum':
+						for ( var i = 0, l = logArrays.length; i < l; i++) {
+							if (val >= logArrays[i].length) {
+								continue;
+							}
+							logArrays[i].splice(0, logArrays[i].length - val);
+						}
+					}
+				}
+			});
 		},
 		/**
-		 * @memberOf h5.debug.developer.SettingController
+		 * @memberOf h5.debug.developer.SettingsController
 		 */
 		'.set click': function() {
 			var setObj = {};
@@ -2161,8 +2185,26 @@
 		 * @param context
 		 */
 		__ready: function(context) {
-			this.baseController.setCreateLogHTML(this.own(this._createLogHTML));
-			this.baseController.setLogArray(context.args.consoleLogs, this.rootElement);
+			var baseController = this.baseController;
+			baseController.setCreateLogHTML(this.own(this._createLogHTML));
+			var consoleLogs = context.args.consoleLogs;
+			this.baseController.setLogArray(consoleLogs, this.rootElement);
+
+			//--------------------------------------------
+			// window.onerrorで拾った例外も出すようにする
+			//--------------------------------------------
+			$(window).bind('error', function(ev) {
+				var message = ev.originalEvent.message;
+				var file = ev.originalEvent.fileName || '';
+				var lineno = ev.originalEvent.lineno || '';
+
+				consoleLogs.push({
+					levelString: 'EXEPTION',
+					date: new Date(),
+					args: ['{0} {1}:{2}', message, file, lineno]
+				});
+				baseController._updateView();
+			});
 		},
 		_createLogHTML: function(logArray) {
 			var html = '';
@@ -2246,7 +2288,7 @@
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 */
-		_settingsController: settingController,
+		_settingsController: settingsController,
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 */
@@ -2515,25 +2557,6 @@
 			return c;
 		};
 	}
-
-	// -------------------------------------------------
-	// デバッガ設定変更時のイベント
-	// -------------------------------------------------
-	h5debugSettings.addEventListener('change', function(e) {
-		for ( var p in e.props) {
-			var val = e.props[p].newValue;
-			switch (p) {
-			case 'LogMaxNum':
-				for ( var i = 0, l = logArrays.length; i < l; i++) {
-					if (val >= logArrays[i].length) {
-						continue;
-					}
-					logArrays[i].splice(0, logArrays[i].length - val);
-				}
-			}
-		}
-	});
-
 
 	// -------------------------------------------------
 	// コントローラのバインド
