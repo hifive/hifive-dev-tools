@@ -985,6 +985,11 @@
 	 * DOM要素を"div#id.cls1.cls2"の形式の文字列に変換
 	 */
 	function formatDOM(elm) {
+		if (elm === window) {
+			return 'window';
+		} else if (elm.nodeType === 9) {
+			return 'document';
+		}
 		var tagName = elm.tagName;
 		var id = elm.id;
 		var cls = elm.className;
@@ -1358,13 +1363,19 @@
 
 			// 実行メニューの表示
 			var $select = $el.closest('li').find('select.eventTarget').html('');
-			$target.each(function() {
-				var $option = $('<option>');
-				$option.data('h5debug-eventTarget', this);
-				$option.text(formatDOM(this));
-				$select.append($option);
-			});
+			if (!$target.length) {
+				$select.append('<option>該当なし</option>');
+				$select.attr('disabled', 'disabled');
+			} else {
+				$target.each(function() {
+					var $option = $('<option>');
+					$option.data('h5debug-eventTarget', this);
+					$option.text(formatDOM(this));
+					$select.append($option);
+				});
+			}
 		},
+
 		/**
 		 * イベントを実行
 		 */
