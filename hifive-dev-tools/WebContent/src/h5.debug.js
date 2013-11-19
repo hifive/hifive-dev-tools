@@ -290,6 +290,11 @@
 			margin: 0
 		}
 	}, {
+		selector: '.h5debug .debug-controller .eventHandler ul li .key',
+		rule: {
+			lineHeight: '28px'
+		}
+	}, {
 		selector: '.h5debug .debug-controller .eventHandler li.selected',
 		rule: {
 			background: 'rgb(203,254,231)'
