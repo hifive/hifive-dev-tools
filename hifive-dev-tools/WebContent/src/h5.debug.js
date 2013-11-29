@@ -870,6 +870,7 @@
 	 * デバッグウィンドウを開く
 	 */
 	function openDebugWindow() {
+		var dfd = h5.async.deferred();
 		var body = null;
 		var w = null;
 		if (useWindowOpen) {
@@ -881,34 +882,60 @@
 			// そのため、IE7,8はDocmode指定済みの空のhtmlを開く
 			var url = h5.env.ua.isIE ? (h5.env.ua.browserVersion >= 9 ? 'about:blank'
 					: getThiScriptPath() + OLD_IE_BLANK_URL) : null;
-			w = window.open(url, '1',
-					'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
-			if (w._h5debug) {
-				// 既に開いているものがあったら、それを閉じて別のものを開く
-				w.close();
-				return openDebugWindow();
+			if (!w) {
+				// ポップアップがブロックされた場合
+				return dfd.reject();
 			}
-			try {
-				w._h5debug = true;
-			} catch (e) {
-				// IEの場合既に開いているウィンドウがあったら書き込もうとするとエラーになる
-				w.close();
-				return openDebugWindow();
+			function setupWindow() {
+				w = window
+						.open(url, '1',
+								'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
+				if (w._h5debug) {
+					// 既に開いているものがあったら、それを閉じて別のものを開く
+					w.close();
+					return openDebugWindow();
+				}
+				try {
+					w._h5debug = true;
+				} catch (e) {
+					// IEの場合既に開いているウィンドウがあったら書き込もうとするとエラーになる
+					w.close();
+					return openDebugWindow();
+				}
+
+				body = w.document.body;
+				$(body).addClass('h5debug');
+				$(w.document.getElementsByTagName('html')).addClass('h5debugHTML');
+
+				// タイトルの設定
+				w.document.title = 'hifive Developer Tools';
 			}
 
-			body = w.document.body;
-			$(body).addClass('h5debug');
-			$(w.document.getElementsByTagName('html')).addClass('h5debugHTML');
 
-			// タイトルの設定
-			w.document.title = 'hifive Developer Tools';
+			// IE11の場合、非同期でウィンドウが開くことがある
+			// openしたwindowの状態はスクリプトの実行中に変化することがある
+			// (= else節を抜けた瞬間にcompleteになることもあり得る)
+			// ので、イベントハンドラではなくsetIntervalで設定する
+			if (w.document && w.document.readyState === 'complete') {
+				setupWindow();
+				dfd.resolve(w);
+			} else {
+				var timer = setInterval(function() {
+					if (w.document && w.document.readyState === 'complete') {
+						clearInterval(timer);
+						setupWindow();
+						dfd.resolve(w);
+					}
+				}, 100);
+			}
 		} else {
 			// モバイル用の擬似ウィンドウを開く
 			w = window;
 			body = document.body;
 			view.append(body, 'wrapper');
+			dfd.resolve(w);
 		}
-		return w;
+		return dfd.promise();
 	}
 
 	/**
@@ -2635,14 +2662,18 @@
 	// コントローラのバインド
 	// -------------------------------------------------
 	$(function() {
-		debugWindow = openDebugWindow();
-		h5.core.controller($(debugWindow.document).find('.h5debug'), debugController, {
-			win: debugWindow,
-			// 全体の動作ログ
-			operationLogs: wholeOperationLogs,
-			// コンソールログ
-			consoleLogs: consoleLogs
+		openDebugWindow().done(function(debugWindow){
+			h5.core.controller($(debugWindow.document).find('.h5debug'), debugController, {
+				win: debugWindow,
+				// 全体の動作ログ
+				operationLogs: wholeOperationLogs,
+				// コンソールログ
+				consoleLogs: consoleLogs
 
+			});
+		}).fail(function(){
+			// ポップアップブロックされると失敗する
+			// 何もしない
 		});
 	});
 })();
