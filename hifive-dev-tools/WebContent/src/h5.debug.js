@@ -882,19 +882,19 @@
 			// そのため、IE7,8はDocmode指定済みの空のhtmlを開く
 			var url = h5.env.ua.isIE ? (h5.env.ua.browserVersion >= 9 ? 'about:blank'
 					: getThiScriptPath() + OLD_IE_BLANK_URL) : null;
+			w = window.open(url, '1',
+					'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
 			if (!w) {
 				// ポップアップがブロックされた場合
-				return dfd.reject();
+				return dfd.reject().promise();
 			}
+			if (w._h5debug) {
+				// 既に開いているものがあったら、それを閉じて別のものを開く
+				w.close();
+				return openDebugWindow();
+			}
+
 			function setupWindow() {
-				w = window
-						.open(url, '1',
-								'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
-				if (w._h5debug) {
-					// 既に開いているものがあったら、それを閉じて別のものを開く
-					w.close();
-					return openDebugWindow();
-				}
 				try {
 					w._h5debug = true;
 				} catch (e) {
@@ -2662,7 +2662,7 @@
 	// コントローラのバインド
 	// -------------------------------------------------
 	$(function() {
-		openDebugWindow().done(function(debugWindow){
+		openDebugWindow().done(function(debugWindow) {
 			h5.core.controller($(debugWindow.document).find('.h5debug'), debugController, {
 				win: debugWindow,
 				// 全体の動作ログ
@@ -2671,9 +2671,10 @@
 				consoleLogs: consoleLogs
 
 			});
-		}).fail(function(){
+		}).fail(function() {
 			// ポップアップブロックされると失敗する
-			// 何もしない
+			// アラートをだして何もしない
+			alert('別ウィンドウのオープンに失敗しました。ポップアップブロックを設定している場合は一時的に解除してください。');
 		});
 	});
 })();
