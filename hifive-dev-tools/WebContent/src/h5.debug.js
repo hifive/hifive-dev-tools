@@ -1387,7 +1387,7 @@
 		selectEventHandler: function($el) {
 			this.$find('.eventHandler li').removeClass('selected');
 			this.removeOverlay();
-			if($el == null){
+			if ($el == null) {
 				return;
 			}
 			$el.addClass('selected');
