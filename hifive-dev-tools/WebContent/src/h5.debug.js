@@ -50,6 +50,9 @@
 
 	var LIFECYCLE_METHODS = ['__construct', '__init', '__ready', '__unbind', '__dispose'];
 
+	// オーバレイのボーダーの幅
+	var OVERLAY_BORDER_WIDTH = 3;
+
 	/**
 	 * デバッグツールのスタイル
 	 */
@@ -511,7 +514,7 @@
 	 * デバッグ対象になるページ側のスタイル
 	 */
 	var H5PAGE_STYLE = [{
-		selector: '.h5debug-overlay',
+		selector: '.h5debug-overlay, .h5debug-overlay *',
 		rule: {
 			position: 'absolute',
 			zIndex: 10000,
@@ -521,34 +524,58 @@
 			'-o-box-sizing': 'border-box'
 		}
 	}, {
-		selector: '.h5debug-overlay.root',
+		selector: '.h5debug-overlay .body',
 		rule: {
-			background: 'rgb(64, 214, 255)',
-			opacity: '0.4',
-			filter: 'alpha(opacity=40)',
-			border: '5px solid rgb(64, 214, 255)'
+			height: '100%',
+			width: '100%',
+			opacity: '0.2',
+			filter: 'alpha(opacity=20)',
+			backgroundColor: 'rgb(64, 214, 255)'
 		}
 	}, {
-		selector: '.h5debug-overlay.child',
+		selector: '.h5debug-overlay.event-target .body',
 		rule: {
-			background: 'rgb(170,237,255)',
-			opacity: '0.4',
-			filter: 'alpha(opacity=40)',
-			border: '5px dashed rgb(170, 237, 255)'
+			backgroundColor: 'rgb(128,255,198)'
 		}
 	}, {
-		selector: '.h5debug-overlay.event-target',
+		selector: '.h5debug-overlay .border',
 		rule: {
-			background: 'rgb(128,255,198)',
 			opacity: '0.3',
 			filter: 'alpha(opacity=30)',
-			border: '5px solid rgb(128,255,198)'
+			position: 'absolute',
+			borderTopWidth: '3px',
+			borderLeftWidth: '3px',
+			borderBottomWidth: 0,
+			borderRightWidth: 0
+		}
+	}, {
+		selector: '.h5debug-overlay.root .border',
+		rule: {
+			borderStyle: 'solid',
+			borderColor: 'rgb(64, 214, 255)'
+		}
+	}, {
+		selector: '.h5debug-overlay.child .border',
+		rule: {
+			borderStyle: 'dashed',
+			borderColor: 'rgb(64, 214, 255)'
+		}
+	}, {
+		selector: '.h5debug-overlay.event-target .border',
+		rule: {
+			borderStyle: 'dashed',
+			borderColor: 'rgb(128,255,198)'
+		}
+	}, {
+		selector: '.h5debug-overlay.borderOnly .body',
+		rule: {
+			display: 'none'
 		}
 	}, {
 		selector: '.h5debug-overlay.borderOnly',
 		rule: {
-			backgroundColor: 'transparent!important',
-			opacity: 1
+			height: '0!important',
+			width: '0!important'
 		}
 	}];
 
@@ -673,7 +700,10 @@
 
 
 	// オーバレイ
-	view.register('overlay', '<div class="h5debug-overlay [%= cls %]"></div>');
+	view
+			.register(
+					'overlay',
+					'<div class="h5debug-overlay [%= cls %]"><div class="body"></div><div class="border top"></div><div class="border right"></div><div class="border bottom"></div><div class="border left"></div></div>');
 
 	// --------------------- デバッガ設定 --------------------- //
 	view
@@ -1288,8 +1318,8 @@
 			var target = this.getTargetFromElem($el);
 			this.removeOverlay();
 			if (target.__controllerContext) {
-				this.overlay(target.rootElement, target.__controllerContext.isRoot ? 'root'
-						: 'child');
+				$el.data('h5debug-overlay', this.overlay(target.rootElement,
+						target.__controllerContext.isRoot ? 'root' : 'child'));
 			}
 		},
 		/**
@@ -1346,11 +1376,12 @@
 
 			this.setDetail(target);
 
-			this.removeOverlay(true);
-			if (target.__controllerContext) {
-				// 選択したものがコントローラの場合、コントローラのルートエレメントについてボーダーだけのオーバレイを作成
-				this.overlay(target.rootElement, [
-						target.__controllerContext.isRoot ? 'root' : 'child', 'borderOnly']);
+			// ターゲットリストと紐づいているオーバレイ要素を取得
+			var $overlay = $el.data('h5debug-overlay');
+			if ($overlay) {
+				this.removeOverlay(true, $overlay);
+				// ボーダーだけのオーバレイに変更
+				$('.h5debug-overlay').addClass('borderOnly');
 			}
 		},
 		/**
@@ -1653,39 +1684,80 @@
 		/**
 		 * 引数に指定された要素にオーバレイ
 		 *
+		 * @param elem オーバレイ対象要素
+		 * @param classNames オーバレイ要素に追加するクラス名
+		 * @returns 追加したオーバレイ要素
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
 		overlay: function(elem, classNames) {
 			var className = ($.isArray(classNames) ? classNames : [classNames]).join(' ');
 			var $el = $(elem);
+			var $ret = $();
 			$el.each(function() {
-				view.append(window.document.body, 'overlay', {
+				var $overlay = $(view.get('overlay', {
 					cls: className
-				});
+				}));
+
+				var width = $(this).outerWidth();
+				var height = $(this).outerHeight();
 				// documentオブジェクトならoffset取得できないので、0,0にする
 				var offset = $(this).offset() || {
 					top: 0,
 					left: 0
 				};
-				$('.h5debug-overlay:last').css({
-					top: offset.top || 0,
-					left: offset.left || 0,
-					width: $(this).outerWidth(),
-					height: $(this).outerHeight()
+
+				$overlay.css({
+					width: width,
+					height: height,
+					top: offset.top,
+					left: offset.left
 				});
+				var $borderTop = $overlay.find('.border.top');
+				var $borderRight = $overlay.find('.border.right');
+				var $borderBottom = $overlay.find('.border.bottom');
+				var $borderLeft = $overlay.find('.border.left');
+
+				$borderTop.css({
+					top: 0,
+					left: 0,
+					width: width,
+					height: OVERLAY_BORDER_WIDTH
+				});
+				$borderRight.css({
+					top: 0,
+					left: width,
+					width: OVERLAY_BORDER_WIDTH,
+					height: height
+				});
+				$borderBottom.css({
+					top: height,
+					left: 0,
+					width: width,
+					height: OVERLAY_BORDER_WIDTH
+				});
+				$borderLeft.css({
+					top: 0,
+					left: 0,
+					width: OVERLAY_BORDER_WIDTH,
+					height: height
+				});
+
+				$(window.document.body).append($overlay);
+				$ret = $ret.add($overlay);
 			});
+			return $ret;
 		},
 		/**
 		 * オーバレイの削除。deleteAllにtrueが指定された場合ボーダーだけのオーバーレイも削除
 		 *
+		 * @param {Boolean} [deleteAll=false] ボーダーだけのオーバレイも削除するかどうか
+		 * @param {jQuery} $exclude 除外するオーバーレイ要素
 		 * @memberOf h5.debug.developer.ControllerDebugController
 		 */
-		removeOverlay: function(deleteAll) {
-			if (deleteAll) {
-				$('.h5debug-overlay').remove();
-			} else {
-				$('.h5debug-overlay:not(.borderOnly)').remove();
-			}
+		removeOverlay: function(deleteAll, $exclude) {
+			var $target = deleteAll ? $('.h5debug-overlay')
+					: $('.h5debug-overlay:not(.borderOnly)');
+			($exclude ? $target.not($exclude) : $target).remove();
 		},
 		/**
 		 * コントローラまたはロジックをコントローラリストに追加
