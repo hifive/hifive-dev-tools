@@ -357,11 +357,6 @@
 			fontSize: '12px'
 		}
 	}, {
-		selector: '.h5debug .selected pre',
-		rule: {
-			backgroundColor: 'rgb(226,252,240)'
-		}
-	}, {
 		selector: '.h5debug .debug-controller .detail',
 		rule: {
 			overflow: 'auto'
@@ -1375,6 +1370,15 @@
 			this.selectEventHandler($el);
 		},
 		/**
+		 * イベントハンドラからカーソルを外した時(PC用)
+		 *
+		 * @memberOf h5.debug.developer.ControllerDebugController
+		 */
+		' .eventHandler li.selected mouseleave': function(context, $el) {
+			this.selectEventHandler(null);
+		},
+
+		/**
 		 * イベントハンドラの選択
 		 *
 		 * @memberOf h5.debug.developer.ControllerDebugController
@@ -1382,6 +1386,10 @@
 		 */
 		selectEventHandler: function($el) {
 			this.$find('.eventHandler li').removeClass('selected');
+			this.removeOverlay();
+			if($el == null){
+				return;
+			}
 			$el.addClass('selected');
 			var controller = this.getTargetFromElem(this.$find('.target-name.selected'));
 			var key = $.trim($el.find('.key').text());
@@ -1390,7 +1398,6 @@
 			// 取得結果を保存。これはクリックしてイベントを発火させるとき用です。
 			// 再度mosueoverされ場合は新しく取得しなおします。
 			$el.data('h5debug-eventTarget', $target);
-			this.removeOverlay();
 			this.overlay($target, 'event-target');
 
 			// 実行メニューの表示
