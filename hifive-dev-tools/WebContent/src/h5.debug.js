@@ -228,8 +228,7 @@
 		}
 	},
 	/*
-	 * カラムレイアウトをコンテンツに持つタブコンテンツのラッパー
-	 * 各カラムでスクロールできればいいので、外側はoverflow:hidden
+	 * カラムレイアウトをコンテンツに持つタブコンテンツのラッパー 各カラムでスクロールできればいいので、外側はoverflow:hidden
 	 */
 	{
 		selector: '.h5debug .columnLayoutWrapper',
@@ -500,15 +499,15 @@
 	}];
 
 	var SPECIAL_H5DEBUG_STYLE = {
-	//		IE: [{
-	//			// スタイルの調整(IE用)
-	//			// IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
-	//			// その分を調整する。
-	//			selector: '.h5debug .tab-content .tab-content',
-	//			rule: {
-	////				paddingBottom: '60px'
-	//			}
-	//		}]
+	// IE: [{
+	// // スタイルの調整(IE用)
+	// // IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
+	// // その分を調整する。
+	// selector: '.h5debug .tab-content .tab-content',
+	// rule: {
+	// // paddingBottom: '60px'
+	// }
+	// }]
 	};
 	/**
 	 * デバッグ対象になるページ側のスタイル
@@ -719,6 +718,11 @@
 	 */
 	var debugWindow = null;
 
+	/**
+	 * デバッグウィンドウが閉じられたかどうか
+	 */
+	var debugWindowClosed = false;
+
 	var h5debugSettings = h5.core.data.createObservableItem({
 		LogMaxNum: {
 			type: 'integer',
@@ -913,7 +917,15 @@
 				// ポップアップがブロックされた場合
 				return dfd.reject().promise();
 			}
-			if (w._h5debug) {
+			// IEの場合、既に開いているwindowのプロパティにアクセスできず、documentにアクセスするとエラーになる
+			// エラーが発生することを利用して、既に開いているものがあるかどうか判定する
+			var accessError = false;
+			try {
+				w.document;
+			} catch (e) {
+				accessError = true;
+			}
+			if (w._h5debug || accessError) {
 				// 既に開いているものがあったら、それを閉じて別のものを開く
 				w.close();
 				return openDebugWindow();
@@ -2219,10 +2231,10 @@
 			// (view.get, str.formatを1000件回してIE10で20msくらい。ただの文字列結合なら10msくらい)
 
 			for ( var i = 0, l = logArray.length; i < l; i++) {
-				//			var part = view.get('operation-log-list-part', logArray.get(i));
+				// var part = view.get('operation-log-list-part', logArray.get(i));
 				var logObj = logArray.get(i);
-				//			h5.u.str.format(operationLogListPart, logObj.cls, logObj.time,
-				//					logObj.indentWidth, logObj.tag, logObj.promiseState, logObj.message);
+				// h5.u.str.format(operationLogListPart, logObj.cls, logObj.time,
+				// logObj.indentWidth, logObj.tag, logObj.promiseState, logObj.message);
 				var part = '<li class=' + logObj.cls + '>' + '<span class="time">' + logObj.time
 						+ '</span>' + '<span style="margin-left:' + logObj.indentWidth
 						+ 'px" class="tag">' + logObj.tag + '</span>'
@@ -2360,9 +2372,9 @@
 			var consoleLogs = context.args.consoleLogs;
 			this.baseController.setLogArray(consoleLogs, this.rootElement);
 
-			//--------------------------------------------
+			// --------------------------------------------
 			// window.onerrorで拾った例外も出すようにする
-			//--------------------------------------------
+			// --------------------------------------------
 			$(window).bind('error', function(ev) {
 				var message = ev.originalEvent.message;
 				var file = ev.originalEvent.fileName || '';
@@ -2576,6 +2588,10 @@
 	var aspect = {
 		target: '*',
 		interceptors: h5.u.createInterceptor(function(invocation, data) {
+			if (debugWindowClosed) {
+				// デバッグウィンドウが閉じられていたら何もしない
+				return invocation.proceed();
+			}
 			var target = invocation.target;
 			if (!target.__name || h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
 				// __nameがない(===disposeされた)またはデバッグコントローラなら何もしない
@@ -2655,6 +2671,10 @@
 			preTarget = target;
 			return invocation.proceed();
 		}, function(invocation, data) {
+			if (debugWindowClosed) {
+				// デバッグウィンドウが閉じられていたら何もしない
+				return;
+			}
 			var target = invocation.target;
 			if (!target.__name) {
 				// target.__nameがない(===disposeされた)場合は何もしない
@@ -2725,7 +2745,7 @@
 			var defObj = $.extend({}, arguments[1]);
 			var c = orgController.apply(this, arguments);
 			if (defObj && h5.u.str.startsWith(defObj.__name, 'h5.debug.developer')) {
-				return;
+				return c;
 			}
 			c.initPromise.done(function() {
 				if (!this.__controllerContext.controllerDefObj) {
@@ -2749,6 +2769,18 @@
 				// コンソールログ
 				consoleLogs: consoleLogs
 
+			}).readyPromise.done(function() {
+				// 閉じられたときにdebugControllerをdispose
+				var controller = this;
+				function unloadFunc() {
+					controller.dispose();
+					debugWindowClosed = true;
+				}
+				if (debugWindow.addEventListener) {
+					debugWindow.addEventListener('unload', unloadFunc);
+				} else {
+					debugWindow.attachEvent('onunload', unloadFunc);
+				}
 			});
 		}).fail(function() {
 			// ポップアップブロックされると失敗する
