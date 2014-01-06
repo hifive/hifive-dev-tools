@@ -2773,7 +2773,12 @@
 				// 閉じられたときにdebugControllerをdispose
 				var controller = this;
 				function unloadFunc() {
+					// オーバレイを削除
+					controller._controllerDebugController.removeOverlay(true);
+					// コントローラをdispose
 					controller.dispose();
+					// デバッグウィンドウが閉じられたフラグを立てる
+					// 以降、デバッグ用のアスペクトは動作しなくなる
 					debugWindowClosed = true;
 				}
 				if (debugWindow.addEventListener) {
