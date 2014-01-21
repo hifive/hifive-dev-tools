@@ -1446,7 +1446,7 @@
 			// 実行メニューの表示
 			var $select = $el.closest('li').find('select.eventTarget').html('');
 			if (!$target.length) {
-				var option = $(debugWindow.document.createElement('option'));
+				var $option = $(debugWindow.document.createElement('option'));
 				$option.text('該当なし');
 				$select.append($option);
 				$select.attr('disabled', 'disabled');
