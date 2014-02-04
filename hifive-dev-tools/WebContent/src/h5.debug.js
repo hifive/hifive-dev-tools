@@ -1446,11 +1446,13 @@
 			// 実行メニューの表示
 			var $select = $el.closest('li').find('select.eventTarget').html('');
 			if (!$target.length) {
-				$select.append('<option>該当なし</option>');
+				var $option = $(debugWindow.document.createElement('option'));
+				$option.text('該当なし');
+				$select.append($option);
 				$select.attr('disabled', 'disabled');
 			} else {
 				$target.each(function() {
-					var $option = $('<option>');
+					var $option = $(debugWindow.document.createElement('option'));
 					$option.data('h5debug-eventTarget', this);
 					$option.text(formatDOM(this));
 					$select.append($option);
@@ -2761,9 +2763,10 @@
 	// コントローラのバインド
 	// -------------------------------------------------
 	$(function() {
-		openDebugWindow().done(function(debugWindow) {
-			h5.core.controller($(debugWindow.document).find('.h5debug'), debugController, {
-				win: debugWindow,
+		openDebugWindow().done(function(win) {
+			debugWindow = win;
+			h5.core.controller($(win.document).find('.h5debug'), debugController, {
+				win: win,
 				// 全体の動作ログ
 				operationLogs: wholeOperationLogs,
 				// コンソールログ
@@ -2781,10 +2784,10 @@
 					// 以降、デバッグ用のアスペクトは動作しなくなる
 					debugWindowClosed = true;
 				}
-				if (debugWindow.addEventListener) {
-					debugWindow.addEventListener('unload', unloadFunc);
+				if (win.addEventListener) {
+					win.addEventListener('unload', unloadFunc);
 				} else {
-					debugWindow.attachEvent('onunload', unloadFunc);
+					win.attachEvent('onunload', unloadFunc);
 				}
 			});
 		}).fail(function() {
