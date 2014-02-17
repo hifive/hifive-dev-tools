@@ -16,6 +16,278 @@
  * hifive
  */
 
+/**
+ * コンテキストメニューコントローラ
+ */
+(function() {
+
+	var contextMenuController = {
+
+		__name: 'h5.debug.developer.ui.ContextMenuController',
+
+		_contextMenu: null,
+
+		contextMenuExp: '',
+
+		targetAll: true,
+
+		__construct: function(context) {
+			if (context.args) {
+				var targetAll = context.args.targetAll;
+				if (targetAll != undefined) {
+					this.targetAll = context.args.targetAll;
+				}
+				var contextMenuExp = context.args.contextMenuExp;
+				if (contextMenuExp != undefined) {
+					this.contextMenuExp = context.args.contextMenuExp;
+				}
+			}
+		},
+
+		__ready: function(context) {
+			var root = $(this.rootElement);
+			var targetAll = root.attr('data-targetall');
+			if (targetAll != undefined) {
+				if (/false/i.test(targetAll)) {
+					targetAll = false;
+				}
+				this.targetAll = !!targetAll;
+			}
+			var contextMenuExp = root.attr('data-contextmenuexp');
+			if (contextMenuExp != undefined) {
+				this.contextMenuExp = context.args.contextMenuExp;
+			}
+			this.close();
+		},
+
+		_getContextMenu: function(exp) {
+			return this.$find('> .contextMenu' + (exp || this.contextMenuExp));
+		},
+
+		close: function(selected) {
+			var $contextMenu = this.$find('> .contextMenu');
+
+			if ($contextMenu.css('display') === 'none') {
+				// 既にdisplay:noneなら何もしない(イベントもあげない)
+				return;
+			}
+			// selectMenuItemイベントを上げる
+			// 選択されたアイテムがあれば、それを引数に入れる
+			// そもそもopenしていなかったらイベントは上げない
+			this.trigger('selectMenuItem', {
+				selected: selected ? selected : null
+			});
+
+			$contextMenu.css({
+				display: 'none'
+			});
+			// イベントを上げる
+			this.trigger('hideCustomMenu');
+		},
+
+		_open: function(context, exp) {
+			var contextMenu = this._getContextMenu(exp);
+
+			// イベントを上げる
+			// 既にopenしていたらイベントは上げない
+			if (contextMenu.css('display') === 'none') {
+				var e = this.trigger('showCustomMenu', {
+					orgContext: context
+				});
+				if (e.isDefaultPrevented()) {
+					// preventDefaultされていたらメニューを出さない
+					return;
+				}
+			}
+
+			contextMenu.css({
+				display: 'block',
+				visibility: 'hidden',
+				left: 0,
+				top: 0
+			});
+			var offsetParentOffset = contextMenu.offsetParent().offset();
+			var left = context.event.pageX - offsetParentOffset.left;
+			var top = context.event.pageY - offsetParentOffset.top;
+			var outerWidth = contextMenu.outerWidth(true);
+			var outerHeight = contextMenu.outerHeight(true);
+			var scrollLeft = scrollPosition('Left')();
+			var scrollTop = scrollPosition('Top')();
+			var windowWidth = getDisplayArea('Width');
+			var windowHeight = getDisplayArea('Height');
+			var windowRight = scrollLeft + windowWidth;
+			var windowBottom = scrollTop + windowHeight;
+			var right = left + outerWidth;
+			if (right > windowRight) {
+				left = windowRight - outerWidth;
+				if (left < scrollLeft)
+					left = scrollLeft;
+			}
+			var bottom = top + outerHeight;
+			if (bottom > windowBottom) {
+				top = top - outerHeight;
+				if (top < scrollTop)
+					top = scrollTop;
+			}
+
+			initSubMenu(contextMenu, right, top);
+
+			contextMenu.css({
+				visibility: 'visible',
+				left: left,
+				top: top
+			});
+
+			function initSubMenu(menu, _right, _top) {
+				menu.find('> .dropdown-submenu > .dropdown-menu').each(function() {
+					var subMenu = $(this);
+					var nextRight;
+					var display = subMenu[0].style.display;
+					subMenu.css({
+						display: 'block'
+					});
+					var subMenuWidth = subMenu.outerWidth(true);
+					if (subMenuWidth > windowRight - _right) {
+						subMenu.parent().addClass('pull-left');
+						nextRight = _right - subMenuWidth;
+					} else {
+						subMenu.parent().removeClass('pull-left');
+						nextRight = _right + subMenuWidth;
+					}
+
+					var parent = subMenu.parent();
+					var subMenuTop = _top + parent.position().top;
+					var subMenuHeight = subMenu.outerHeight(true);
+					if (subMenuHeight > windowBottom - subMenuTop) {
+						subMenuTop = subMenuTop - subMenuHeight + parent.height();
+						subMenu.css({
+							top: 'auto',
+							bottom: '0'
+						});
+					} else {
+						subMenu.css({
+							top: '0',
+							bottom: 'auto'
+						});
+					}
+
+					initSubMenu(subMenu, nextRight, subMenuTop);
+
+					subMenu.css({
+						display: display
+					});
+				});
+			}
+
+			//hifiveから流用(13470)
+			function getDisplayArea(prop) {
+				var compatMode = (document.compatMode !== 'CSS1Compat');
+				var e = compatMode ? document.body : document.documentElement;
+				return h5.env.ua.isiOS ? window['inner' + prop] : e['client' + prop];
+			}
+
+			//hifiveから流用(13455)
+			function scrollPosition(propName) {
+				var compatMode = (document.compatMode !== 'CSS1Compat');
+				var prop = propName;
+
+				return function() {
+					// doctypeが「XHTML1.0 Transitional DTD」だと、document.documentElement.scrollTopが0を返すので、互換モードを判定する
+					// http://mokumoku.mydns.jp/dok/88.html
+					var elem = compatMode ? document.body : document.documentElement;
+					var offsetProp = (prop === 'Top') ? 'Y' : 'X';
+					return window['page' + offsetProp + 'Offset'] || elem['scroll' + prop];
+				};
+			}
+		},
+
+		/**
+		 * コンテキストメニューを出す前に実行するフィルタ。 falseを返したらコンテキストメニューを出さない。
+		 * 関数が指定された場合はその関数の実行結果、セレクタが指定された場合は右クリック時のセレクタとマッチするかどうかを返す。
+		 */
+		_filter: null,
+
+		/**
+		 * コンテキストメニューを出すかどうかを判定するフィルタを設定する。 引数には関数またはセレクタを指定できる。
+		 * 指定する関数はcontextを引数に取り、falseを返したらコンテキストメニューを出さないような関数を指定する。
+		 * セレクタを指定した場合は、右クリック時のevent.targetがセレクタにマッチする場合にコンテキストメニューを出さない。
+		 *
+		 * @memberOf ___anonymous46_5456
+		 * @param selectorOrFunc
+		 */
+		setFilter: function(selectorOrFunc) {
+			if (selectorOrFunc == null) {
+				this._filter = null;
+			} else if ($.isFunction(selectorOrFunc)) {
+				// 渡された関数をthis._filterにセット
+				this._filter = selectorOrFunc;
+			} else if (typeof (selectorOrFunc) === 'string') {
+				this._filter = function(context) {
+					// targetがセレクタとマッチしたらreturn false;
+					if ($(context.event.target).filter(selectorOrFunc).length) {
+						return false;
+					}
+				};
+			}
+		},
+
+		'{rootElement} contextmenu': function(context) {
+			this.close();
+			// _filterがfalseを返したら何もしない
+			if (this._filter && this._filter(context) === false) {
+				return;
+			}
+			if (this.targetAll) {
+				context.event.preventDefault();
+				context.event.stopPropagation();
+				this._open(context);
+			}
+		},
+
+		'{document.body} click': function(context) {
+			this.close();
+		},
+
+		'{document.body} contextmenu': function(context) {
+			this.close();
+		},
+
+		'.contextMenuBtn contextmenu': function(context) {
+			context.event.preventDefault();
+			context.event.stopPropagation();
+			var current = context.event.currentTarget;
+			var exp = $(current).attr('data-contextmenuexp');
+			this._open(context, exp);
+		},
+
+		'> .contextMenu .dropdown-menu click': function(context) {
+			context.event.stopPropagation();
+			this.close();
+		},
+		//
+		//		'> .contextMenu .dropdown-submenu click': function(context) {
+		//			context.event.stopPropagation();
+		//		},
+		//
+		//		'> .contextMenu contextmenu': function(context) {
+		//			context.event.stopPropagation();
+		//		},
+		//
+		//		'> .contextMenu click': function(context) {
+		//			context.event.stopPropagation();
+		//		},
+
+		'> .contextMenu li a click': function(context) {
+			context.event.stopPropagation();
+			this.close(context.event.target);
+		}
+	};
+
+	h5.core.expose(contextMenuController);
+})();
+/**
+ * デバッグコントローラ
+ */
 (function() {
 	// =========================================================================
 	//
@@ -148,6 +420,11 @@
 			overflow: 'auto'
 		}
 	}, {
+		selector: '.h5debug .operation-log-list>li.selected',
+		rule: {
+			backgroundColor: '#ddd'
+		}
+	}, {
 		selector: '.h5debug .operation-log-list>li .time',
 		rule: {
 			marginRight: '1em'
@@ -228,7 +505,8 @@
 		}
 	},
 	/*
-	 * カラムレイアウトをコンテンツに持つタブコンテンツのラッパー 各カラムでスクロールできればいいので、外側はoverflow:hidden
+	 * カラムレイアウトをコンテンツに持つタブコンテンツのラッパー
+	 * 各カラムでスクロールできればいいので、外側はoverflow:hidden
 	 */
 	{
 		selector: '.h5debug .columnLayoutWrapper',
@@ -496,18 +774,60 @@
 		rule: {
 			display: 'block'
 		}
+	},
+	/**
+	 * ドロップダウンメニュー(bootstrapから流用)
+	 */
+	{
+		selector: '.h5debug .dropdown-menu',
+		rule: {
+			position: ' absolute',
+			top: '100%',
+			left: '0',
+			'z-index': '1000',
+			display: 'none',
+			float: 'left',
+			'min-width': '160px',
+			padding: '5px 0',
+			margin: '2px 0 0',
+			'list-style': 'none',
+			'background-color': '#fff',
+			border: '1px solid #ccc',
+			border: '1px solid rgba(0,0,0,0.2)',
+			'-webkit-border-radius': '6px',
+			'-moz-border-radius': '6px',
+			'border-radius': '6px',
+			'-webkit-box-shadow': '0 5px 10px rgba(0,0,0,0.2)',
+			'-moz-box-shadow': '0 5px 10px rgba(0,0,0,0.2)',
+			'box-shadow': '0 5px 10px rgba(0,0,0,0.2)',
+			'-webkit-background-clip': 'padding-box',
+			'-moz-background-clip': 'padding',
+			'background-clip': 'padding-box'
+		}
+	}, {
+		selector: '.h5debug .dropdown-menu li',
+		rule: {
+			fontSize: '0.8em',
+			padding: '8px',
+			cursor: 'pointer'
+		}
+	}, {
+		selector: '.h5debug .dropdown-menu li:hover',
+		rule: {
+			backgroundColor: '#eee'
+		}
 	}];
 
 	var SPECIAL_H5DEBUG_STYLE = {
-	// IE: [{
-	// // スタイルの調整(IE用)
-	// // IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
-	// // その分を調整する。
-	// selector: '.h5debug .tab-content .tab-content',
-	// rule: {
-	// // paddingBottom: '60px'
-	// }
-	// }]
+	//		IE: [{
+	//			// スタイルの調整(IE用)
+	//			// IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
+	//			// その分を調整する。
+	//			selector: '.h5debug .tab-content .tab-content',
+	//			rule: {
+	////				paddingBottom: '60px'
+	//			}
+	//		}]
 	};
 	/**
 	 * デバッグ対象になるページ側のスタイル
@@ -688,7 +1008,8 @@
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '</div>'
-							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"></ul>');
+							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"></ul>'
+							+ '<ul class="contextMenu logContextMenu dropdown-menu"><li class="showFunction"><span>関数を表示</span></li></ul>');
 
 	// 動作ログのli
 	view.register('operation-log-list-part', '<li class=[%= cls %]>'
@@ -717,11 +1038,6 @@
 	 * デバッグするウィンドウ。window.openなら開いたウィンドウで、そうじゃなければページのwindowオブジェクト。
 	 */
 	var debugWindow = null;
-
-	/**
-	 * デバッグウィンドウが閉じられたかどうか
-	 */
-	var debugWindowClosed = false;
 
 	var h5debugSettings = h5.core.data.createObservableItem({
 		LogMaxNum: {
@@ -917,15 +1233,7 @@
 				// ポップアップがブロックされた場合
 				return dfd.reject().promise();
 			}
-			// IEの場合、既に開いているwindowのプロパティにアクセスできず、documentにアクセスするとエラーになる
-			// エラーが発生することを利用して、既に開いているものがあるかどうか判定する
-			var accessError = false;
-			try {
-				w.document;
-			} catch (e) {
-				accessError = true;
-			}
-			if (w._h5debug || accessError) {
+			if (w._h5debug) {
 				// 既に開いているものがあったら、それを閉じて別のものを開く
 				w.close();
 				return openDebugWindow();
@@ -1128,8 +1436,9 @@
 	 * @param message
 	 * @param cls
 	 */
-	function createLogObject(message, cls, tag, promiseState, __name, indentLevel) {
+	function createLogObject(target, message, cls, tag, promiseState, __name, indentLevel) {
 		return {
+			target: target,
 			time: timeFormat(new Date()),
 			cls: cls,
 			message: message,
@@ -1348,27 +1657,6 @@
 			this.removeOverlay();
 		},
 
-
-		/**
-		 * ロジックリスト上のロジックをクリック
-		 *
-		 * @memberOf h5.debug.developer.LogicDebugController
-		 * @param context
-		 * @param $el
-		 */
-		'.logiclist .logic-name click': function(context, $el) {
-			if ($el.hasClass('selected')) {
-				// 既に選択済み
-				return;
-			}
-			var logic = this.getLogicFromElem($el);
-			this.$find('.logic-name').removeClass('selected');
-			$el.addClass('selected');
-			this.selectedLogic = logic;
-
-			this.setDetail(logic);
-		},
-
 		/**
 		 * コントローラリスト上のコントローラをクリック
 		 *
@@ -1384,10 +1672,7 @@
 			var target = this.getTargetFromElem($el);
 			this.$find('.target-name').removeClass('selected');
 			$el.addClass('selected');
-			this.selectedTarget = target;
-
-			this.setDetail(target);
-
+			this.setTarget(target);
 			// ターゲットリストと紐づいているオーバレイ要素を取得
 			var $overlay = $el.data('h5debug-overlay');
 			if ($overlay) {
@@ -1395,6 +1680,11 @@
 				// ボーダーだけのオーバレイに変更
 				$('.h5debug-overlay').addClass('borderOnly');
 			}
+		},
+
+		setTarget: function(target) {
+			this.selectedTarget = target;
+			this.setDetail(target);
 		},
 		/**
 		 * イベントハンドラにマウスオーバーで選択(PC用)
@@ -1446,7 +1736,7 @@
 			// 実行メニューの表示
 			var $select = $el.closest('li').find('select.eventTarget').html('');
 			if (!$target.length) {
-				var $option = $(debugWindow.document.createElement('option'));
+				var option = $(debugWindow.document.createElement('option'));
 				$option.text('該当なし');
 				$select.append($option);
 				$select.attr('disabled', 'disabled');
@@ -1496,13 +1786,10 @@
 				return;
 			}
 
-			// 詳細ビューに表示されているコントローラをアンバインド
+			// 詳細ビューに表示されているコントローラを取得
 			var controllers = h5.core.controllerManager.getControllers(this.$find('.detail'), {
 				deep: true
 			});
-			for ( var i = 0, l = controllers.length; i < l; i++) {
-				controllers[i].dispose();
-			}
 
 			// コントローラの場合はコントローラの詳細ビューを表示
 			if (target.__controllerContext) {
@@ -1511,6 +1798,12 @@
 				// ロジックの場合はロジックの詳細ビューを表示
 				this._showLogicDetail(target);
 			}
+
+			// 元々詳細ビューにバインドされていたコントローラをアンバインド
+			for ( var i = 0, l = controllers.length; i < l; i++) {
+				controllers[i].dispose();
+			}
+
 		},
 		/**
 		 * コントローラの詳細表示
@@ -1580,7 +1873,10 @@
 			var logAry = controller._h5debugContext.debugLog;
 			h5.core.controller(this.$find('.controller-detail .operation-log'),
 					operationLogController, {
-						operationLogs: logAry
+						operationLogs: logAry,
+						// 動作ログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
+						// 引数で渡してログコントローラに覚えさせておく
+						_parentControllerDebugCtrl: this
 					});
 
 			// その他情報
@@ -1655,7 +1951,10 @@
 			var logAry = logic._h5debugContext.debugLog;
 			h5.core.controller(this.$find('.logic-detail .operation-log'), operationLogController,
 					{
-						operationLogs: logAry
+						operationLogs: logAry,
+						// 動作ログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
+						// 引数で渡してログコントローラに覚えさせておく
+						_parentControllerDebugCtrl: this
 					});
 
 			// その他情報
@@ -1874,141 +2173,6 @@
 			});
 		}
 	};
-	//
-	//	// TODO コントローラデバッグコントローラと共通化
-	//	/**
-	//	 * ロジックのデバッグコントローラ
-	//	 *
-	//	 * @name h5.debug.developer.LogicnDebugController
-	//	 */
-	//	var logicDebugController = {
-	//
-	//		/**
-	//		 * ロジックリスト上のロジックをクリック
-	//		 *
-	//		 * @memberOf h5.debug.developer.LogicDebugController
-	//		 * @param context
-	//		 * @param $el
-	//		 */
-	//		'.logiclist .logic-name click': function(context, $el) {
-	//			if ($el.hasClass('selected')) {
-	//				// 既に選択済み
-	//				return;
-	//			}
-	//			var logic = this.getLogicFromElem($el);
-	//			this.$find('.logic-name').removeClass('selected');
-	//			$el.addClass('selected');
-	//			this.selectedLogic = logic;
-	//
-	//			this.setDetail(logic);
-	//		},
-	//		/**
-	//		 * オープン時のイベント
-	//		 *
-	//		 * @memberOf h5.debug.developer.LogicDebugController
-	//		 */
-	//		'{.h5debug} open': function() {
-	//			this.refreshLogicList();
-	//		},
-	//		/**
-	//		 * 左側の何もない箇所がクリックされたらコントローラの選択なしにする
-	//		 *
-	//		 * @memberOf h5.debug.developer.LogicDebugController
-	//		 */
-	//		'{.h5debug} leftclick': function() {
-	//			this.unfocus();
-	//		},
-	//
-	//		/**
-	//		 * エレメントにロジックを持たせる
-	//		 *
-	//		 * @memberOf h5.debug.developer.LogicDebugController
-	//		 * @param el
-	//		 * @param logic
-	//		 */
-	//		setLogicToElem: function(el, logic) {
-	//			$(el).data('h5debug-logic', logic);
-	//		},
-	//		/**
-	//		 * エレメントに覚えさせたロジックを取得する
-	//		 *
-	//		 * @memberOf h5.debug.developer.LogicDebugController
-	//		 * @param el
-	//		 * @returns {Logic}
-	//		 */
-	//		getLogicFromElem: function(el) {
-	//			return $(el).data('h5debug-logic');
-	//		},
-	//		/**
-	//		 * 詳細画面(右側画面)をロジックを基に作成。nullが渡されたら空白にする
-	//		 *
-	//		 * @memberOf h5.debug.developer.LogicDebugController
-	//		 * @param controller
-	//		 */
-	//		setDetail: function(logic) {
-	//			if (logic == null) {
-	//				this.$find('.detail .tab-content>*').html('');
-	//				return;
-	//			}
-	//
-	//			// 詳細ビューに表示されているコントローラをアンバインド
-	//			var controllers = h5.core.controllerManager.getControllers(this.$find('.detail'), {
-	//				deep: true
-	//			});
-	//			for ( var i = 0, l = controllers.length; i < l; i++) {
-	//				controllers[i].dispose();
-	//			}
-	//
-	//			// メソッドリスト
-	//			// public, privateの順でソート
-	//			// lifecycleはライフサイクルの実行順、public、privateは辞書順
-	//			var logicDef = logic.__logicContext.logicDef;
-	//			var privateMethods = [];
-	//			var publicMethods = [];
-	//			for ( var p in logicDef) {
-	//				if ($.isFunction(logicDef[p])) {
-	//					// メソッド
-	//					// lifecycleかpublicかprivateかを判定する
-	//					if (h5.u.str.startsWith(p, '_')) {
-	//						privateMethods.push(p);
-	//					} else {
-	//						publicMethods.push(p);
-	//					}
-	//				}
-	//			}
-	//			// ソート
-	//			privateMethods.sort();
-	//			publicMethods.sort();
-	//			var methods = publicMethods.concat(privateMethods);
-	//			view.update(this.$find('.detail .tab-content .method'), 'method-list', {
-	//				defObj: logicDef,
-	//				methods: methods,
-	//				_funcToStr: funcToStr
-	//			});
-	//
-	//			// ログ
-	//			var logAry = logic._h5debugContext.debugLog;
-	//			h5.core.controller(this.$find('.operation-log'), operationLogController, {
-	//				logArray: logAry
-	//			});
-	//
-	//			// その他情報
-	//			view.update(this.$find('.detail .tab-content .otherInfo'), 'logic-otherInfo', {
-	//				defObj: logicDef,
-	//				instanceName: logic._h5debugContext.instanceName
-	//			});
-	//		},
-	//
-	//		/**
-	//		 * ロジックの選択を解除
-	//		 *
-	//		 * @memberOf h5.debug.developer.LogicDebugController
-	//		 */
-	//		unfocus: function() {
-	//			this.setDetail(null);
-	//			this.$find('.logic-name').removeClass('selected');
-	//		}
-	//	};
 
 	/**
 	 * デバッガの設定を行うコントローラ
@@ -2075,6 +2239,11 @@
 		__name: 'h5.debug.developer.BaseLogController',
 
 		/**
+		 * 右クリックコントローラ
+		 */
+		_contextMenuController: h5.debug.developer.ui.ContextMenuController,
+
+		/**
 		 * ログリストが一番下までスクロールされているかどうか
 		 *
 		 * @memberOf h5.debug.developer.BaseLogController
@@ -2095,6 +2264,18 @@
 		 */
 		_createLogHTML: function() {},
 
+		_selectLogObject: null,
+
+		_parentControllerDebugCtrl: null,
+
+		__ready: function(context) {
+			this._contextMenuController.contextMenuExp = '.logContextMenu';
+			this._contextMenuController.setFilter('*:not(.operation-log-list>li>*)');
+
+			// コントローラデバッグコントローラを参照できるように覚えておく
+			this._parentControllerDebugCtrl = context.args._parentControllerDebugCtrl
+					|| this.parentController.parentController._controllerDebugController;
+		},
 		/**
 		 * ログ配列のセット
 		 *
@@ -2176,6 +2357,82 @@
 
 		'{rootElement} tabSelect': function() {
 			this._updateView();
+		},
+
+		'{rootElement} showCustomMenu': function(context) {
+			this._unselect();
+			var orgContext = context.evArg.orgContext;
+			var $li = $(orgContext.event.target).closest('li');
+			$li.addClass('selected');
+			this._selectLogObject = this._logArray.get($li.data('h5debug-logindex'));
+		},
+
+		'{rootElement} hideCustomMenu': function(context) {
+			this._unselect();
+		},
+
+		_unselect: function() {
+			this.$find('.operation-log-list>li').removeClass('selected');
+		},
+
+		'.showFunction click': function(context, $el) {
+			// エレメントからログオブジェクトを取得
+			// コントローラまたはロジックを取得
+			var ctrlOrLogic = this._selectLogObject.target;
+			var debugCtrl = this._parentControllerDebugCtrl;
+			// コントローラタブに切替
+			var $controllerTab = $(this.rootElement).parents('.h5debug').find(
+					'*[data-tab-page="debug-controller"]');
+			if (!$controllerTab.hasClass('active')) {
+				$controllerTab.trigger('click');
+				debugCtrl.setTarget(ctrlOrLogic);
+			}
+
+			// 対応するコントローラまたはロジックを選択
+			debugCtrl.$find('.target-name').each(function() {
+				if (debugCtrl.getTargetFromElem(this) === ctrlOrLogic) {
+					$(this).trigger('mouseover');
+					$(this).trigger('click');
+					return false;
+				}
+			});
+
+
+			// 詳細コントローラバインド後なので、以降は非同期で処理する
+			var message = this._selectLogObject.message;
+			setTimeout(function() {
+				// メソッドまたはイベントハンドラタブを選択
+				// メソッド名を取得
+				var method = $.trim(message.slice(message.indexOf('#') + 1));
+				// ログメッセージからイベントハンドラなのかメソッドなのか判定する
+				// メソッド名に空白文字がありかつターゲットがコントローラならイベントハンドラ
+				var isEventHandler = method.indexOf(' ') !== -1 && ctrlOrLogic.__controllerContext;
+				var tabCls = isEventHandler ? 'eventHandler' : 'method';
+				// イベントハンドラのタブを選択
+				var $tab = debugCtrl.$find('.controller-detail>.nav-tabs>*[data-tab-page="'
+						+ tabCls + '"]');
+				if (!$tab.hasClass('active')) {
+					$tab.trigger('click');
+				}
+				var $activeList = debugCtrl
+						.$find('.controller-detail .' + tabCls + ' .method-list');
+
+
+				// 該当箇所までスクロール
+				var scrollVal = 0;
+				var textElmSelector = isEventHandler ? '.key' : '.name';
+				var li = null;
+				$activeList.find('li').each(function() {
+					if ($.trim($(this).find(textElmSelector).text()) === method) {
+						scrollVal = this.offsetTop - this.parentNode.offsetTop;
+						li = this;
+						return false;
+					}
+				});
+				if (li) {
+					$activeList.parent().scrollTop(scrollVal);
+				}
+			}, 0);
 		}
 	};
 
@@ -2233,16 +2490,16 @@
 			// (view.get, str.formatを1000件回してIE10で20msくらい。ただの文字列結合なら10msくらい)
 
 			for ( var i = 0, l = logArray.length; i < l; i++) {
-				// var part = view.get('operation-log-list-part', logArray.get(i));
+				//			var part = view.get('operation-log-list-part', logArray.get(i));
 				var logObj = logArray.get(i);
-				// h5.u.str.format(operationLogListPart, logObj.cls, logObj.time,
-				// logObj.indentWidth, logObj.tag, logObj.promiseState, logObj.message);
-				var part = '<li class=' + logObj.cls + '>' + '<span class="time">' + logObj.time
-						+ '</span>' + '<span style="margin-left:' + logObj.indentWidth
-						+ 'px" class="tag">' + logObj.tag + '</span>'
-						+ '<span class="promiseState">' + logObj.promiseState + '</span>'
-						+ '<span class="message ' + logObj.cls + '">' + logObj.message
-						+ '</span></li>';
+				//			h5.u.str.format(operationLogListPart, logObj.cls, logObj.time,
+				//					logObj.indentWidth, logObj.tag, logObj.promiseState, logObj.message);
+				var part = '<li class="' + logObj.cls + '" data-h5debug-logindex="' + i + '">'
+						+ '<span class="time">' + logObj.time + '</span>'
+						+ '<span style="margin-left:' + logObj.indentWidth + 'px" class="tag">'
+						+ logObj.tag + '</span>' + '<span class="promiseState">'
+						+ logObj.promiseState + '</span>' + '<span class="message ' + logObj.cls
+						+ '">' + logObj.message + '</span></li>';
 				// フィルタにマッチしているか
 				if (reg && $('.message').text().match(reg)) {
 					html += $(part).css('display', 'none')[0].outerHTML;
@@ -2308,6 +2565,12 @@
 					.removeAttr('disabled');
 			this.$find('.filter-clear').attr('disabled', 'disabled');
 		},
+		/**
+		 * ログから関数へ遷移
+		 *
+		 * @memberOf h5.debug.developer.OperationLogController
+		 * @param $li
+		 */
 		refresh: function($li) {
 			$li = $li || this.$find('li');
 			$li.css('display', '');
@@ -2374,9 +2637,9 @@
 			var consoleLogs = context.args.consoleLogs;
 			this.baseController.setLogArray(consoleLogs, this.rootElement);
 
-			// --------------------------------------------
+			//--------------------------------------------
 			// window.onerrorで拾った例外も出すようにする
-			// --------------------------------------------
+			//--------------------------------------------
 			$(window).bind('error', function(ev) {
 				var message = ev.originalEvent.message;
 				var file = ev.originalEvent.fileName || '';
@@ -2421,7 +2684,22 @@
 			// 非アクティブのものを非表示
 			this.$find('tab-content').not('.active').css('display', 'none');
 		},
-		'.nav-tabs li click': function(contextn, $el) {
+		/**
+		 * 指定されたクラスのタブへ切替
+		 *
+		 * @param {String} tabClass タブのクラス名
+		 */
+		selectTab: function(tabClass) {
+			this.$find('.nav-tabs li.' + tabClass).trigger('click');
+		},
+		/**
+		 * タブをクリック
+		 *
+		 * @memberOf h5.debug.developer.TabController
+		 * @param context
+		 * @param $el
+		 */
+		'.nav-tabs li click': function(context, $el) {
 			if ($el.hasClass('active')) {
 				return;
 			}
@@ -2590,10 +2868,6 @@
 	var aspect = {
 		target: '*',
 		interceptors: h5.u.createInterceptor(function(invocation, data) {
-			if (debugWindowClosed) {
-				// デバッグウィンドウが閉じられていたら何もしない
-				return invocation.proceed();
-			}
 			var target = invocation.target;
 			if (!target.__name || h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
 				// __nameがない(===disposeされた)またはデバッグコントローラなら何もしない
@@ -2643,7 +2917,7 @@
 
 			// 呼び出し元のターゲットにもログを出す
 			if (preTarget && preTarget !== target) {
-				var logObj = createLogObject(target.__name + '#' + fName, cls, 'BEGIN', '',
+				var logObj = createLogObject(target, target.__name + '#' + fName, cls, 'BEGIN', '',
 						target.__name, preTarget._h5debugContext.indentLevel);
 				addLogObject(preTarget._h5debugContext.debugLog, logObj);
 				preTarget._h5debugContext.indentLevel += 1;
@@ -2654,7 +2928,8 @@
 			}
 
 			// ターゲットのログ
-			var logObj = createLogObject(fName, cls, 'BEGIN', '', target.__name, indentLevel);
+			var logObj = createLogObject(target, fName, cls, 'BEGIN', '', target.__name,
+					indentLevel);
 			data.logObj = logObj;
 			addLogObject(target._h5debugContext.debugLog, logObj);
 			target._h5debugContext.indentLevel += 1;
@@ -2664,7 +2939,7 @@
 			});
 
 			// コントローラ全部、ロジック全部の横断動作ログ
-			var wholeLog = createLogObject(target.__name + '#' + fName, cls, 'BEGIN', '',
+			var wholeLog = createLogObject(target, target.__name + '#' + fName, cls, 'BEGIN', '',
 					target.__name, wholeOperationLogsIndentLevel);
 			wholeOperationLogsIndentLevel++;
 			addLogObject(wholeOperationLogs, wholeLog);
@@ -2673,10 +2948,6 @@
 			preTarget = target;
 			return invocation.proceed();
 		}, function(invocation, data) {
-			if (debugWindowClosed) {
-				// デバッグウィンドウが閉じられていたら何もしない
-				return;
-			}
 			var target = invocation.target;
 			if (!target.__name) {
 				// target.__nameがない(===disposeされた)場合は何もしない
@@ -2747,7 +3018,7 @@
 			var defObj = $.extend({}, arguments[1]);
 			var c = orgController.apply(this, arguments);
 			if (defObj && h5.u.str.startsWith(defObj.__name, 'h5.debug.developer')) {
-				return c;
+				return;
 			}
 			c.initPromise.done(function() {
 				if (!this.__controllerContext.controllerDefObj) {
