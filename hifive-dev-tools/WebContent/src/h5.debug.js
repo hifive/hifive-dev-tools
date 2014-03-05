@@ -2786,7 +2786,8 @@
 					view: {
 						type: {
 							log: function(obj) {
-								if (obj.args[1] && obj.args[1].indexOf('h5.debug.developer.') === 0) {
+								if (obj.args[1] && typeof args[1] === 'string'
+										&& obj.args[1].indexOf('h5.debug.developer.') === 0) {
 									// デバッグツールが吐いてるログは出力しない
 									return;
 								}
