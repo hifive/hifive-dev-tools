@@ -2796,8 +2796,6 @@
 		 * @memberOf h5.debug.developer.DebugController
 		 */
 		__construct: function(context) {
-			// ログを出力する
-			this.log.info('hifive Developer Tool(ver.{0})の読み込みが完了しました。', H5_DEV_TOOL_VERSION);
 			this.win = context.args.win;
 			// 必要な要素を追加
 
@@ -2902,6 +2900,9 @@
 	// Body
 	//
 	// =========================================================================
+
+	// ログを出力する
+	fwLogger.info('hifive Developer Tool(ver.{0})の読み込みが完了しました。', H5_DEV_TOOL_VERSION);
 
 	// アスペクトを掛ける
 	// TODO アスペクトでやるのをやめる。
