@@ -703,8 +703,8 @@
 			.register(
 					'eventHandler-list',
 					'<ul class="liststyle-none no-padding method-list">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
-							+ '<li class="[%= (countObj[p]?"called":"nocalled") %]"><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span>'
-							+ '<span class="key">[%= p %]</span><span class="count">[%= countObj[p] %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
+							+ '<li class="[%= (methodCount.get(p)?"called":"nocalled") %]"><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span>'
+							+ '<span class="key">[%= p %]</span><span class="count">[%= methodCount.get(p) %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
 							+ '[% } %]</ul>');
 
 	// メソッドリスト(コントローラ、ロジック、共通)
@@ -712,7 +712,7 @@
 			.register(
 					'method-list',
 					'<ul class="liststyle-none no-padding method-list">[% for(var i = 0, l = methods.length; i < l; i++){ var p = methods[i];%]'
-							+ '<li class="[%= (countObj[p]?"called":"nocalled") %]"><span class="name">[%= p %]</span><span class="count">[%= countObj[p] %]</span><pre class="value">[%= _funcToStr(defObj[p]) %]</pre></li>'
+							+ '<li class="[%= (methodCount.get(p)?"called":"nocalled") %]"><span class="name">[%= p %]</span><span class="count">[%= methodCount.get(p) %]</span><pre class="value">[%= _funcToStr(defObj[p]) %]</pre></li>'
 							+ '[% } %]</ul>');
 	// その他情報
 	view
@@ -1254,6 +1254,44 @@
 		logArrays.push(ary);
 		return ary;
 	}
+
+	/**
+	 * メソッドの実行回数をカウントするクラス。
+	 * <p>
+	 * (メソッド名をプロパティにしたObservableItemは作成できない(プロパティの命名制限のため)ので、オリジナルのクラスを作成)
+	 * </p>
+	 *
+	 * @param {Controller|Logic} target
+	 * @returns ObservableItem
+	 */
+	function MethodCount(target, callback) {
+		this._method = {};
+		this._callback = callback;
+
+		// 定義オブジェクトを取得
+		var defObj = target.__controllerContext ? target.__controllerContext.controllerDef
+				: target.__logicContext.logicDef;
+
+		for ( var p in defObj) {
+			if ($.isFunction(defObj[p])) {
+				this._method[p] = 0;
+			}
+		}
+	}
+	$.extend(MethodCount.prototype, {
+		count: function(method) {
+			this._method[method]++;
+			if (this._callback) {
+				return this._callback(method);
+			}
+		},
+		get: function(method) {
+			return this._method[method];
+		},
+		registCallback: function(callback) {
+			this._callback = callback;
+		}
+	});
 
 	// =========================================================================
 	//
@@ -1811,6 +1849,11 @@
 				return;
 			}
 
+			// methodCountオブジェクトを持たせる
+			if (!target._h5debugContext.methodCount._method) {
+				target._h5debugContext.methodCount._method = new MethodCount(target);
+			}
+
 			// 詳細ビューに表示されているコントローラを取得
 			var controllers = h5.core.controllerManager.getControllers(this.$find('.detail'), {
 				deep: true
@@ -1828,7 +1871,6 @@
 			for ( var i = 0, l = controllers.length; i < l; i++) {
 				controllers[i].dispose();
 			}
-
 		},
 		/**
 		 * コントローラの詳細表示
@@ -1840,59 +1882,79 @@
 			this.$find('.logic-detail').css('display', 'none');
 			this.$find('.controller-detail').css('display', 'block');
 
-			// イベントハンドラ、メソッドは、コントローラ定義オブジェクトから取得する。
-			// hifive1.1.8以前では、コントローラ定義オブジェクトを持たないが、h5.core.controllerをフックしているので、
-			// デバッグコントローラバインド後にコントローラ化されたものは定義オブジェクトを持っている。
-			// また、デバッグコントローラがコントローラ化された時点でその前にバインドされていたコントローラにもコントローラ定義オブジェクトが無ければ持たせている
-
-			// イベントハンドラリスト
+			// メソッド(イベントハンドラ以外)とイベントハンドラを列挙
+			var methods = [];
 			var eventHandlers = [];
-			// メソッドリスト
-			// lifecycle, public, privateの順でソート
-			// lifecycleはライフサイクルの実行順、public、privateは辞書順
-			var privateMethods = [];
-			var publicMethods = [];
-			var lifecycleMethods = [];
-			for ( var p in controller.__controllerContext.controllerDef) {
-				if ($.isFunction(controller.__controllerContext.controllerDef[p])) {
-					if (p.indexOf(' ') !== -1) {
-						// イベントハンドラ
-						eventHandlers.push(p);
-					} else {
-						// メソッド
-						// lifecycleかpublicかprivateかを判定する
-						if ($.inArray(p, LIFECYCLE_METHODS) !== -1) {
-							lifecycleMethods.push(p);
-						} else if (h5.u.str.startsWith(p, '_')) {
-							privateMethods.push(p);
-						} else {
-							publicMethods.push(p);
-						}
-					}
+			for ( var p in controller._h5debugContext.methodCount._method) {
+				if (p.indexOf(' ') === -1) {
+					methods.push(p);
+				} else {
+					eventHandlers.push(p);
 				}
 			}
-			// ソート
-			eventHandlers.sort();
-			lifecycleMethods.sort(function(a, b) {
-				return $.inArray(a, LIFECYCLE_METHODS) > $.inArray(b, LIFECYCLE_METHODS);
-			});
-			privateMethods.sort();
-			publicMethods.sort();
-			var methods = lifecycleMethods.concat(publicMethods).concat(privateMethods);
+
+			methods
+					.sort(function(a, b) {
+						// lifecycle, public, privateの順でソート
+						// lifecycleはライフサイクルの実行順、public、privateは辞書順
+						if ($.inArray(a, LIFECYCLE_METHODS) !== -1
+								&& $.inArray(b, LIFECYCLE_METHODS) !== -1) {
+							// 両方ともライフサイクルメソッド
+							return $.inArray(a, LIFECYCLE_METHODS) - $
+									.inArray(b, LIFECYCLE_METHODS);
+						}
+						// lifecycle, public, privateの順でソート
+						var ret = 0;
+						ret -= $.inArray(a, LIFECYCLE_METHODS) >= 0 ? 1 : 0;
+						ret += $.inArray(b, LIFECYCLE_METHODS) >= 0 ? 1 : 0;
+						ret -= h5.u.str.startsWith(a, '_') && $.inArray(a, LIFECYCLE_METHODS) === -1 ? -1
+								: 0;
+						ret += h5.u.str.startsWith(b, '_') && $.inArray(b, LIFECYCLE_METHODS) === -1 ? -1
+								: 0;
+						return ret === 0 ? (a > b ? 1 : -1) : ret;
+					});
 
 			this._updateEventHandlerView({
 				controller: controller.__controllerContext.controllerDef,
 				eventHandlers: eventHandlers,
 				_funcToStr: funcToStr,
-				countObj: controller._h5debugContext.methodCount
+				methodCount: controller._h5debugContext.methodCount
 			});
 
 			this._updateMethodView({
 				defObj: controller.__controllerContext.controllerDef,
 				methods: methods,
 				_funcToStr: funcToStr,
-				countObj: controller._h5debugContext.methodCount
+				methodCount: controller._h5debugContext.methodCount
 			});
+
+			controller._h5debugContext.methodCount
+					.registCallback(this
+							.own(function(method) {
+								// 表示中であればカウントを更新
+								if (this.selectedTarget !== controller) {
+									return;
+								}
+								var $targetLi = null
+								if ($.inArray(method, methods) !== -1
+										&& this
+												.$find('.controller-detail .tab-content .method.active').length) {
+									$targetLi = this.$find(
+											'.controller-detail .tab-content .method.active .name:contains('
+													+ method + ')').parent();
+								} else if ($.inArray(method, eventHandlers) !== -1
+										&& this
+												.$find('.controller-detail .tab-content .eventHandler.active').length) {
+									$targetLi = this.$find(
+											'.controller-detail .tab-content .eventHandler.active .key:contains('
+													+ method + ')').parent();
+								}
+								if (!$targetLi || !$targetLi.length) {
+									return;
+								}
+								var $count = $targetLi.find('.count');
+								$count.text(parseInt($count.text()) + 1);
+							}));
 
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
@@ -1918,11 +1980,12 @@
 					});
 		},
 		_updateEventHandlerView: function(obj) {
-			view.update(this.$find('.controller-detail .tab-content .eventHandler'),
-					'eventHandler-list', obj);
+			var $target = this.$find('.controller-detail .tab-content .eventHandler');
+			view.update($target, 'eventHandler-list', obj);
 		},
 		_updateMethodView: function(obj) {
-			view.update(this.$find('.controller-detail .tab-content .method'), 'method-list', obj);
+			var $target = this.$find('.controller-detail .tab-content .method');
+			view.update($target, 'method-list', obj);
 		},
 		/**
 		 * 表示中のタブが押されたら更新する
@@ -1969,8 +2032,27 @@
 				defObj: logic.__logicContext.logicDef,
 				methods: methods,
 				_funcToStr: funcToStr,
-				countObj: logic._h5debugContext.methodCount
+				methodCount: logic._h5debugContext.methodCount
 			});
+
+			logic._h5debugContext.methodCount.registCallback(this.own(function(method) {
+				// 表示中であればカウントを更新
+				if (this.selectedTarget !== logic) {
+					return;
+				}
+				var $targetLi = null
+				if ($.inArray(method, methods) !== -1
+						&& this.$find('.logic-detail .tab-content .method.active').length) {
+					$targetLi = this.$find(
+							'.logic-detail .tab-content .method.active .name:contains(' + method
+									+ ')').parent();
+				}
+				if (!$targetLi || !$targetLi.length) {
+					return;
+				}
+				var $count = $targetLi.find('.count');
+				$count.text(parseInt($count.text()) + 1);
+			}));
 
 			// ログ
 			var logAry = logic._h5debugContext.debugLog;
@@ -2117,12 +2199,7 @@
 			}
 
 			// メソッド・イベントハンドラの実行回数を保持するオブジェクトを持たせる
-			target._h5debugContext.methodCount = {};
-			for ( var p in target) {
-				if ($.isFunction(target[p])) {
-					target._h5debugContext.methodCount[p] = 0;
-				}
-			}
+			target._h5debugContext.methodCount = new MethodCount(target);
 
 			if (target.__controllerContext) {
 				// コントローラの場合
@@ -2926,12 +3003,12 @@
 			// ログのインデントレベルを設定
 			target._h5debugContext.indentLevel = target._h5debugContext.indentLevel || 0;
 			// メソッドの呼び出し回数をカウント
-			if (!target._h5debugContext.methodCount) {
-				var methodCount = {};
-				methodCount[fName] = 0;
+			var methodCount = target._h5debugContext.methodCount;
+			if (!methodCount) {
+				methodCount = new MethodCount(target);
 				target._h5debugContext.methodCount = methodCount;
 			}
-			target._h5debugContext.methodCount[fName]++;
+			methodCount.count(fName);
 
 			var indentLevel = target._h5debugContext.indentLevel;
 			var cls = '';
