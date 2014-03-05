@@ -380,7 +380,7 @@
 		}
 	},
 	/*
-	 * 動作ログ
+	 * トレースログ
 	 */
 	{
 		selector: '.h5debug .operation-log',
@@ -919,9 +919,9 @@
 	// ルートのタブ
 	view.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
 			+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
-			+ '<li data-tab-page="operation-log">動作ログ</li>'
+			+ '<li data-tab-page="operation-log">トレース</li>'
 			+ '<li data-tab-page="console-log">コンソールログ</li>'
-			+ '<li data-tab-page="settings">デバッガ設定</li>' + '</ul><div class="tab-content">'
+			+ '<li data-tab-page="settings">設定</li>' + '</ul><div class="tab-content">'
 			+ '<div class="active debug-controller columnLayoutWrapper"></div>'
 			+ '<div class="operation-log whole"></div>' + '<div class="console-log"></div>'
 			+ '<div class="settings"></div>' + '</div>');
@@ -996,7 +996,7 @@
 	view.register('logic-otherInfo', '<dl><dt>名前</dt><dd>[%= defObj.__name %]</dd>'
 			+ '<dt>ロジックインスタンスの名前</dt><dd>[%= instanceName %]</dd>' + '</dl>');
 
-	// 動作ログ(コントローラ、ロジック、全体、で共通)
+	// トレースログ(コントローラ、ロジック、全体、で共通)
 	view
 			.register(
 					'operation-log',
@@ -1011,7 +1011,7 @@
 							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"></ul>'
 							+ '<ul class="contextMenu logContextMenu dropdown-menu"><li class="showFunction"><span>関数を表示</span></li></ul>');
 
-	// 動作ログのli
+	// トレースログのli
 	view.register('operation-log-list-part', '<li class=[%= cls %]>'
 			+ '<span class="time">[%= time %]</span>'
 			+ '<span style="margin-left:[%= indentWidth %]" class="tag">[%= tag %]</span>'
@@ -1063,8 +1063,8 @@
 	/**
 	 * コントローラ、ロジック、全体のログ
 	 */
-	var wholeOperationLogs = createLogArray();
-	var wholeOperationLogsIndentLevel = 0;
+	var wholeTraceLogs = createLogArray();
+	var wholeTraceLogsIndentLevel = 0;
 
 	/**
 	 * コンソール出力のログ
@@ -1872,9 +1872,9 @@
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
 			h5.core.controller(this.$find('.controller-detail .operation-log'),
-					operationLogController, {
-						operationLogs: logAry,
-						// 動作ログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
+					traceLogController, {
+						traceLogs: logAry,
+						// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
 						// 引数で渡してログコントローラに覚えさせておく
 						_parentControllerDebugCtrl: this
 					});
@@ -1949,10 +1949,10 @@
 
 			// ログ
 			var logAry = logic._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.logic-detail .operation-log'), operationLogController,
+			h5.core.controller(this.$find('.logic-detail .operation-log'), traceLogController,
 					{
-						operationLogs: logAry,
-						// 動作ログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
+						traceLogs: logAry,
+						// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
 						// 引数で渡してログコントローラに覚えさせておく
 						_parentControllerDebugCtrl: this
 					});
@@ -2228,7 +2228,7 @@
 	};
 
 	/**
-	 * 動作ログ、コンソールログの共通処理を抜き出したコントローラ
+	 * トレースログ、コンソールログの共通処理を抜き出したコントローラ
 	 *
 	 * @name h5.debug.developer.BaseLogConttoller
 	 */
@@ -2437,19 +2437,19 @@
 	};
 
 	/**
-	 * 動作ログコントローラ<br>
+	 * トレースログコントローラ<br>
 	 *
-	 * @name h5.debug.developer.OperationLogController
+	 * @name h5.debug.developer.TraceLogController
 	 */
-	var operationLogController = {
+	var traceLogController = {
 		/**
-		 * @memberOf h5.debug.developer.OperationLogController
+		 * @memberOf h5.debug.developer.TraceLogController
 		 */
-		__name: 'h5.debug.developer.OperationLogController',
+		__name: 'h5.debug.developer.TraceLogController',
 		/**
 		 * 表示する条件を格納するオブジェクト
 		 *
-		 * @memberOf h5.debug.developer.OperationLogController
+		 * @memberOf h5.debug.developer.TraceLogController
 		 */
 		_condition: {
 			filterStr: '',
@@ -2460,7 +2460,7 @@
 		/**
 		 * ログ配列
 		 *
-		 * @memberOf h5.debug.developer.OperationLogContorller
+		 * @memberOf h5.debug.developer.TraceLogContorller
 		 */
 		_logArray: null,
 
@@ -2472,13 +2472,13 @@
 		baseController: baseLogController,
 
 		/**
-		 * @memberOf h5.debug.developer.OperationLogController
+		 * @memberOf h5.debug.developer.TraceLogController
 		 * @param context.evArg.logArray logArray
 		 */
 		__ready: function(context) {
 			view.update(this.rootElement, 'operation-log');
 			this.baseController.setCreateLogHTML(this.own(this._createLogHTML));
-			this.baseController.setLogArray(context.args.operationLogs, this
+			this.baseController.setLogArray(context.args.traceLogs, this
 					.$find('.operation-log-list')[0]);
 		},
 		_createLogHTML: function(logArray) {
@@ -2492,7 +2492,7 @@
 			for ( var i = 0, l = logArray.length; i < l; i++) {
 				//			var part = view.get('operation-log-list-part', logArray.get(i));
 				var logObj = logArray.get(i);
-				//			h5.u.str.format(operationLogListPart, logObj.cls, logObj.time,
+				//			h5.u.str.format(traceLogListPart, logObj.cls, logObj.time,
 				//					logObj.indentWidth, logObj.tag, logObj.promiseState, logObj.message);
 				var part = '<li class="' + logObj.cls + '" data-h5debug-logindex="' + i + '">'
 						+ '<span class="time">' + logObj.time + '</span>'
@@ -2532,7 +2532,7 @@
 		/**
 		 * フィルタを掛ける
 		 *
-		 * @memberOf h5.debug.developer.OperationLogController
+		 * @memberOf h5.debug.developer.TraceLogController
 		 */
 		'button.filter-show click': function(context) {
 			var val = this.$find('input.filter[type="text"]').val();
@@ -2568,7 +2568,7 @@
 		/**
 		 * ログから関数へ遷移
 		 *
-		 * @memberOf h5.debug.developer.OperationLogController
+		 * @memberOf h5.debug.developer.TraceLogController
 		 * @param $li
 		 */
 		refresh: function($li) {
@@ -2742,7 +2742,7 @@
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 */
-		_operationLogController: operationLogController,
+		_traceLogController: traceLogController,
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 */
@@ -2758,7 +2758,7 @@
 			_controllerDebugController: {
 			// rootElementは__constructで追加してから設定している
 			},
-			_operationLogController: {},
+			_traceLogController: {},
 			_settingsController: {},
 			_consoleLogController: {}
 		},
@@ -2774,7 +2774,7 @@
 			view.append(this.$find('.debug-controller'), 'controllerDebugWrapper');
 			view.append(this.$find('.settings'), 'settings');
 			this.__meta._controllerDebugController.rootElement = this.$find('.debug-controller');
-			this.__meta._operationLogController.rootElement = this.$find('.operation-log');
+			this.__meta._traceLogController.rootElement = this.$find('.operation-log');
 			this.__meta._consoleLogController.rootElement = this.$find('.console-log');
 			this.__meta._settingsController.rootElement = this.$find('.settings');
 
@@ -2909,7 +2909,7 @@
 			}
 
 			// BEGINを出力したターゲットのログを覚えておいてENDの出力場所が分かるようにする
-			// 全体の動作ログ以外で、ログを出した場所を覚えさせておく
+			// 全体のトレースログ以外で、ログを出した場所を覚えさせておく
 			data.beginLog = [];
 
 			// ログを保持する配列をターゲットに持たせる
@@ -2940,11 +2940,11 @@
 				logObj: logObj
 			});
 
-			// コントローラ全部、ロジック全部の横断動作ログ
+			// コントローラ全部、ロジック全部の横断トレースログ
 			var wholeLog = createLogObject(target, target.__name + '#' + fName, cls, 'BEGIN', '',
-					target.__name, wholeOperationLogsIndentLevel);
-			wholeOperationLogsIndentLevel++;
-			addLogObject(wholeOperationLogs, wholeLog);
+					target.__name, wholeTraceLogsIndentLevel);
+			wholeTraceLogsIndentLevel++;
+			addLogObject(wholeTraceLogs, wholeLog);
 			data.wholeLog = wholeLog;
 
 			preTarget = target;
@@ -2997,14 +2997,14 @@
 				}
 			}
 
-			// コントローラ全部、ロジック全部の横断動作ログにログオブジェクトの登録
+			// コントローラ全部、ロジック全部の横断トレースログにログオブジェクトの登録
 			var wholeLog = $.extend({}, data.wholeLog);
 			wholeLog.tag = tag;
 			wholeLog.promiseState = promiseState;
 			wholeLog.time = time;
 			wholeLog.indentWidth = isPromise ? 0 : wholeLog.indentWidth;
-			addLogObject(wholeOperationLogs, wholeLog);
-			wholeOperationLogsIndentLevel -= 1;
+			addLogObject(wholeTraceLogs, wholeLog);
+			wholeTraceLogsIndentLevel -= 1;
 			preTarget = null;
 		}),
 		pointCut: '*'
@@ -3040,8 +3040,8 @@
 			debugWindow = win;
 			h5.core.controller($(win.document).find('.h5debug'), debugController, {
 				win: win,
-				// 全体の動作ログ
-				operationLogs: wholeOperationLogs,
+				// 全体のトレースログ
+				traceLogs: wholeTraceLogs,
 				// コンソールログ
 				consoleLogs: consoleLogs
 
