@@ -353,6 +353,12 @@
 			margin: 0
 		}
 	}, {
+		selector: '.h5debug .debug-controller .otherInfo dt',
+		rule: {
+			fontWeight: 'bold',
+			margin: '5px 0 5px 5px'
+		}
+	}, {
 		selector: '.h5debug .method-list .count',
 		rule: {
 			float: 'right',
