@@ -498,7 +498,7 @@
 			color: '#ff0000'
 		}
 	}, {
-		selector: '.h5debug .console-log p.EXEPTION',
+		selector: '.h5debug .console-log p.EXCEPTION',
 		rule: {
 			color: '#ff0000',
 			fontWeight: 'bold'
@@ -2646,7 +2646,7 @@
 				var lineno = ev.originalEvent.lineno || '';
 
 				consoleLogs.push({
-					levelString: 'EXEPTION',
+					levelString: 'EXCEPTION',
 					date: new Date(),
 					args: ['{0} {1}:{2}', message, file, lineno]
 				});
