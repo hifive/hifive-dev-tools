@@ -17,12 +17,14 @@
  */
 
 /**
- * コンテキストメニューコントローラ
+ * デバッグツールで使用するコンテキストメニューコントローラ
  */
 (function() {
-
 	var contextMenuController = {
 
+		/**
+		 * @memberOf h5.debug.developer.ui.ContextMenuController
+		 */
 		__name: 'h5.debug.developer.ui.ContextMenuController',
 
 		_contextMenu: null,
@@ -285,6 +287,7 @@
 
 	h5.core.expose(contextMenuController);
 })();
+
 /**
  * デバッグコントローラ
  */
@@ -313,6 +316,12 @@
 	// Constants
 	//
 	// =========================================================================
+
+	/**
+	 * DebugToolのバージョン
+	 */
+	var H5_DEV_TOOL_VERSION = '1.0.0';
+
 	var OLD_IE_BLANK_URL = 'blankForOldIE.html';
 	var LOG_INDENT_WIDTH = 10;
 	// ログ出力の遅延時間(ms)
@@ -1034,6 +1043,12 @@
 	// =============================
 	// Variables
 	// =============================
+
+	/**
+	 * デバッグツールで使用するロガー
+	 */
+	var fwLogger = h5.log.createLogger('h5.debug.developper');
+
 	/**
 	 * デバッグするウィンドウ。window.openなら開いたウィンドウで、そうじゃなければページのwindowオブジェクト。
 	 */
@@ -1253,7 +1268,7 @@
 				$(w.document.getElementsByTagName('html')).addClass('h5debugHTML');
 
 				// タイトルの設定
-				w.document.title = 'hifive Developer Tools';
+				w.document.title = 'hifive Developer Tool ver.' + H5_DEV_TOOL_VERSION;
 			}
 
 
@@ -1871,8 +1886,8 @@
 
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.controller-detail .operation-log'),
-					traceLogController, {
+			h5.core.controller(this.$find('.controller-detail .operation-log'), traceLogController,
+					{
 						traceLogs: logAry,
 						// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
 						// 引数で渡してログコントローラに覚えさせておく
@@ -1949,13 +1964,12 @@
 
 			// ログ
 			var logAry = logic._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.logic-detail .operation-log'), traceLogController,
-					{
-						traceLogs: logAry,
-						// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
-						// 引数で渡してログコントローラに覚えさせておく
-						_parentControllerDebugCtrl: this
-					});
+			h5.core.controller(this.$find('.logic-detail .operation-log'), traceLogController, {
+				traceLogs: logAry,
+				// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
+				// 引数で渡してログコントローラに覚えさせておく
+				_parentControllerDebugCtrl: this
+			});
 
 			// その他情報
 			view.update(this.$find('.logic-detail .tab-content .otherInfo'), 'logic-otherInfo', {
@@ -2863,6 +2877,16 @@
 			}
 		}
 	};
+
+	// =========================================================================
+	//
+	// Body
+	//
+	// =========================================================================
+
+	// ログを出力する
+	fwLogger.info('hifive Developer Tool(ver.{0})の読み込みが完了しました。', H5_DEV_TOOL_VERSION);
+
 	// アスペクトを掛ける
 	// TODO アスペクトでやるのをやめる。
 	// アスペクトだと、メソッドがプロミスを返した時が分からない。(プロミスがresolve,rejectされた時に初めてpostに入るので。)
