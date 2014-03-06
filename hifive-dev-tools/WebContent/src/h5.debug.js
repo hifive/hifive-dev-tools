@@ -24,7 +24,7 @@
 			return;
 		}
 	} else {
-		// hifiveが読み込まれていないならreturnする
+		// hifive自体がロードされていないので、ロードを中止する
 		return;
 	}
 
