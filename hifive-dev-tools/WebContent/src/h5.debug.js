@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 NS Solutions Corporation
+ * Copyright (C) 2013-2014 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -672,8 +672,7 @@
 	// ルートのタブ
 	view.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
 			+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
-			+ '<li data-tab-page="trace">トレース</li>'
-			+ '<li data-tab-page="logger">ロガー</li>'
+			+ '<li data-tab-page="trace">トレース</li>' + '<li data-tab-page="logger">ロガー</li>'
 			+ '<li data-tab-page="settings">設定</li>' + '</ul><div class="tab-content">'
 			+ '<div class="active debug-controller columnLayoutWrapper"></div>'
 			+ '<div class="trace whole"></div>' + '<div class="logger"></div>'
@@ -1959,13 +1958,12 @@
 
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.controller-detail .trace'), traceLogController,
-					{
-						traceLogs: logAry,
-						// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
-						// 引数で渡してログコントローラに覚えさせておく
-						_parentControllerDebugCtrl: this
-					});
+			h5.core.controller(this.$find('.controller-detail .trace'), traceLogController, {
+				traceLogs: logAry,
+				// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
+				// 引数で渡してログコントローラに覚えさせておく
+				_parentControllerDebugCtrl: this
+			});
 
 			// その他情報
 			var childControllerProperties = getChildControllerProperties(controller);
@@ -2583,8 +2581,7 @@
 		__ready: function(context) {
 			view.update(this.rootElement, 'trace');
 			this.baseController.setCreateLogHTML(this.own(this._createLogHTML));
-			this.baseController.setLogArray(context.args.traceLogs, this
-					.$find('.trace-list')[0]);
+			this.baseController.setLogArray(context.args.traceLogs, this.$find('.trace-list')[0]);
 		},
 		_createLogHTML: function(logArray) {
 			var reg = this._condition.filterStr && getRegex(this._condition.filterStr);
