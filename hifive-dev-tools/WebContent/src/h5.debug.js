@@ -178,7 +178,6 @@
 			backgroundColor: '#fff',
 			border: 'solid 1px gray',
 			padding: '3px'
-
 		}
 	}, {
 		selector: '.h5debug .trace-list',
@@ -2565,13 +2564,6 @@
 		},
 
 		/**
-		 * ログ配列
-		 *
-		 * @memberOf h5.debug.developer.TraceLogContorller
-		 */
-		_logArray: null,
-
-		/**
 		 * ログ出力共通コントローラ
 		 *
 		 * @memberOf h5.debug.developer.BaseLogController
@@ -2588,8 +2580,9 @@
 			this.baseController.setLogArray(context.args.traceLogs, this.$find('.trace-list')[0]);
 		},
 		_createLogHTML: function(logArray) {
-			var reg = this._condition.filterStr && getRegex(this._condition.filterStr);
-			var exclude = this._condition.filterStr && this._condition.exclude;
+			var str = this._condition.filterStr;
+			var reg = this._condition.filterReg;
+			var isExclude = this._condition.filterStr && this._condition.exclude;
 			var hideCls = this._condition.hideCls;
 
 			var html = '';
@@ -2601,9 +2594,8 @@
 				var logObj = logArray.get(i);
 				var part = view.get('trace-list-part', logObj);
 				// フィルタにマッチしているか
-				if (reg
-						&& ((!exclude && !logObj.message.match(reg)) || (exclude && logObj.message
-								.match(reg)))) {
+				if (!isExclude === !(reg ? logObj.message.match(reg)
+						: logObj.message.indexOf(str) !== -1)) {
 					html += $(part).css('display', 'none')[0].outerHTML;
 					continue;
 				} else if (hideCls && hideCls[logObj.cls]) {
@@ -2662,46 +2654,19 @@
 		},
 		_executeFilter: function(val, execlude) {
 			this._condition.filterStr = val;
+			this._condition.filterReg = val.indexOf('*') !== -1 ? getRegex(val) : null;
 			this._condition.exclude = !!execlude;
 			this.refresh();
 		},
 
 		/**
-		 * フィルタを掛けなおす
+		 * 表示されているログについてフィルタを掛けなおす
 		 *
 		 * @memberOf h5.debug.developer.TraceLogController
-		 * @param $li
 		 */
-		refresh: function($li) {
-			$li = $li || this.$find('li');
-			$li.css('display', '');
-			this._regFilter($li);
-			this._clsFilter($li);
-		},
-		_regFilter: function($li) {
-			var str = this._condition.filterStr;
-			if (!str) {
-				return;
-			}
-			var isExclude = this._condition.exclude;
-			var reg = getRegex(str);
-			// フィルタによって隠されてる要素を一度表示
-			var $hiddenLi = $();
-			$li.each(function() {
-				var $this = $(this);
-				if (isExclude !== !$this.find('.message').text().match(reg)) {
-					$hiddenLi = $hiddenLi.add($this);
-				}
-			});
-			// フィルタにマッチしたものを隠す
-			$hiddenLi.css('display', 'none');
-		},
-		_clsFilter: function($li) {
-			for ( var cls in this._condition.hideCls) {
-				if (this._condition.hideCls[cls]) {
-					$li.filter('.' + cls).css('display', 'none');
-				}
-			}
+		refresh: function() {
+			this.$find('.trace-list')[0].innerHTML = this
+					._createLogHTML(this.baseController._logArray);
 		}
 	};
 	h5.core.expose(traceLogController);
