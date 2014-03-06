@@ -134,29 +134,25 @@
 		rule: {
 			marginRight: '2px'
 		}
-	},
-	{
+	}, {
 		selector: '.h5debug .fixedControlls label.lifecycle',
 		rule: {
 			borderBottom: '3px solid #2EB3EE',
 			color: '#2EB3EE'
 		}
-	},
-	{
+	}, {
 		selector: '.h5debug .fixedControlls label.event',
 		rule: {
 			borderBottom: '3px solid #008348',
 			color: '#008348'
 		}
-	},
-	{
+	}, {
 		selector: '.h5debug .fixedControlls label.private',
 		rule: {
 			borderBottom: '3px solid #B2532E',
 			color: '#B2532E'
 		}
-	},
-	{
+	}, {
 		selector: '.h5debug .fixedControlls label.public',
 		rule: {
 			borderBottom: '3px solid #006B89',
@@ -2618,6 +2614,7 @@
 		},
 		_createLogHTML: function(logArray) {
 			var reg = this._condition.filterStr && getRegex(this._condition.filterStr);
+			var exclude = this._condition.filterStr && this._condition.exclude;
 			var hideCls = this._condition.hideCls;
 
 			var html = '';
@@ -2636,19 +2633,14 @@
 						+ logObj.promiseState + '</span>' + '<span class="message ' + logObj.cls
 						+ '">' + logObj.message + '</span></li>';
 				// フィルタにマッチしているか
-				if (reg && $('.message').text().match(reg)) {
+				if (reg
+						&& ((!exclude && !logObj.message.match(reg)) || (exclude && logObj.message
+								.match(reg)))) {
 					html += $(part).css('display', 'none')[0].outerHTML;
 					continue;
-				}
-
-				// クラスのフィルタにマッチしているか
-				if (hideCls) {
-					for ( var cls in hideCls) {
-						if (hideCls[cls]) {
-							part = $(part).css('display', 'none')[0].outerHTML;
-							break;
-						}
-					}
+				} else if (hideCls && hideCls[logObj.cls]) {
+					// クラスのフィルタにマッチしているか
+					part = $(part).css('display', 'none')[0].outerHTML;
 				}
 
 				html += part;
@@ -2707,7 +2699,7 @@
 		},
 
 		/**
-		 * ログから関数へ遷移
+		 * フィルタを掛けなおす
 		 *
 		 * @memberOf h5.debug.developer.TraceLogController
 		 * @param $li
@@ -3051,7 +3043,7 @@
 			var cls = '';
 			if (fName.indexOf(' ') !== -1 && target.__controllerContext) {
 				// コントローラかつ空白を含むメソッドの場合はイベントハンドラ
-				cls = ' event';
+				cls = 'event';
 			} else if ($.inArray(fName, LIFECYCLE_METHODS) !== -1 && target.__controllerContext) {
 				// ライフサイクルメソッド
 				cls = 'lifecycle';
