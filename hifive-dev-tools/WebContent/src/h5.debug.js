@@ -2639,49 +2639,40 @@
 		'input.filter keydown': function(context) {
 			// エンターキー
 			if (context.event.keyCode === 13) {
-				var val = this.$find('input.filter[type="text"]').val();
+				var val = this.$find('input.filter').val();
 				if (!val) {
 					return;
 				}
-				this._condition.filterStr = val;
-				this._condition.exclude = false;
-				this.refresh();
-				this.$find('input.filter[type="text"],.filter-show,.filter-hide').attr('disabled',
-						'disabled');
-				this.$find('.filter-clear').removeAttr('disabled');
+				this._executeFilter(val);
+				this.$find('.filter-clear').prop('disabled', false);
 			}
 		},
 		'button.filter-show click': function(context) {
-			var val = this.$find('input.filter[type="text"]').val();
+			var val = this.$find('input.filter').val();
 			if (!val) {
 				return;
 			}
-			this._condition.filterStr = val;
-			this._condition.exclude = false;
-			this.refresh();
-			this.$find('input.filter[type="text"],.filter-show,.filter-hide').attr('disabled',
-					'disabled');
-			this.$find('.filter-clear').removeAttr('disabled');
+			this._executeFilter(val);
+			this.$find('.filter-clear').prop('disabled', false);
 		},
 		'button.filter-hide click': function(context) {
-			var val = this.$find('input.filter[type="text"]').val();
+			var val = this.$find('input.filter').val();
 			if (!val) {
 				return;
 			}
-			this._condition.filterStr = val;
-			this._condition.exclude = true;
-			this.refresh();
-			this.$find('input.filter[type="text"],.filter-show,.filter-hide').attr('disabled',
-					'disabled');
-			this.$find('.filter-clear').removeAttr('disabled');
+			this._executeFilter(val, true);
+			this.$find('.filter-clear').prop('disabled', false);
 		},
 		'button.filter-clear click': function(context) {
-			this._condition.filterStr = '';
-			this.refresh();
-			this.$find('input.filter[type="text"],.filter-show,.filter-hide')
-					.removeAttr('disabled');
-			this.$find('.filter-clear').attr('disabled', 'disabled');
+			this._executeFilter('');
+			this.$find('.filter-clear').prop('disabled', true);
 		},
+		_executeFilter: function(val, execlude) {
+			this._condition.filterStr = val;
+			this._condition.exclude = !!execlude;
+			this.refresh();
+		},
+
 		/**
 		 * ログから関数へ遷移
 		 *
