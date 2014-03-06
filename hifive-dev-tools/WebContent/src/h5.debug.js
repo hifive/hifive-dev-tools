@@ -18,13 +18,11 @@
 
 (function() {
 	// 二重読み込み防止
-	if (window.h5) {
-		if (window.h5 && window.h5.debug && h5.debug.developer) {
-			// 既にロード済みならロードを中止する
-			return;
-		}
-	} else {
+	if (!window.h5) {
 		// hifive自体がロードされていないので、ロードを中止する
+		return;
+	} else if (h5.debug && h5.debug.developer) {
+		// 既にロード済みならロードを中止する
 		return;
 	}
 
