@@ -130,7 +130,7 @@
 	 * トレースログ
 	 */
 	{
-		selector: '.h5debug .operation-log',
+		selector: '.h5debug .trace',
 		rule: {
 			paddingLeft: 0,
 			margin: 0,
@@ -141,7 +141,7 @@
 			'-moz-boxSizing': 'border-box'
 		}
 	}, {
-		selector: '.h5debug .operation-log .fixedControlls',
+		selector: '.h5debug .trace .fixedControlls',
 		rule: {
 			paddingLeft: 0,
 			margin: 0,
@@ -151,13 +151,13 @@
 
 		}
 	}, {
-		selector: '.h5debug .operation-log .fixedControlls input.filter[disabled]',
+		selector: '.h5debug .trace .fixedControlls input.filter[disabled]',
 		rule: {
 			backgroundColor: '#fff',
 			fontWeight: 'bold'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list',
+		selector: '.h5debug .trace-list',
 		rule: {
 			paddingLeft: 0,
 			margin: 0,
@@ -167,85 +167,85 @@
 			overflow: 'auto'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list>li.selected',
+		selector: '.h5debug .trace-list>li.selected',
 		rule: {
 			backgroundColor: '#ddd'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list>li .time',
+		selector: '.h5debug .trace-list>li .time',
 		rule: {
 			marginRight: '1em'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list>li .tag',
+		selector: '.h5debug .trace-list>li .tag',
 		rule: {
 			display: 'inline-block',
 			minWidth: '3em'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list>li .promiseState',
+		selector: '.h5debug .trace-list>li .promiseState',
 		rule: {
 			display: 'inline-block',
 			marginRight: '0.5em'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list>li .message.lifecycle',
+		selector: '.h5debug .trace-list>li .message.lifecycle',
 		rule: {
 			color: '#2EB3EE'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list .message.event',
+		selector: '.h5debug .trace-list .message.event',
 		rule: {
 			color: '#008348'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list>li .message.private',
+		selector: '.h5debug .trace-list>li .message.private',
 		rule: {
 			color: '#B2532E'
 		}
 	}, {
-		selector: '.h5debug .operation-log-list>li .message.public',
+		selector: '.h5debug .trace-list>li .message.public',
 		rule: {
 			color: '#006B89'
 		}
 	},
 	/*
-	 * コンソールログ
+	 * ロガー
 	 */
 	{
-		selector: '.h5debug .console-log p',
+		selector: '.h5debug .logger p',
 		rule: {
 			margin: '4px 0 0 2px',
 			borderTop: '1px solid #eee',
 			fontSize: '12px'
 		}
 	}, {
-		selector: '.h5debug .console-log p.TRACE',
+		selector: '.h5debug .logger p.TRACE',
 		rule: {
 			color: '#000000'
 		}
 	}, {
-		selector: '.h5debug .console-log p.DEBUG',
+		selector: '.h5debug .logger p.DEBUG',
 		rule: {
 			color: '#0000ff'
 		}
 	}, {
-		selector: '.h5debug .console-log p.INFO',
+		selector: '.h5debug .logger p.INFO',
 		rule: {
 			color: '#000000'
 		}
 	}, {
-		selector: '.h5debug .console-log p.WARN',
+		selector: '.h5debug .logger p.WARN',
 		rule: {
 			color: '#0000ff'
 		}
 	}, {
-		selector: '.h5debug .console-log p.ERROR',
+		selector: '.h5debug .logger p.ERROR',
 		rule: {
 			color: '#ff0000'
 		}
 	}, {
-		selector: '.h5debug .console-log p.EXCEPTION',
+		selector: '.h5debug .logger p.EXCEPTION',
 		rule: {
 			color: '#ff0000',
 			fontWeight: 'bold'
@@ -672,11 +672,11 @@
 	// ルートのタブ
 	view.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
 			+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
-			+ '<li data-tab-page="operation-log">トレース</li>'
-			+ '<li data-tab-page="console-log">コンソールログ</li>'
+			+ '<li data-tab-page="trace">トレース</li>'
+			+ '<li data-tab-page="logger">ロガー</li>'
 			+ '<li data-tab-page="settings">設定</li>' + '</ul><div class="tab-content">'
 			+ '<div class="active debug-controller columnLayoutWrapper"></div>'
-			+ '<div class="operation-log whole"></div>' + '<div class="console-log"></div>'
+			+ '<div class="trace whole"></div>' + '<div class="logger"></div>'
 			+ '<div class="settings"></div>' + '</div>');
 
 	// --------------------- コントローラ --------------------- //
@@ -696,10 +696,10 @@
 			'<div class="detail controller-detail"><ul class="nav nav-tabs">'
 					+ '<li class="active" data-tab-page="eventHandler">イベントハンドラ</li>'
 					+ '<li data-tab-page="method">メソッド</li>'
-					+ '<li data-tab-page="operation-log">ログ</li>'
+					+ '<li data-tab-page="trace">トレース</li>'
 					+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
 					+ '<div class="active eventHandler"></div>' + '<div class="method"></div>'
-					+ '<div class="operation-log"></div>' + '<div class="otherInfo"></div></div>');
+					+ '<div class="trace"></div>' + '<div class="otherInfo"></div></div>');
 
 	// イベントハンドラリスト
 	view
@@ -740,9 +740,9 @@
 	// 詳細情報画面
 	view.register('logic-detail', '<div class="detail logic-detail"><ul class="nav nav-tabs">'
 			+ '<li class="active" data-tab-page="method">メソッド</li>'
-			+ '<li data-tab-page="operation-log">ログ</li>'
+			+ '<li data-tab-page="trace">トレース</li>'
 			+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
-			+ '<div class="active method"></div>' + '<div class="operation-log"></div>'
+			+ '<div class="active method"></div>' + '<div class="trace"></div>'
 			+ '<div class="otherInfo"></div></div>');
 
 	// その他情報
@@ -752,7 +752,7 @@
 	// トレースログ(コントローラ、ロジック、全体、で共通)
 	view
 			.register(
-					'operation-log',
+					'trace',
 					'<div class="fixedControlls">'
 							+ '<label><input type="checkbox" checked name="event"/>イベント</label>'
 							+ '<label><input type="checkbox" checked name="public" />パブリック</label>'
@@ -761,11 +761,11 @@
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '</div>'
-							+ '<ul class="operation-log-list liststyle-none no-padding" data-h5-loop-context="logs"></ul>'
+							+ '<ul class="trace-list liststyle-none no-padding" data-h5-loop-context="logs"></ul>'
 							+ '<ul class="contextMenu logContextMenu dropdown-menu"><li class="showFunction"><span>関数を表示</span></li></ul>');
 
 	// トレースログのli
-	view.register('operation-log-list-part', '<li class=[%= cls %]>'
+	view.register('trace-list-part', '<li class=[%= cls %]>'
 			+ '<span class="time">[%= time %]</span>'
 			+ '<span style="margin-left:[%= indentWidth %]" class="tag">[%= tag %]</span>'
 			+ '<span class="promiseState">[%= promiseState %]</span>'
@@ -828,7 +828,7 @@
 	/**
 	 * コンソール出力のログ
 	 */
-	var consoleLogs = createLogArray();
+	var loggerArray = createLogArray();
 
 	/**
 	 * アスペクトが掛かっていて元の関数が見えない時に代用する関数
@@ -1959,7 +1959,7 @@
 
 			// ログ
 			var logAry = controller._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.controller-detail .operation-log'), traceLogController,
+			h5.core.controller(this.$find('.controller-detail .trace'), traceLogController,
 					{
 						traceLogs: logAry,
 						// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
@@ -2057,7 +2057,7 @@
 
 			// ログ
 			var logAry = logic._h5debugContext.debugLog;
-			h5.core.controller(this.$find('.logic-detail .operation-log'), traceLogController, {
+			h5.core.controller(this.$find('.logic-detail .trace'), traceLogController, {
 				traceLogs: logAry,
 				// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
 				// 引数で渡してログコントローラに覚えさせておく
@@ -2332,7 +2332,7 @@
 	h5.core.expose(settingsController);
 
 	/**
-	 * トレースログ、コンソールログの共通処理を抜き出したコントローラ
+	 * トレースログ、ロガーの共通処理を抜き出したコントローラ
 	 *
 	 * @name h5.debug.developer.BaseLogConttoller
 	 */
@@ -2374,7 +2374,7 @@
 
 		__ready: function(context) {
 			this._contextMenuController.contextMenuExp = '.logContextMenu';
-			this._contextMenuController.setFilter('*:not(.operation-log-list>li>*)');
+			this._contextMenuController.setFilter('*:not(.trace-list>li>*)');
 
 			// コントローラデバッグコントローラを参照できるように覚えておく
 			this._parentControllerDebugCtrl = context.args._parentControllerDebugCtrl
@@ -2476,7 +2476,7 @@
 		},
 
 		_unselect: function() {
-			this.$find('.operation-log-list>li').removeClass('selected');
+			this.$find('.trace-list>li').removeClass('selected');
 		},
 
 		'.showFunction click': function(context, $el) {
@@ -2581,10 +2581,10 @@
 		 * @param context.evArg.logArray logArray
 		 */
 		__ready: function(context) {
-			view.update(this.rootElement, 'operation-log');
+			view.update(this.rootElement, 'trace');
 			this.baseController.setCreateLogHTML(this.own(this._createLogHTML));
 			this.baseController.setLogArray(context.args.traceLogs, this
-					.$find('.operation-log-list')[0]);
+					.$find('.trace-list')[0]);
 		},
 		_createLogHTML: function(logArray) {
 			var reg = this._condition.filterStr && getRegex(this._condition.filterStr);
@@ -2595,7 +2595,7 @@
 			// (view.get, str.formatを1000件回してIE10で20msくらい。ただの文字列結合なら10msくらい)
 
 			for ( var i = 0, l = logArray.length; i < l; i++) {
-				//			var part = view.get('operation-log-list-part', logArray.get(i));
+				//			var part = view.get('trace-list-part', logArray.get(i));
 				var logObj = logArray.get(i);
 				//			h5.u.str.format(traceLogListPart, logObj.cls, logObj.time,
 				//					logObj.indentWidth, logObj.tag, logObj.promiseState, logObj.message);
@@ -2711,20 +2711,20 @@
 	h5.core.expose(traceLogController);
 
 	/**
-	 * コンソールログコントローラ
+	 * ロガーコントローラ
 	 *
-	 * @name h5.debug.developer.ConsoleLogController
+	 * @name h5.debug.developer.LoggerController
 	 */
-	var consoleLogController = {
+	var loggerController = {
 		/**
-		 * @memberOf h5.debug.developer.ConsoleLogController
+		 * @memberOf h5.debug.developer.LoggerController
 		 */
-		__name: 'h5.debug.developer.ConsoleLogController',
+		__name: 'h5.debug.developer.LoggerController',
 
 		/**
 		 * ログ出力共通コントローラ
 		 *
-		 * @memberOf h5.debug.developer.ConsoleLogController
+		 * @memberOf h5.debug.developer.LoggerController
 		 */
 		baseController: h5.debug.developer.BaseLogController,
 
@@ -2734,14 +2734,14 @@
 		_logArray: null,
 
 		/**
-		 * @memberOf h5.debug.developer.ConsoleLogController
+		 * @memberOf h5.debug.developer.LoggerController
 		 * @param context
 		 */
 		__ready: function(context) {
 			var baseController = this.baseController;
 			baseController.setCreateLogHTML(this.own(this._createLogHTML));
-			var consoleLogs = context.args.consoleLogs;
-			this.baseController.setLogArray(consoleLogs, this.rootElement);
+			var loggerArray = context.args.loggerArray;
+			this.baseController.setLogArray(loggerArray, this.rootElement);
 
 			//--------------------------------------------
 			// window.onerrorで拾った例外も出すようにする
@@ -2751,7 +2751,7 @@
 				var file = ev.originalEvent.fileName || '';
 				var lineno = ev.originalEvent.lineno || '';
 
-				consoleLogs.push({
+				loggerArray.push({
 					levelString: 'EXCEPTION',
 					date: new Date(),
 					args: ['{0} {1}:{2}', message, file, lineno]
@@ -2772,7 +2772,7 @@
 			return html;
 		}
 	};
-	h5.core.expose(consoleLogController);
+	h5.core.expose(loggerController);
 
 	/**
 	 * タブコントローラ タブ表示切替をサポートする
@@ -2854,7 +2854,7 @@
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 */
-		_consoleLogController: h5.debug.developer.ConsoleLogController,
+		_loggerController: h5.debug.developer.LoggerController,
 		/**
 		 * @memberOf h5.debug.developer.DebugController
 		 */
@@ -2868,7 +2868,7 @@
 			},
 			_traceLogController: {},
 			_settingsController: {},
-			_consoleLogController: {}
+			_loggerController: {}
 		},
 		/**
 		 * @memberOf h5.debug.developer.DebugController
@@ -2882,8 +2882,8 @@
 			view.append(this.$find('.debug-controller'), 'controllerDebugWrapper');
 			view.append(this.$find('.settings'), 'settings');
 			this.__meta._controllerDebugController.rootElement = this.$find('.debug-controller');
-			this.__meta._traceLogController.rootElement = this.$find('.operation-log');
-			this.__meta._consoleLogController.rootElement = this.$find('.console-log');
+			this.__meta._traceLogController.rootElement = this.$find('.trace');
+			this.__meta._loggerController.rootElement = this.$find('.logger');
 			this.__meta._settingsController.rootElement = this.$find('.settings');
 
 			// -------------------------------------------------
@@ -2900,8 +2900,8 @@
 									// デバッグツールが吐いてるログは出力しない
 									return;
 								}
-								consoleLogs.push(obj);
-								consoleLogs.dispatchEvent({
+								loggerArray.push(obj);
+								loggerArray.dispatchEvent({
 									type: 'logUpdate'
 								});
 							}
@@ -3161,8 +3161,8 @@
 				win: win,
 				// 全体のトレースログ
 				traceLogs: wholeTraceLogs,
-				// コンソールログ
-				consoleLogs: consoleLogs
+				// ロガー
+				loggerArray: loggerArray
 
 			}).readyPromise.done(function() {
 				// 閉じられたときにdebugControllerをdispose
