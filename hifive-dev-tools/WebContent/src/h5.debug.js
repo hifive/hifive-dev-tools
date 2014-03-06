@@ -800,6 +800,11 @@
 	 */
 	var debugWindow = null;
 
+	/**
+	 * デバッグするウィンドウが閉じられたかどうかのフラグ
+	 */
+	var debugWindowClosed = false;
+
 	var h5debugSettings = h5.core.data.createObservableItem({
 		LogMaxNum: {
 			type: 'integer',
@@ -817,7 +822,7 @@
 	var hasTouchEvent = document.ontouchstart !== undefined;
 
 	/**
-	 * ログ用のObservableArrayの配列
+	 * ログ用のObservableArrayを要素に持つ配列
 	 */
 	var logArrays = [];
 
@@ -2951,8 +2956,8 @@
 		target: '*',
 		interceptors: h5.u.createInterceptor(function(invocation, data) {
 			var target = invocation.target;
-			if (!target.__name || h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
-				// __nameがない(===disposeされた)またはデバッグコントローラなら何もしない
+			if (debugWindowClosed || !target.__name || h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
+				// デバッグウィンドウが閉じられた、または__nameがない(===disposeされた)またはデバッグコントローラなら何もしない
 				return invocation.proceed();
 			}
 
@@ -3031,7 +3036,8 @@
 			return invocation.proceed();
 		}, function(invocation, data) {
 			var target = invocation.target;
-			if (!target.__name) {
+			if (debugWindowClosed || !target.__name) {
+				// デバッグウィンドウが閉じた間は何もしない
 				// target.__nameがない(===disposeされた)場合は何もしない
 				return;
 			}
