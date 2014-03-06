@@ -130,6 +130,39 @@
 	 * トレースログ
 	 */
 	{
+		selector: '.h5debug .fixedControlls label',
+		rule: {
+			marginRight: '2px'
+		}
+	},
+	{
+		selector: '.h5debug .fixedControlls label.lifecycle',
+		rule: {
+			borderBottom: '3px solid #2EB3EE',
+			color: '#2EB3EE'
+		}
+	},
+	{
+		selector: '.h5debug .fixedControlls label.event',
+		rule: {
+			borderBottom: '3px solid #008348',
+			color: '#008348'
+		}
+	},
+	{
+		selector: '.h5debug .fixedControlls label.private',
+		rule: {
+			borderBottom: '3px solid #B2532E',
+			color: '#B2532E'
+		}
+	},
+	{
+		selector: '.h5debug .fixedControlls label.public',
+		rule: {
+			borderBottom: '3px solid #006B89',
+			color: '#006B89'
+		}
+	}, {
 		selector: '.h5debug .trace',
 		rule: {
 			paddingLeft: 0,
@@ -753,10 +786,10 @@
 			.register(
 					'trace',
 					'<div class="fixedControlls">'
-							+ '<label><input type="checkbox" checked name="event"/>イベント</label>'
-							+ '<label><input type="checkbox" checked name="public" />パブリック</label>'
-							+ '<label><input type="checkbox" checked name="private" />プライベート</label>'
-							+ '<label><input type="checkbox" checked name="lifecycle"/>ライフサイクル</label>'
+							+ '<label class="event"><input type="checkbox" checked name="event"/>イベント</label>'
+							+ '<label class="public"><input type="checkbox" checked name="public" />パブリック</label>'
+							+ '<label class="private"><input type="checkbox" checked name="private" />プライベート</label>'
+							+ '<label class="lifecycle"><input type="checkbox" checked name="lifecycle"/>ライフサイクル</label>'
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '</div>'
