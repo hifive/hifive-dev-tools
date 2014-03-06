@@ -23,6 +23,9 @@
 			// 既にロード済みならreturn
 			return;
 		}
+	} else {
+		// hifiveが読み込まれていないならreturnする
+		return;
 	}
 
 	/**
@@ -1893,26 +1896,24 @@
 				}
 			}
 
-			methods
-					.sort(function(a, b) {
-						// lifecycle, public, privateの順でソート
-						// lifecycleはライフサイクルの実行順、public、privateは辞書順
-						if ($.inArray(a, LIFECYCLE_METHODS) !== -1
-								&& $.inArray(b, LIFECYCLE_METHODS) !== -1) {
-							// 両方ともライフサイクルメソッド
-							return $.inArray(a, LIFECYCLE_METHODS) - $
-									.inArray(b, LIFECYCLE_METHODS);
-						}
-						// lifecycle, public, privateの順でソート
-						var ret = 0;
-						ret -= $.inArray(a, LIFECYCLE_METHODS) >= 0 ? 1 : 0;
-						ret += $.inArray(b, LIFECYCLE_METHODS) >= 0 ? 1 : 0;
-						ret -= h5.u.str.startsWith(a, '_') && $.inArray(a, LIFECYCLE_METHODS) === -1 ? -1
-								: 0;
-						ret += h5.u.str.startsWith(b, '_') && $.inArray(b, LIFECYCLE_METHODS) === -1 ? -1
-								: 0;
-						return ret === 0 ? (a > b ? 1 : -1) : ret;
-					});
+			methods.sort(function(a, b) {
+				// lifecycle, public, privateの順でソート
+				// lifecycleはライフサイクルの実行順、public、privateは辞書順
+				if ($.inArray(a, LIFECYCLE_METHODS) !== -1
+						&& $.inArray(b, LIFECYCLE_METHODS) !== -1) {
+					// 両方ともライフサイクルメソッド
+					return $.inArray(a, LIFECYCLE_METHODS) - $.inArray(b, LIFECYCLE_METHODS);
+				}
+				// lifecycle, public, privateの順でソート
+				var ret = 0;
+				ret -= $.inArray(a, LIFECYCLE_METHODS) >= 0 ? 1 : 0;
+				ret += $.inArray(b, LIFECYCLE_METHODS) >= 0 ? 1 : 0;
+				ret -= h5.u.str.startsWith(a, '_') && $.inArray(a, LIFECYCLE_METHODS) === -1 ? -1
+						: 0;
+				ret += h5.u.str.startsWith(b, '_') && $.inArray(b, LIFECYCLE_METHODS) === -1 ? -1
+						: 0;
+				return ret === 0 ? (a > b ? 1 : -1) : ret;
+			});
 
 			this._updateEventHandlerView({
 				controller: controller.__controllerContext.controllerDef,
