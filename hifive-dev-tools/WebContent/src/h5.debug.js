@@ -2636,6 +2636,21 @@
 		 *
 		 * @memberOf h5.debug.developer.TraceLogController
 		 */
+		'input.filter keydown': function(context) {
+			// エンターキー
+			if (context.event.keyCode === 13) {
+				var val = this.$find('input.filter[type="text"]').val();
+				if (!val) {
+					return;
+				}
+				this._condition.filterStr = val;
+				this._condition.exclude = false;
+				this.refresh();
+				this.$find('input.filter[type="text"],.filter-show,.filter-hide').attr('disabled',
+						'disabled');
+				this.$find('.filter-clear').removeAttr('disabled');
+			}
+		},
 		'button.filter-show click': function(context) {
 			var val = this.$find('input.filter[type="text"]').val();
 			if (!val) {
