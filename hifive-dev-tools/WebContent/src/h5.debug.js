@@ -130,35 +130,6 @@
 	 * トレースログ
 	 */
 	{
-		selector: '.h5debug .fixedControlls label',
-		rule: {
-			marginRight: '2px'
-		}
-	}, {
-		selector: '.h5debug .fixedControlls label.lifecycle',
-		rule: {
-			borderBottom: '3px solid #2EB3EE',
-			color: '#2EB3EE'
-		}
-	}, {
-		selector: '.h5debug .fixedControlls label.event',
-		rule: {
-			borderBottom: '3px solid #008348',
-			color: '#008348'
-		}
-	}, {
-		selector: '.h5debug .fixedControlls label.private',
-		rule: {
-			borderBottom: '3px solid #B2532E',
-			color: '#B2532E'
-		}
-	}, {
-		selector: '.h5debug .fixedControlls label.public',
-		rule: {
-			borderBottom: '3px solid #006B89',
-			color: '#006B89'
-		}
-	}, {
 		selector: '.h5debug .trace',
 		rule: {
 			paddingLeft: 0,
@@ -168,6 +139,37 @@
 			overflow: 'visible!important',
 			boxSizing: 'border-box',
 			'-moz-boxSizing': 'border-box'
+		}
+	}, {
+		selector: '.h5debug .trace .lifecycleColor',
+		rule: {
+			color: '#2EB3EE',
+			borderColor: '#2EB3EE'
+		}
+	}, {
+		selector: '.h5debug .trace .publicColor',
+		rule: {
+			color: '#006B89',
+			borderColor: '#006B89'
+		}
+	}, {
+		selector: '.h5debug .trace .privateColor',
+		rule: {
+			color: '#B2532E',
+			borderColor: '#B2532E'
+		}
+	}, {
+		selector: '.h5debug .trace .eventColor',
+		rule: {
+			color: '#008348',
+			borderColor: '#008348'
+		}
+	}, {
+		selector: '.h5debug .trace .fixedControlls label',
+		rule: {
+			marginRight: '2px',
+			borderWidth: '0 0 3px 0',
+			borderStyle: 'solid'
 		}
 	}, {
 		selector: '.h5debug .trace .fixedControlls',
@@ -216,26 +218,6 @@
 		rule: {
 			display: 'inline-block',
 			marginRight: '0.5em'
-		}
-	}, {
-		selector: '.h5debug .trace-list>li .message.lifecycle',
-		rule: {
-			color: '#2EB3EE'
-		}
-	}, {
-		selector: '.h5debug .trace-list .message.event',
-		rule: {
-			color: '#008348'
-		}
-	}, {
-		selector: '.h5debug .trace-list>li .message.private',
-		rule: {
-			color: '#B2532E'
-		}
-	}, {
-		selector: '.h5debug .trace-list>li .message.public',
-		rule: {
-			color: '#006B89'
 		}
 	},
 	/*
@@ -782,10 +764,10 @@
 			.register(
 					'trace',
 					'<div class="fixedControlls">'
-							+ '<label class="event"><input type="checkbox" checked name="event"/>イベント</label>'
-							+ '<label class="public"><input type="checkbox" checked name="public" />パブリック</label>'
-							+ '<label class="private"><input type="checkbox" checked name="private" />プライベート</label>'
-							+ '<label class="lifecycle"><input type="checkbox" checked name="lifecycle"/>ライフサイクル</label>'
+							+ '<label class="event eventColor"><input type="checkbox" checked name="event"/>イベント</label>'
+							+ '<label class="public publicColor"><input type="checkbox" checked name="public" />パブリック</label>'
+							+ '<label class="private privateColor"><input type="checkbox" checked name="private" />プライベート</label>'
+							+ '<label class="lifecycle lifecycleColor"><input type="checkbox" checked name="lifecycle"/>ライフサイクル</label>'
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '</div>'
@@ -797,7 +779,7 @@
 			+ '<span class="time">[%= time %]</span>'
 			+ '<span style="margin-left:[%= indentWidth %]" class="tag">[%= tag %]</span>'
 			+ '<span class="promiseState">[%= promiseState %]</span>'
-			+ '<span class="message [%= cls %]">[%= message %]</span></li>');
+			+ '<span class="message [%= cls %] [%= cls %]Color">[%= message %]</span></li>');
 
 
 	// オーバレイ
@@ -2624,14 +2606,7 @@
 			for ( var i = 0, l = logArray.length; i < l; i++) {
 				//			var part = view.get('trace-list-part', logArray.get(i));
 				var logObj = logArray.get(i);
-				//			h5.u.str.format(traceLogListPart, logObj.cls, logObj.time,
-				//					logObj.indentWidth, logObj.tag, logObj.promiseState, logObj.message);
-				var part = '<li class="' + logObj.cls + '" data-h5debug-logindex="' + i + '">'
-						+ '<span class="time">' + logObj.time + '</span>'
-						+ '<span style="margin-left:' + logObj.indentWidth + 'px" class="tag">'
-						+ logObj.tag + '</span>' + '<span class="promiseState">'
-						+ logObj.promiseState + '</span>' + '<span class="message ' + logObj.cls
-						+ '">' + logObj.message + '</span></li>';
+				var part = view.get('trace-list-part', logObj);
 				// フィルタにマッチしているか
 				if (reg
 						&& ((!exclude && !logObj.message.match(reg)) || (exclude && logObj.message
