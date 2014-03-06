@@ -20,7 +20,7 @@
 	// 二重読み込み防止
 	if (window.h5) {
 		if (window.h5 && window.h5.debug && h5.debug.developer) {
-			// 既にロード済みならreturn
+			// 既にロード済みならロードを中止する
 			return;
 		}
 	} else {
