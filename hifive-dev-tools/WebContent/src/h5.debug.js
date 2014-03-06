@@ -165,9 +165,10 @@
 	}, {
 		selector: '.h5debug .trace .fixedControlls label',
 		rule: {
-			marginRight: '2px',
+			margin: '0 2px 4px 0',
 			borderWidth: '0 0 3px 0',
-			borderStyle: 'solid'
+			borderStyle: 'solid',
+			display: 'inline-block'
 		}
 	}, {
 		selector: '.h5debug .trace .fixedControlls',
@@ -178,12 +179,6 @@
 			border: 'solid 1px gray',
 			padding: '3px'
 
-		}
-	}, {
-		selector: '.h5debug .trace .fixedControlls input.filter[disabled]',
-		rule: {
-			backgroundColor: '#fff',
-			fontWeight: 'bold'
 		}
 	}, {
 		selector: '.h5debug .trace-list',
