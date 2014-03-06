@@ -2704,27 +2704,23 @@
 		 * @param context
 		 */
 		__ready: function(context) {
-			var baseController = this.baseController;
-			baseController.setCreateLogHTML(this.own(this._createLogHTML));
-			var loggerArray = context.args.loggerArray;
-			this.baseController.setLogArray(loggerArray, this.rootElement);
+			this.baseController.setCreateLogHTML(this.own(this._createLogHTML));
+			this.baseController.setLogArray(context.args.loggerArray, this.rootElement);
 
 			//--------------------------------------------
 			// window.onerrorで拾った例外も出すようにする
+			// (bindするのはwindowはデバッグウィンドウのwindowじゃなくてアプリ側のwindowオブジェクト)
 			//--------------------------------------------
-			$(window).bind('error', function(ev) {
-				var message = ev.originalEvent.message;
-				var file = ev.originalEvent.fileName || '';
-				var lineno = ev.originalEvent.lineno || '';
-
-				loggerArray.push({
-					levelString: 'EXCEPTION',
-					date: new Date(),
-					args: ['{0} {1}:{2}', message, file, lineno]
-				});
-				baseController._updateView();
-			});
+			$(window).bind('error', this.own(this._onnerrorHandler));
 		},
+
+		/**
+		 * Log出力するHTML文字列を作成
+		 *
+		 * @memberOf h5.debug.developer.LoggerController
+		 * @param logArray
+		 * @returns {String}
+		 */
 		_createLogHTML: function(logArray) {
 			var html = '';
 			for ( var i = 0, l = logArray.length; i < l; i++) {
@@ -2736,6 +2732,27 @@
 
 			}
 			return html;
+		},
+
+		_onnerrorHandler: function(ev) {
+			var message = ev.originalEvent.message;
+			var file = ev.originalEvent.fileName || '';
+			var lineno = ev.originalEvent.lineno || '';
+
+			loggerArray.push({
+				levelString: 'EXCEPTION',
+				date: new Date(),
+				args: ['{0} {1}:{2}', message, file, lineno]
+			});
+			this.baseController._updateView();
+		},
+
+		/**
+		 * @memberOf h5.debug.developer.LoggerController
+		 */
+		__unbind: function() {
+			// コントローラのハンドラがunbindされるときにerrorハンドラもunbindする
+			$(window).unbind('error', this._onnerrorHandler);
 		}
 	};
 	h5.core.expose(loggerController);
@@ -2956,7 +2973,8 @@
 		target: '*',
 		interceptors: h5.u.createInterceptor(function(invocation, data) {
 			var target = invocation.target;
-			if (debugWindowClosed || !target.__name || h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
+			if (debugWindowClosed || !target.__name
+					|| h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
 				// デバッグウィンドウが閉じられた、または__nameがない(===disposeされた)またはデバッグコントローラなら何もしない
 				return invocation.proceed();
 			}
