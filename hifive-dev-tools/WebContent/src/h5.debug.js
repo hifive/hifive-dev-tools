@@ -141,26 +141,26 @@
 	}, {
 		selector: '.h5debug .trace .lifecycleColor',
 		rule: {
-			color: '#2EB3EE',
-			borderColor: '#2EB3EE'
+			color: '#15A2E3',
+			borderColor: '#15A2E3'
 		}
 	}, {
 		selector: '.h5debug .trace .publicColor',
 		rule: {
-			color: '#006B89',
-			borderColor: '#006B89'
+			color: '#31A120',
+			borderColor: '#31A120'
 		}
 	}, {
 		selector: '.h5debug .trace .privateColor',
 		rule: {
-			color: '#B2532E',
-			borderColor: '#B2532E'
+			color: '#4A370C',
+			borderColor: '#4A370C'
 		}
 	}, {
 		selector: '.h5debug .trace .eventColor',
 		rule: {
-			color: '#008348',
-			borderColor: '#008348'
+			color: '#861EC2',
+			borderColor: '#861EC2'
 		}
 	}, {
 		selector: '.h5debug .trace .fixedControlls label',
