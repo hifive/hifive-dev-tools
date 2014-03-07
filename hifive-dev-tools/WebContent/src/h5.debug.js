@@ -2710,8 +2710,21 @@
 			//--------------------------------------------
 			// window.onerrorで拾った例外も出すようにする
 			// (bindするのはwindowはデバッグウィンドウのwindowじゃなくてアプリ側のwindowオブジェクト)
+			// unbindするときのためにコントローラでハンドラを覚えておく
 			//--------------------------------------------
-			$(window).bind('error', this.own(this._onnerrorHandler));
+			this._onnerrorHandler = this.own(function(ev) {
+				var message = ev.originalEvent.message;
+				var file = ev.originalEvent.fileName || '';
+				var lineno = ev.originalEvent.lineno || '';
+
+				loggerArray.push({
+					levelString: 'EXCEPTION',
+					date: new Date(),
+					args: ['{0} {1}:{2}', message, file, lineno]
+				});
+				this.baseController._updateView();
+			});
+			$(window).bind('error', this._onnerrorHandler);
 		},
 
 		/**
@@ -2732,19 +2745,6 @@
 
 			}
 			return html;
-		},
-
-		_onnerrorHandler: function(ev) {
-			var message = ev.originalEvent.message;
-			var file = ev.originalEvent.fileName || '';
-			var lineno = ev.originalEvent.lineno || '';
-
-			loggerArray.push({
-				levelString: 'EXCEPTION',
-				date: new Date(),
-				args: ['{0} {1}:{2}', message, file, lineno]
-			});
-			this.baseController._updateView();
 		},
 
 		/**
