@@ -2480,7 +2480,7 @@
 			var orgContext = context.evArg.orgContext;
 			var $li = $(orgContext.event.target).closest('li');
 			$li.addClass('selected');
-			this._selectLogObject = this._logArray.get($li.data('h5debug-logindex'));
+			this._selectLogObject = this._logArray.get($li.attr('data-h5debug-logindex'));
 		},
 
 		'{rootElement} hideCustomMenu': function(context) {
@@ -2601,9 +2601,10 @@
 			// (view.get, str.formatを1000件回してIE10で20msくらい。ただの文字列結合なら10msくらい)
 
 			for ( var i = 0, l = logArray.length; i < l; i++) {
-				//			var part = view.get('trace-list-part', logArray.get(i));
 				var logObj = logArray.get(i);
 				var part = view.get('trace-list-part', logObj);
+				// index番号を覚えさせる
+				part = $(part).attr('data-h5debug-logindex', i)[0].outerHTML;
 				// フィルタにマッチしているか
 				if (!isExclude === !(reg ? logObj.message.match(reg)
 						: logObj.message.indexOf(str) !== -1)) {
