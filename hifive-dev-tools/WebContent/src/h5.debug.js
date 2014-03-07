@@ -1005,16 +1005,19 @@
 				// 既に開いているものがあったら、それを閉じて別のものを開く
 				w.close();
 				return openDebugWindow();
-			}
-
-			function setupWindow() {
+			} else {
 				try {
-					w._h5debug = true;
+					// IEで、すでにデバッグウィンドウが開かれているとき、そのデバッグウィンドウのプロパティ_h5debugはundefinedになっている。
+					// そのため、デバッグウィンドウが開かれているかどうかはdocumentオブジェクトにアクセスしたときにエラーが出るかで確認する
+					w.document;
 				} catch (e) {
-					// IEの場合既に開いているウィンドウがあったら書き込もうとするとエラーになる
 					w.close();
 					return openDebugWindow();
 				}
+			}
+
+			function setupWindow() {
+				w._h5debug = true;
 
 				body = w.document.body;
 				$(body).addClass('h5debug');
@@ -2647,7 +2650,7 @@
 		'input.filter keyup': function(context) {
 			// エンターキー
 			var val = this.$find('input.filter').val();
-			if(val === ''){
+			if (val === '') {
 				this._executeFilter('');
 			}
 		},
