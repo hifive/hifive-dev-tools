@@ -136,7 +136,9 @@
 			paddingBottom: '60px', // .fixedControllsの高さ
 			overflow: 'visible!important',
 			boxSizing: 'border-box',
-			'-moz-boxSizing': 'border-box'
+			'-moz-box-sizing': 'border-box',
+			'-ms-box-sizing': 'border-box',
+			'-o-box-sizing': 'border-box',
 		}
 	}, {
 		selector: '.h5debug .trace .lifecycleColor',
@@ -179,7 +181,10 @@
 			border: 'solid 1px gray',
 			padding: '3px',
 			height: '60px',
-			boxSizing: 'border-box'
+			boxSizing: 'border-box',
+			'-moz-box-sizing': 'border-box',
+			'-ms-box-sizing': 'border-box',
+			'-o-box-sizing': 'border-box',
 		}
 	}, {
 		selector: '.h5debug .trace-list',
