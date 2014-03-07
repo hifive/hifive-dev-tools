@@ -133,7 +133,7 @@
 			paddingLeft: 0,
 			margin: 0,
 			height: '100%',
-			paddingBottom: '52px', // .fixedControllsの高さ
+			paddingBottom: '60px', // .fixedControllsの高さ
 			overflow: 'visible!important',
 			boxSizing: 'border-box',
 			'-moz-boxSizing': 'border-box'
@@ -178,7 +178,7 @@
 			backgroundColor: '#fff',
 			border: 'solid 1px gray',
 			padding: '3px',
-			height: '52px',
+			height: '60px',
 			boxSizing: 'border-box'
 		}
 	}, {
