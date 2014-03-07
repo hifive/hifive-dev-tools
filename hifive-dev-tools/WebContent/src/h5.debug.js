@@ -2637,13 +2637,25 @@
 				this.$find('.filter-clear').prop('disabled', false);
 			}
 		},
+		/**
+		 * 入力欄が空になったらフィルタを解除
+		 *
+		 * @memberOf h5.debug.developer.TraceLogController
+		 */
+		'input.filter keyup': function(context) {
+			// エンターキー
+			var val = this.$find('input.filter').val();
+			if(val === ''){
+				this._executeFilter('');
+			}
+		},
 		'button.filter-show click': function(context) {
 			var val = this.$find('input.filter').val();
 			if (!val) {
 				return;
 			}
 			this._executeFilter(val);
-			this.$find('.filter-clear').prop('disabled', false);
+			this.$find('.filter-clear').prop('disabled');
 		},
 		'button.filter-hide click': function(context) {
 			var val = this.$find('input.filter').val();
@@ -2651,7 +2663,7 @@
 				return;
 			}
 			this._executeFilter(val, true);
-			this.$find('.filter-clear').prop('disabled', false);
+			this.$find('.filter-clear').prop('disabled');
 		},
 		'button.filter-clear click': function(context) {
 			this._executeFilter('');
