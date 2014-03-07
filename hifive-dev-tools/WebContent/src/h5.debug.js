@@ -1365,8 +1365,8 @@
 		close: function(selected) {
 			var $contextMenu = this.$find('> .contextMenu');
 
-			if ($contextMenu.css('display') === 'none') {
-				// 既にdisplay:noneなら何もしない(イベントもあげない)
+			if (!$contextMenu.hasClass('open')) {
+				// 既に閉じているなら何もしない(イベントもあげない)
 				return;
 			}
 			// selectMenuItemイベントを上げる
@@ -1379,16 +1379,17 @@
 			$contextMenu.css({
 				display: 'none'
 			});
+			$contextMenu.removeClass('open');
 			// イベントを上げる
 			this.trigger('hideCustomMenu');
 		},
 
 		_open: function(context, exp) {
-			var contextMenu = this._getContextMenu(exp);
+			var $contextMenu = this._getContextMenu(exp);
 
 			// イベントを上げる
 			// 既にopenしていたらイベントは上げない
-			if (contextMenu.css('display') === 'none') {
+			if (!$contextMenu.hasClass('open')) {
 				var e = this.trigger('showCustomMenu', {
 					orgContext: context
 				});
@@ -1398,17 +1399,18 @@
 				}
 			}
 
-			contextMenu.css({
+			$contextMenu.css({
 				display: 'block',
 				visibility: 'hidden',
 				left: 0,
 				top: 0
 			});
-			var offsetParentOffset = contextMenu.offsetParent().offset();
+			$contextMenu.addClass('open');
+			var offsetParentOffset = $contextMenu.offsetParent().offset();
 			var left = context.event.pageX - offsetParentOffset.left;
 			var top = context.event.pageY - offsetParentOffset.top;
-			var outerWidth = contextMenu.outerWidth(true);
-			var outerHeight = contextMenu.outerHeight(true);
+			var outerWidth = $contextMenu.outerWidth(true);
+			var outerHeight = $contextMenu.outerHeight(true);
 			var scrollLeft = scrollPosition('Left')();
 			var scrollTop = scrollPosition('Top')();
 			var windowWidth = getDisplayArea('Width');
@@ -1428,9 +1430,9 @@
 					top = scrollTop;
 			}
 
-			initSubMenu(contextMenu, right, top);
+			initSubMenu($contextMenu, right, top);
 
-			contextMenu.css({
+			$contextMenu.css({
 				visibility: 'visible',
 				left: left,
 				top: top
@@ -1813,7 +1815,7 @@
 			// 実行メニューの表示
 			var $select = $el.closest('li').find('select.eventTarget').html('');
 			if (!$target.length) {
-				var option = $(debugWindow.document.createElement('option'));
+				var $option = $(debugWindow.document.createElement('option'));
 				$option.text('該当なし');
 				$select.append($option);
 				$select.attr('disabled', 'disabled');
