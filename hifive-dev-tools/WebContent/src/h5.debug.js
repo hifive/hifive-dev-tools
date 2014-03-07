@@ -135,10 +135,9 @@
 			height: '100%',
 			paddingBottom: '60px', // .fixedControllsの高さ
 			overflow: 'visible!important',
-			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
-			'-ms-box-sizing': 'border-box',
-			'-o-box-sizing': 'border-box',
+			'-webkit-box-sizing': 'border-box',
+			boxSizing: 'border-box'
 		}
 	}, {
 		selector: '.h5debug .trace .lifecycleColor',
@@ -181,10 +180,9 @@
 			border: 'solid 1px gray',
 			padding: '3px',
 			height: '60px',
-			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
-			'-ms-box-sizing': 'border-box',
-			'-o-box-sizing': 'border-box',
+			'-webkit-box-sizing': 'border-box',
+			boxSizing: 'border-box'
 		}
 	}, {
 		selector: '.h5debug .trace-list',
@@ -421,10 +419,9 @@
 			height: '100%',
 			maxWidth: '350px',
 			border: '1px solid #20B5FF',
-			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
-			'-ms-box-sizing': 'border-box',
-			'-o-box-sizing': 'border-box',
+			'-webkit-box-sizing': 'border-box',
+			boxSizing: 'border-box',
 			// IE7用
 			'*position': 'absolute',
 			'*height': 'auto',
@@ -439,10 +436,9 @@
 			height: '100%',
 			border: '1px solid #20B5FF',
 			borderLeft: 'none',
-			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
-			'-ms-box-sizing': 'border-box',
-			'-o-box-sizing': 'border-box',
+			'-webkit-box-sizing': 'border-box',
+			boxSizing: 'border-box',
 			// IE7用
 			'*position': 'absolute',
 			'*height': 'auto',
@@ -504,10 +500,9 @@
 			width: '100%',
 			height: '100%',
 			paddingBottom: '30px',
-			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
-			'-ms-box-sizing': 'border-box',
-			'-o-box-sizing': 'border-box',
+			'-webkit-box-sizing': 'border-box',
+			boxSizing: 'border-box',
 			// IE7用
 			'*position': 'absolute',
 			'*height': 'auto',
@@ -600,10 +595,9 @@
 		rule: {
 			position: 'absolute',
 			zIndex: 10000,
-			boxSizing: 'border-box',
 			'-moz-box-sizing': 'border-box',
-			'-ms-box-sizing': 'border-box',
-			'-o-box-sizing': 'border-box'
+			'-webkit-box-sizing': 'border-box',
+			boxSizing: 'border-box'
 		}
 	}, {
 		selector: '.h5debug-overlay .body',
