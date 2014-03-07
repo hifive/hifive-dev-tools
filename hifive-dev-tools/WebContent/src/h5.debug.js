@@ -125,6 +125,15 @@
 		}
 	},
 	/*
+	 * 汎用スタイル
+	 */
+	{
+		selector: '.h5debug .font-small',
+		rule:{
+			fontSize: '0.8em'
+		}
+	},
+	/*
 	 * トレースログ
 	 */
 	{
@@ -763,7 +772,7 @@
 							+ '<label class="lifecycle lifecycleColor"><input type="checkbox" checked name="lifecycle"/>ライフサイクル</label>'
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
-							+ '</div>'
+							+ '<span class="font-small">（ログを右クリックで関数にジャンプ）</span></div>'
 							+ '<ul class="trace-list liststyle-none no-padding" data-h5-loop-context="logs"></ul>'
 							+ '<ul class="contextMenu logContextMenu dropdown-menu"><li class="showFunction"><span>関数を表示</span></li></ul>');
 
