@@ -805,7 +805,7 @@
 	/**
 	 * デバッグするウィンドウが閉じられたかどうかのフラグ
 	 */
-	var debugWindowClosed = false;
+	var isDebugWindowClosed = false;
 
 	var h5debugSettings = h5.core.data.createObservableItem({
 		LogMaxNum: {
@@ -2987,7 +2987,7 @@
 		target: '*',
 		interceptors: h5.u.createInterceptor(function(invocation, data) {
 			var target = invocation.target;
-			if (debugWindowClosed || !target.__name
+			if (isDebugWindowClosed || !target.__name
 					|| h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
 				// デバッグウィンドウが閉じられた、または__nameがない(===disposeされた)またはデバッグコントローラなら何もしない
 				return invocation.proceed();
@@ -3068,7 +3068,7 @@
 			return invocation.proceed();
 		}, function(invocation, data) {
 			var target = invocation.target;
-			if (debugWindowClosed || !target.__name) {
+			if (isDebugWindowClosed || !target.__name) {
 				// デバッグウィンドウが閉じた間は何もしない
 				// target.__nameがない(===disposeされた)場合は何もしない
 				return;
@@ -3173,7 +3173,7 @@
 					controller.dispose();
 					// デバッグウィンドウが閉じられたフラグを立てる
 					// 以降、デバッグ用のアスペクトは動作しなくなる
-					debugWindowClosed = true;
+					isDebugWindowClosed = true;
 				}
 				if (win.addEventListener) {
 					win.addEventListener('unload', unloadFunc);
