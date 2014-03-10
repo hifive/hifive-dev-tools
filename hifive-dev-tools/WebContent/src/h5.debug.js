@@ -885,6 +885,14 @@
 	});
 	h5.settings.aspects = null;
 
+	/**
+	 * jQueryを使って別ウィンドウのスタイルを取得できるかどうか
+	 * <p>
+	 * (IEでjQuery2.0.Xなら取得できない。jQuery2系の場合は自分で計算するようにする)
+	 * </p>
+	 */
+	var isEnableJQueryGetStyle = !$().jquery.match(/^2.*/);
+
 	// =============================
 	// Functions
 	// =============================
@@ -1278,6 +1286,47 @@
 		return ary;
 	}
 
+
+	/**
+	 * debugWindow内の要素についてouterHeightを計算する。
+	 */
+	function getOuterHeight(elm) {
+		if (isEnableJQueryGetStyle) {
+			return $(elm).outerHeight();
+		}
+		var elmStyle = debugWindow.getComputedStyle($(elm)[0], null);
+		parseInt(elmStyle.height) + parseInt(elmStyle.paddingTop)
+				+ parseInt(elmStyle.paddingBottom) + parseInt(elmStyle.borderTopWidth)
+				+ parseInt(elmStyle.borderBottomWidth) + parseInt(elmStyle.marginTop)
+				+ parseInt(elmStyle.marginBottom);
+	}
+
+	/**
+	 * debugWindow内の要素についてouterWidthを計算する。
+	 */
+	function getOuterWidth(elm) {
+		if (isEnableJQueryGetStyle) {
+			return $(elm).outerWidth();
+		}
+		var elmStyle = debugWindow.getComputedStyle($(elm)[0], null);
+		return parseInt(elmStyle.width) + parseInt(elmStyle.paddingLeft)
+				+ parseInt(elmStyle.paddingRight) + parseInt(elmStyle.borderLeftWidth)
+				+ parseInt(elmStyle.borderRightWidth) + parseInt(elmStyle.marginLeft)
+				+ parseInt(elmStyle.marginRight);
+	}
+
+	/**
+	 * offsetParentを取得する。
+	 */
+	function getOffsetParent(elm) {
+		var offsetParent = $(elm)[0];
+		while (offsetParent && offsetParent.nodeName !== 'HTML'
+				&& (debugWindow.getComputedStyle(offsetParent, 'position') === 'static')) {
+			offsetParent = offsetParent.offsetParent;
+		}
+		return offsetParent || elm.ownerDocument;
+	}
+
 	/**
 	 * メソッドの実行回数をカウントするクラス。
 	 * <p>
@@ -1414,34 +1463,16 @@
 				left: 0,
 				top: 0
 			});
-			// contextMenu要素のスタイルの取得はjQueryを使わないようにしている
+			// contextMenu要素のスタイルの取得、offsetParentの取得はjQueryを使わないようにしている
 			// jQuery2.0.Xで、windowに属していない、別ウィンドウ内の要素についてwindow.getComputedStyle(elm)をしており、
 			// IEだとそれが原因でエラーになるため。
 			$contextMenu.addClass('open');
-			var offsetParent = $contextMenu[0];
-			while (offsetParent && offsetParent.nodeName !== 'HTML'
-					&& (debugWindow.getComputedStyle(offsetParent, 'position') === 'static')) {
-				offsetParent = offsetParent.offsetParent;
-			}
-			offsetParent = offsetParent || offsetParent.ownerDocument;
+			var offsetParent = getOffsetParent($contextMenu);
 			var offsetParentOffset = $(offsetParent).offset();
 			var left = context.event.pageX - offsetParentOffset.left;
 			var top = context.event.pageY - offsetParentOffset.top;
-			var contextMenuStyle = debugWindow.getComputedStyle($contextMenu[0], null);
-			var outerWidth = parseInt(contextMenuStyle.width)
-					+ parseInt(contextMenuStyle.paddingLeft)
-					+ parseInt(contextMenuStyle.paddingRight)
-					+ parseInt(contextMenuStyle.borderLeftWidth)
-					+ parseInt(contextMenuStyle.borderRightWidth)
-					+ parseInt(contextMenuStyle.marginLeft)
-					+ parseInt(contextMenuStyle.marginRight);
-			var outerHeight = parseInt(contextMenuStyle.height)
-					+ parseInt(contextMenuStyle.paddingTop)
-					+ parseInt(contextMenuStyle.paddingBottom)
-					+ parseInt(contextMenuStyle.borderTopWidth)
-					+ parseInt(contextMenuStyle.borderBottomWidth)
-					+ parseInt(contextMenuStyle.marginTop)
-					+ parseInt(contextMenuStyle.marginBottom);
+			var outerWidth = getOuterWidth($contextMenu);
+			var outerHeight = getOuterHeight($contextMenu);
 			var scrollLeft = scrollPosition('Left')();
 			var scrollTop = scrollPosition('Top')();
 			var windowWidth = getDisplayArea('Width');
