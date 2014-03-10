@@ -129,7 +129,7 @@
 	 */
 	{
 		selector: '.h5debug .font-small',
-		rule:{
+		rule: {
 			fontSize: '0.8em'
 		}
 	},
@@ -1414,12 +1414,34 @@
 				left: 0,
 				top: 0
 			});
+			// contextMenu要素のスタイルの取得はjQueryを使わないようにしている
+			// jQuery2.0.Xで、windowに属していない、別ウィンドウ内の要素についてwindow.getComputedStyle(elm)をしており、
+			// IEだとそれが原因でエラーになるため。
 			$contextMenu.addClass('open');
-			var offsetParentOffset = $contextMenu.offsetParent().offset();
+			var offsetParent = $contextMenu[0];
+			while (offsetParent && offsetParent.nodeName !== 'HTML'
+					&& (debugWindow.getComputedStyle(offsetParent, 'position') === 'static')) {
+				offsetParent = offsetParent.offsetParent;
+			}
+			offsetParent = offsetParent || offsetParent.ownerDocument;
+			var offsetParentOffset = $(offsetParent).offset();
 			var left = context.event.pageX - offsetParentOffset.left;
 			var top = context.event.pageY - offsetParentOffset.top;
-			var outerWidth = $contextMenu.outerWidth(true);
-			var outerHeight = $contextMenu.outerHeight(true);
+			var contextMenuStyle = debugWindow.getComputedStyle($contextMenu[0], null);
+			var outerWidth = parseInt(contextMenuStyle.width)
+					+ parseInt(contextMenuStyle.paddingLeft)
+					+ parseInt(contextMenuStyle.paddingRight)
+					+ parseInt(contextMenuStyle.borderLeftWidth)
+					+ parseInt(contextMenuStyle.borderRightWidth)
+					+ parseInt(contextMenuStyle.marginLeft)
+					+ parseInt(contextMenuStyle.marginRight);
+			var outerHeight = parseInt(contextMenuStyle.height)
+					+ parseInt(contextMenuStyle.paddingTop)
+					+ parseInt(contextMenuStyle.paddingBottom)
+					+ parseInt(contextMenuStyle.borderTopWidth)
+					+ parseInt(contextMenuStyle.borderBottomWidth)
+					+ parseInt(contextMenuStyle.marginTop)
+					+ parseInt(contextMenuStyle.marginBottom);
 			var scrollLeft = scrollPosition('Left')();
 			var scrollTop = scrollPosition('Top')();
 			var windowWidth = getDisplayArea('Width');
