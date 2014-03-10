@@ -1731,6 +1731,11 @@
 		 * @param context
 		 */
 		'{document} h5controllerbound': function(context) {
+			var target = context.evArg;
+			// すでにdispose済みだったら何もしない
+			if (target.__name == null) {
+				return;
+			}
 			this._h5controllerbound(context.evArg);
 		},
 
@@ -3101,8 +3106,8 @@
 				target._h5debugContext.debugLog = createLogArray();
 			}
 
-			// 呼び出し元のターゲットにもログを出す
-			if (preTarget && preTarget !== target) {
+			// 呼び出し元のターゲットにもログを出す(ただし呼び出し元がdispose済みなら何もしない)
+			if (preTarget && preTarget !== target && preTarget._h5debugContext) {
 				var logObj = createLogObject(target, target.__name + '#' + fName, cls, 'BEGIN', '',
 						target.__name, preTarget._h5debugContext.indentLevel);
 				addLogObject(preTarget._h5debugContext.debugLog, logObj);
