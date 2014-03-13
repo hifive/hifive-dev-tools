@@ -891,7 +891,7 @@
 	 * (IEでjQuery2.0.Xなら取得できない。jQuery2系の場合は自分で計算するようにする)
 	 * </p>
 	 */
-	var isEnableJQueryGetStyle = !$().jquery.match(/^2.*/);
+	var useJQueryMeasuringFunctions = !$().jquery.match(/^2.*/);
 
 	// =============================
 	// Functions
@@ -1291,7 +1291,7 @@
 	 * debugWindow内の要素についてouterHeightを計算する。
 	 */
 	function getOuterHeight(elm) {
-		if (isEnableJQueryGetStyle) {
+		if (useJQueryMeasuringFunctions) {
 			return $(elm).outerHeight();
 		}
 		var elmStyle = debugWindow.getComputedStyle($(elm)[0], null);
@@ -1305,7 +1305,7 @@
 	 * debugWindow内の要素についてouterWidthを計算する。
 	 */
 	function getOuterWidth(elm) {
-		if (isEnableJQueryGetStyle) {
+		if (useJQueryMeasuringFunctions) {
 			return $(elm).outerWidth();
 		}
 		var elmStyle = debugWindow.getComputedStyle($(elm)[0], null);
