@@ -1328,13 +1328,24 @@
 	}
 
 	/**
+	 * コントローラまたはロジックがすでにdisposeされているかどうかを判定する
+	 *
+	 * @param {Controller|Logic}
+	 * @returns {Boolean}
+	 */
+	function isDisposed(target) {
+		// コントローラとロジック共通で見たいので__nameがあるかどうかでチェックしている
+		return !target.__name;
+	}
+
+	/**
 	 * メソッドの実行回数をカウントするクラス。
 	 * <p>
 	 * (メソッド名をプロパティにしたObservableItemは作成できない(プロパティの命名制限のため)ので、オリジナルのクラスを作成)
 	 * </p>
 	 *
 	 * @param {Controller|Logic} target
-	 * @returns ObservableItem
+	 * @returns {ObservableItem}
 	 */
 	function MethodCount(target, callback) {
 		this._method = {};
@@ -1733,7 +1744,7 @@
 		'{document} h5controllerbound': function(context) {
 			var target = context.evArg;
 			// すでにdispose済みだったら何もしない
-			if (target.__name == null) {
+			if (isDisposed(target)) {
 				return;
 			}
 			this._h5controllerbound(context.evArg);
@@ -1784,7 +1795,8 @@
 			}
 			var target = this.getTargetFromElem($el);
 			this.removeOverlay();
-			if (target.__controllerContext) {
+			if (!isDisposed(target)) {
+				// disposeされていなければオーバレイを表示
 				$el.data('h5debug-overlay', this.overlay(target.rootElement,
 						target.__controllerContext.isRoot ? 'root' : 'child'));
 			}
@@ -3059,9 +3071,9 @@
 		target: '*',
 		interceptors: h5.u.createInterceptor(function(invocation, data) {
 			var target = invocation.target;
-			if (isDebugWindowClosed || !target.__name
+			if (isDebugWindowClosed || isDisposed(target)
 					|| h5.u.str.startsWith(target.__name, 'h5.debug.developer')) {
-				// デバッグウィンドウが閉じられた、または__nameがない(===disposeされた)またはデバッグコントローラなら何もしない
+				// デバッグウィンドウが閉じられた、またはdisposeされた、またはデバッグコントローラなら何もしない
 				return invocation.proceed();
 			}
 
@@ -3140,8 +3152,8 @@
 			return invocation.proceed();
 		}, function(invocation, data) {
 			var target = invocation.target;
-			if (isDebugWindowClosed || !target.__name) {
-				// デバッグウィンドウが閉じた間は何もしない
+			if (isDebugWindowClosed || isDisposed(target)) {
+				// デバッグウィンドウが閉じた、またはdisposeされたターゲットの場合は何もしない
 				// target.__nameがない(===disposeされた)場合は何もしない
 				return;
 			}
@@ -3150,8 +3162,6 @@
 			}
 			target._h5debugContext = target._h5debugContext || {};
 			target._h5debugContext.indentLevel = target._h5debugContext.indentLevel || 0;
-			var cls = '';
-			var fName = invocation.funcName;
 
 			// プロミスの判定
 			// penddingのプロミスを返した時はPOSTに入ってこないので、RESOLVEDかREJECTEDのどっちかになる。
