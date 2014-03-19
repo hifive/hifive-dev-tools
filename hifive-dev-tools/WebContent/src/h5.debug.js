@@ -966,7 +966,7 @@
 	 */
 	function getGlobalSelectorTarget(selector) {
 		var specialObj = ['window', 'document', 'navigator'];
-		for ( var i = 0, len = specialObj.length; i < len; i++) {
+		for (var i = 0, len = specialObj.length; i < len; i++) {
 			var s = specialObj[i];
 			if (selector === s) {
 				// 特殊オブジェクトそのものを指定された場合
@@ -1097,7 +1097,7 @@
 		doc.getElementsByTagName('head')[0].appendChild(style);
 		var sheet = doc.styleSheets[doc.styleSheets.length - 1];
 		if (sheet.insertRule) {
-			for ( var i = 0, l = cssArray.length; i < l; i++) {
+			for (var i = 0, l = cssArray.length; i < l; i++) {
 				var def = cssArray[i];
 				var selector = def.selector;
 				var rule = def.rule;
@@ -1111,7 +1111,7 @@
 				sheet.insertRule(cssStr, sheet.cssRules.length);
 			}
 		} else {
-			for ( var i = 0, l = cssArray.length; i < l; i++) {
+			for (var i = 0, l = cssArray.length; i < l; i++) {
 				var def = cssArray[i];
 				var selector = def.selector;
 				var rule = def.rule;
@@ -1206,7 +1206,7 @@
 	function timeFormat(date) {
 		function formatDigit(val, digit) {
 			var d = digit - ("" + val).length;
-			for ( var i = 0; i < d; i++) {
+			for (var i = 0; i < d; i++) {
 				val = '0' + val;
 			}
 			return val;
@@ -1689,7 +1689,7 @@
 			if (!this.__controllerContext.controllerDef) {
 				// コントローラを取得(__initの時点なので、このコントローラは含まれていない)。
 				var controllers = h5.core.controllerManager.getAllControllers();
-				for ( var i = 0, l = controllers.length; i < l; i++) {
+				for (var i = 0, l = controllers.length; i < l; i++) {
 					addControllerDef(controllers[i], controllers[i]);
 				}
 			}
@@ -1716,7 +1716,7 @@
 			// コントローラ化済みのものに対してログを出すようにする機構が必要。
 			// h5controllerboundが上がってくるのは__initの後、__readyの前なので、__initはその前に書き換える必要がある
 			var controllers = h5.core.controllerManager.getAllControllers();
-			for ( var i = 0, l = controllers.length; i < l; i++) {
+			for (var i = 0, l = controllers.length; i < l; i++) {
 				this._h5controllerbound(controllers[i]);
 			}
 		},
@@ -1795,8 +1795,8 @@
 			}
 			var target = this.getTargetFromElem($el);
 			this.removeOverlay();
-			if (!isDisposed(target)) {
-				// disposeされていなければオーバレイを表示
+			if (!isDisposed(target) && target.__controllerContext) {
+				// disposeされていないコントローラならオーバレイを表示
 				$el.data('h5debug-overlay', this.overlay(target.rootElement,
 						target.__controllerContext.isRoot ? 'root' : 'child'));
 			}
@@ -1963,7 +1963,7 @@
 			}
 
 			// 元々詳細ビューにバインドされていたコントローラをアンバインド
-			for ( var i = 0, l = controllers.length; i < l; i++) {
+			for (var i = 0, l = controllers.length; i < l; i++) {
 				controllers[i].dispose();
 			}
 		},
@@ -2061,7 +2061,7 @@
 			// その他情報
 			var childControllerProperties = getChildControllerProperties(controller);
 			var childControllerNames = [];
-			for ( var i = 0, l = childControllerProperties.length; i < l; i++) {
+			for (var i = 0, l = childControllerProperties.length; i < l; i++) {
 				childControllerNames.push(controller[childControllerProperties[i]].__name);
 			}
 			view.update(this.$find('.controller-detail .tab-content .otherInfo'),
@@ -2306,7 +2306,7 @@
 				// 子コントローラも追加
 				var childControllerProperties = getChildControllerProperties(target);
 				if (childControllerProperties.length) {
-					for ( var i = 0, l = childControllerProperties.length; i < l; i++) {
+					for (var i = 0, l = childControllerProperties.length; i < l; i++) {
 						// 『コントローラ名#定義名』を覚えさせておく
 						var p = childControllerProperties[i];
 						var controller = target[p];
@@ -2394,7 +2394,7 @@
 					var val = e.props[p].newValue;
 					switch (p) {
 					case 'LogMaxNum':
-						for ( var i = 0, l = logArrays.length; i < l; i++) {
+						for (var i = 0, l = logArrays.length; i < l; i++) {
 							if (val >= logArrays[i].length) {
 								continue;
 							}
@@ -2679,7 +2679,7 @@
 			// TODO view.getが重いので、文字列を直接操作する
 			// (view.get, str.formatを1000件回してIE10で20msくらい。ただの文字列結合なら10msくらい)
 
-			for ( var i = 0, l = logArray.length; i < l; i++) {
+			for (var i = 0, l = logArray.length; i < l; i++) {
 				var logObj = logArray.get(i);
 				var part = view.get('trace-list-part', logObj);
 				// index番号を覚えさせる
@@ -2834,7 +2834,7 @@
 		 */
 		_createLogHTML: function(logArray) {
 			var html = '';
-			for ( var i = 0, l = logArray.length; i < l; i++) {
+			for (var i = 0, l = logArray.length; i < l; i++) {
 				var obj = logArray.get(i);
 				var msg = '[' + obj.levelString + ']' + timeFormat(obj.date) + ' '
 						+ h5.u.str.format.apply(h5.u.str, obj.args);
@@ -3184,7 +3184,7 @@
 
 			// BEGINのログを出したターゲット(コントローラまたはロジック)にログを出す
 			if (data.beginLog) {
-				for ( var i = 0, l = data.beginLog.length; i < l; i++) {
+				for (var i = 0, l = data.beginLog.length; i < l; i++) {
 					var t = data.beginLog[i].target;
 					var logObj = $.extend({}, data.beginLog[i].logObj);
 					logObj.tag = tag;
