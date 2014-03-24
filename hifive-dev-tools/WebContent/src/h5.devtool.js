@@ -1286,6 +1286,15 @@
 		return ary;
 	}
 
+	/**
+	 * エレメントのスタイルを取得します
+	 *
+	 * @returns styleオブジェクト
+	 */
+	function getStyle(elm) {
+		return devtoolWindow.getComputedStyle ? devtoolWindow.getComputedStyle($(elm)[0], null)
+				: $(elm)[0].currentStyle;
+	}
 
 	/**
 	 * devtoolWindow内の要素についてouterHeightを計算する。
@@ -1294,8 +1303,7 @@
 		if (useJQueryMeasuringFunctions) {
 			return $(elm).outerHeight();
 		}
-		var elmStyle = devtoolWindow.getComputedStyle ? devtoolWindow.getComputedStyle($(elm)[0],
-				null) : $(elm)[0].currentStyle;
+		var elmStyle = getStyle(elm);
 		parseInt(elmStyle.height) + parseInt(elmStyle.paddingTop)
 				+ parseInt(elmStyle.paddingBottom) + parseInt(elmStyle.borderTopWidth)
 				+ parseInt(elmStyle.borderBottomWidth) + parseInt(elmStyle.marginTop)
@@ -1309,8 +1317,7 @@
 		if (useJQueryMeasuringFunctions) {
 			return $(elm).outerWidth();
 		}
-		var elmStyle = devtoolWindow.getComputedStyle ? devtoolWindow.getComputedStyle($(elm)[0],
-				null) : $(elm)[0].currentStyle;
+		var elmStyle = getStyle(elm);
 		return parseInt(elmStyle.width) + parseInt(elmStyle.paddingLeft)
 				+ parseInt(elmStyle.paddingRight) + parseInt(elmStyle.borderLeftWidth)
 				+ parseInt(elmStyle.borderRightWidth) + parseInt(elmStyle.marginLeft)
@@ -1322,10 +1329,8 @@
 	 */
 	function getOffsetParent(elm) {
 		var offsetParent = $(elm)[0];
-		while (offsetParent
-				&& offsetParent.nodeName !== 'HTML'
-				&& ((devtoolWindow.getComputedStyle ? devtoolWindow.getComputedStyle(offsetParent,
-						'position') : offsetParent.currentStyle.position) === 'static')) {
+		while (offsetParent && offsetParent.nodeName !== 'HTML'
+				&& (getStyle(offsetParent)['position'] === 'static')) {
 			offsetParent = offsetParent.offsetParent;
 		}
 		return offsetParent || elm.ownerDocument;
