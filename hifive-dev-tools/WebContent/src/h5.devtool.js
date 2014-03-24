@@ -905,14 +905,14 @@
 	 * @param {Object|Object[]} aspects アスペクト設定
 	 */
 	function compileAspects(aspects) {
-		var compile = function(aspect) {
-			if (aspect.target) {
-				aspect.compiledTarget = getRegex(aspect.target);
+		var compile = function(asp) {
+			if (asp.target) {
+				asp.compiledTarget = getRegex(asp.target);
 			}
-			if (aspect.pointCut) {
-				aspect.compiledPointCut = getRegex(aspect.pointCut);
+			if (asp.pointCut) {
+				asp.compiledPointCut = getRegex(asp.pointCut);
 			}
-			return aspect;
+			return asp;
 		};
 		h5.settings.aspects = $.map(wrapInArray(aspects), function(n) {
 			return compile(n);
