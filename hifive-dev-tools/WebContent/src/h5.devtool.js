@@ -53,12 +53,8 @@
 	//
 	// =========================================================================
 
-	/** DevelopperToolのファイル名 */
-	var H5DEVTOOL_FILE_NAME = 'h5.devtool.js';
 	/** DvelopperToolのバージョン */
 	var H5_DEV_TOOL_VERSION = '1.0.0';
-	/** 古いIE用の空HTMLファイル名 */
-	var OLD_IE_BLANK_URL = 'blankForOldIE.html';
 	/** ログのインデント幅 */
 	var LOG_INDENT_WIDTH = 10;
 	/** ログ出力の遅延時間(ms) */
@@ -966,6 +962,9 @@
 
 	/**
 	 * h5.core.controller.jsからコピペ
+	 *
+	 * @param {String} selector セレクタ
+	 * @returns 特殊オブジェクトの場合は
 	 */
 	function getGlobalSelectorTarget(selector) {
 		var specialObj = ['window', 'document', 'navigator'];
@@ -984,21 +983,6 @@
 	}
 
 	/**
-	 * h5.devtool.jsが設置されているフォルダを取得 (古いIEのためのblankページを取得するために必要)
-	 */
-	function getDevtoolPath() {
-		var ret = '';
-		$('script').each(function() {
-			var match = this.src.match(new RegExp('(^|.*/)' + H5DEVTOOL_FILE_NAME + '$'));
-			if (match) {
-				ret = match[1];
-				return false;
-			}
-		});
-		return ret;
-	}
-
-	/**
 	 * デバッグウィンドウを開く
 	 */
 	function openDebugWindow() {
@@ -1012,13 +996,25 @@
 			// IE9の場合だけ'about:blank'を使うようにしている
 			// IE7,8の場合は、about:blankでもnullや空文字でも、Docmodeがquirksになる
 			// そのため、IE7,8はDocmode指定済みの空のhtmlを開く
-			var url = h5.env.ua.isIE ? (h5.env.ua.browserVersion >= 9 ? 'about:blank'
-					: getDevtoolPath() + OLD_IE_BLANK_URL) : null;
+			var url = null;
+			if (h5.env.ua.isIE) {
+				if (h5.env.ua.browserVersion >= 9) {
+					url = 'about:blank';
+				} else {
+					if (!window.__h5_devtool_page) {
+						// IE8-なのにdocmode指定指定済みhtmlファイルの指定がない場合はエラー
+						fwLogger
+								.error('IE8以下で使用する場合、window.__h5_devtool_pageにダミーページのパスを指定する必要があります。');
+						return dfd.reject('no_dummy_page').promise();
+					}
+					url = window.__h5_devtool_page;
+				}
+			}
 			w = window.open(url, '1',
 					'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
 			if (!w) {
 				// ポップアップがブロックされた場合
-				return dfd.reject().promise();
+				return dfd.reject('block').promise();
 			}
 			if (w._h5devtool) {
 				// 既に開いているものがあったら、それを閉じて別のものを開く
@@ -3280,10 +3276,12 @@
 					win.attachEvent('onunload', unloadFunc);
 				}
 			});
-		}).fail(function() {
+		}).fail(function(reason) {
 			// ポップアップブロックされると失敗する
 			// アラートをだして何もしない
-			alert('別ウィンドウのオープンに失敗しました。ポップアップブロックを設定している場合は一時的に解除してください。');
+			if (reason === 'block') {
+				alert('別ウィンドウのオープンに失敗しました。ポップアップブロックを設定している場合は一時的に解除してください。');
+			}
 		});
 	});
 })(jQuery);
