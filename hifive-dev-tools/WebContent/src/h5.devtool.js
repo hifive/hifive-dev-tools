@@ -53,21 +53,21 @@
 	//
 	// =========================================================================
 
-	/**
-	 * DebugToolのバージョン
-	 */
+	/** DevelopperToolのファイル名 */
+	var H5DEVTOOL_FILE_NAME = 'h5.devtool.js';
+	/** DvelopperToolのバージョン */
 	var H5_DEV_TOOL_VERSION = '1.0.0';
-
+	/** 古いIE用の空HTMLファイル名 */
 	var OLD_IE_BLANK_URL = 'blankForOldIE.html';
+	/** ログのインデント幅 */
 	var LOG_INDENT_WIDTH = 10;
-	// ログ出力の遅延時間(ms)
+	/** ログ出力の遅延時間(ms) */
 	var LOG_DELAY = 100;
-	// ログ出力の最大遅延時間(ms)
+	/** ログ出力の最大遅延時間(ms) */
 	var MAX_LOG_DELAY = 500;
-
+	/** ライフサイクルメソッド(表示する順番で記述) */
 	var LIFECYCLE_METHODS = ['__construct', '__init', '__ready', '__unbind', '__dispose'];
-
-	// オーバレイのボーダーの幅
+	/** オーバレイのボーダーの幅 */
 	var OVERLAY_BORDER_WIDTH = 3;
 
 	/**
@@ -89,7 +89,8 @@
 			height: '100%',
 			width: '100%',
 			margin: 0,
-			padding: 0
+			padding: 0,
+			overflow: 'hidden' // IE7でスクロールバーが出てしまうためoverflow:hiddenを指定する
 		}
 	}, {
 		selector: '.h5devtool.posfix',
@@ -348,10 +349,12 @@
 	 * メソッドリスト
 	 */
 	{
-		selector: '.h5devtool .debug-controller .method ul',
+		selector: '.h5devtool .method-list',
 		rule: {
 			listStyle: 'none',
-			margin: 0
+			margin: 0,
+			// IE7用
+			'*padding-right': '16px!important' // スクロールバーの下に隠れることがあるので右側にその分パディングを取る
 		}
 	}, {
 		selector: '.h5devtool .method-list .nocalled',
@@ -779,7 +782,7 @@
 	// トレースログのli
 	view.register('trace-list-part', '<li class=[%= cls %]>'
 			+ '<span class="time">[%= time %]</span>'
-			+ '<span style="margin-left:[%= indentWidth %]" class="tag">[%= tag %]</span>'
+			+ '<span style="margin-left:[%= indentWidth %]px" class="tag">[%= tag %]</span>'
 			+ '<span class="promiseState">[%= promiseState %]</span>'
 			+ '<span class="message [%= cls %] [%= cls %]Color">[%= message %]</span></li>');
 
@@ -986,7 +989,7 @@
 	function getThiScriptPath() {
 		var ret = '';
 		$('script').each(function() {
-			var match = this.src.match(/(^|.*\/)h5\.debug\.js$/);
+			var match = this.src.match(new RegExp('(^|.*/)' + H5DEVTOOL_FILE_NAME + '$'));
 			if (match) {
 				ret = match[1];
 				return false;
@@ -1111,6 +1114,9 @@
 				sheet.insertRule(cssStr, sheet.cssRules.length);
 			}
 		} else {
+			// カンマを含むセレクタがaddRuleで使用できるかどうか
+			// (IE7-ならaddRuleでカンマを含むセレクタは使用できない)
+			var isSupportCommmaSelector = !h5.env.ua.isIE || h5.env.ua.browserVersion > 7;
 			for (var i = 0, l = cssArray.length; i < l; i++) {
 				var def = cssArray[i];
 				var selector = def.selector;
@@ -1118,7 +1124,14 @@
 				for ( var p in rule) {
 					var key = hyphenate(p);
 					var val = rule[p];
-					sheet.addRule(selector, key + ':' + val);
+					if (isSupportCommmaSelector) {
+						sheet.addRule(selector, key + ':' + val);
+					} else {
+						var selectors = selector.split(',');
+						for (var j = 0, len = selectors.length; j < len; j++) {
+							sheet.addRule(selectors[j], key + ':' + val);
+						}
+					}
 				}
 			}
 		}
@@ -1294,7 +1307,8 @@
 		if (useJQueryMeasuringFunctions) {
 			return $(elm).outerHeight();
 		}
-		var elmStyle = devtoolWindow.getComputedStyle($(elm)[0], null);
+		var elmStyle = devtoolWindow.getComputedStyle ? devtoolWindow.getComputedStyle($(elm)[0],
+				null) : $(elm)[0].currentStyle;
 		parseInt(elmStyle.height) + parseInt(elmStyle.paddingTop)
 				+ parseInt(elmStyle.paddingBottom) + parseInt(elmStyle.borderTopWidth)
 				+ parseInt(elmStyle.borderBottomWidth) + parseInt(elmStyle.marginTop)
@@ -1308,7 +1322,8 @@
 		if (useJQueryMeasuringFunctions) {
 			return $(elm).outerWidth();
 		}
-		var elmStyle = devtoolWindow.getComputedStyle($(elm)[0], null);
+		var elmStyle = devtoolWindow.getComputedStyle ? devtoolWindow.getComputedStyle($(elm)[0],
+				null) : $(elm)[0].currentStyle;
 		return parseInt(elmStyle.width) + parseInt(elmStyle.paddingLeft)
 				+ parseInt(elmStyle.paddingRight) + parseInt(elmStyle.borderLeftWidth)
 				+ parseInt(elmStyle.borderRightWidth) + parseInt(elmStyle.marginLeft)
@@ -1320,8 +1335,10 @@
 	 */
 	function getOffsetParent(elm) {
 		var offsetParent = $(elm)[0];
-		while (offsetParent && offsetParent.nodeName !== 'HTML'
-				&& (devtoolWindow.getComputedStyle(offsetParent, 'position') === 'static')) {
+		while (offsetParent
+				&& offsetParent.nodeName !== 'HTML'
+				&& ((devtoolWindow.getComputedStyle ? devtoolWindow.getComputedStyle(offsetParent,
+						'position') : offsetParent.currentStyle.position) === 'static')) {
 			offsetParent = offsetParent.offsetParent;
 		}
 		return offsetParent || elm.ownerDocument;
