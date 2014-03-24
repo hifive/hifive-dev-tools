@@ -986,7 +986,7 @@
 	/**
 	 * h5.devtool.jsが設置されているフォルダを取得 (古いIEのためのblankページを取得するために必要)
 	 */
-	function getThiScriptPath() {
+	function getDevtoolPath() {
 		var ret = '';
 		$('script').each(function() {
 			var match = this.src.match(new RegExp('(^|.*/)' + H5DEVTOOL_FILE_NAME + '$'));
@@ -1013,7 +1013,7 @@
 			// IE7,8の場合は、about:blankでもnullや空文字でも、Docmodeがquirksになる
 			// そのため、IE7,8はDocmode指定済みの空のhtmlを開く
 			var url = h5.env.ua.isIE ? (h5.env.ua.browserVersion >= 9 ? 'about:blank'
-					: getThiScriptPath() + OLD_IE_BLANK_URL) : null;
+					: getDevtoolPath() + OLD_IE_BLANK_URL) : null;
 			w = window.open(url, '1',
 					'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
 			if (!w) {
