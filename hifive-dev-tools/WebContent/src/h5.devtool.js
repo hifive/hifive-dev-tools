@@ -975,6 +975,8 @@
 
 	/**
 	 * デバッグウィンドウを開く
+	 *
+	 * @returns デバッグウィンドウが開くまで待機するpromiseオブジェクト
 	 */
 	function openDebugWindow() {
 		var dfd = h5.async.deferred();
@@ -1011,15 +1013,14 @@
 				// 既に開いているものがあったら、それを閉じて別のものを開く
 				w.close();
 				return openDebugWindow();
-			} else {
-				try {
-					// IEで、すでにデバッグウィンドウが開かれているとき、そのデバッグウィンドウのプロパティ_h5devtoolはundefinedになっている。
-					// そのため、デバッグウィンドウが開かれているかどうかはdocumentオブジェクトにアクセスしたときにエラーが出るかで確認する
-					w.document;
-				} catch (e) {
-					w.close();
-					return openDebugWindow();
-				}
+			}
+			try {
+				// IEで、すでにデバッグウィンドウが開かれているとき、そのデバッグウィンドウのプロパティ_h5devtoolはundefinedになっている。
+				// そのため、デバッグウィンドウが開かれているかどうかはdocumentオブジェクトにアクセスしたときにエラーが出るかで確認する
+				w.document;
+			} catch (e) {
+				w.close();
+				return openDebugWindow();
 			}
 
 			function setupWindow() {
@@ -1042,7 +1043,8 @@
 				setupWindow();
 				dfd.resolve(w);
 			} else {
-				var timer = setInterval(function() {
+				var timer = null;
+				timer = setInterval(function() {
 					if (w.document && w.document.readyState === 'complete') {
 						clearInterval(timer);
 						setupWindow();
@@ -1060,8 +1062,12 @@
 		return dfd.promise();
 	}
 
+	// --------------- CSSの設定 ---------------
 	/**
-	 * CSSの設定
+	 * キャメルケースからハイフン区切りに変換する
+	 *
+	 * @param {String} str
+	 * @returns 引数をハイフン区切りにした文字列
 	 */
 	function hyphenate(str) {
 		return str.replace(/[A-Z]/g, function(s) {
@@ -1164,7 +1170,7 @@
 	 * コントローラが持つ子コントローラの定義されたプロパティキーのリストを返す
 	 *
 	 * @param {Controller} controller
-	 * @returns {String[]}
+	 * @returns {String[]} コントローラが持つ子コントローラの定義されたプロパティキーのリスト
 	 */
 	function getChildControllerProperties(controller) {
 		var ret = [];
@@ -1181,6 +1187,10 @@
 
 	/**
 	 * イベントハンドラを指定しているキーから対象になる要素を取得
+	 *
+	 * @param {String} key
+	 * @param {Controller} controller
+	 * @returns {jQuery} イベントハンドラの対象になる要素
 	 */
 	function getTargetFromEventHandlerKey(key, controller) {
 		var $rootElement = $(controller.rootElement);
@@ -1202,6 +1212,7 @@
 	 * Dateをフォーマット
 	 *
 	 * @param {Date} date
+	 * @returns {String} フォーマットした日付文字列
 	 */
 	function timeFormat(date) {
 		function formatDigit(val, digit) {
@@ -1220,10 +1231,15 @@
 	/**
 	 * ログメッセージオブジェクトを作成
 	 *
-	 * @param message
-	 * @param cls
+	 * @param {Controller|Logic} target
+	 * @param message メッセージ}
+	 * @param {String} cls クラス。'private'や'event'など
+	 * @param {String} tag BEGINやENDなどのタグ
+	 * @param {String} promiseState 非同期メソッドの場合の戻り値の状態。'RESOLVED'など
+	 * @param {Integer} indentLevel ログのインデント
+	 * @returns ログメッセージオブジェクト
 	 */
-	function createLogObject(target, message, cls, tag, promiseState, __name, indentLevel) {
+	function createLogObject(target, message, cls, tag, promiseState, indentLevel) {
 		return {
 			target: target,
 			time: timeFormat(new Date()),
@@ -1237,6 +1253,9 @@
 
 	/**
 	 * 第2引数のログメッセージオブジェクトを第1引数のObservableArrayに追加する。 最大数を超えないようにする
+	 *
+	 * @param {ObservableArray} logArray
+	 * @param {Object} logObj ログオブジェクト
 	 */
 	function addLogObject(logArray, logObj) {
 		// 追加
@@ -1254,6 +1273,9 @@
 
 	/**
 	 * コントローラ定義オブジェクトを追加する(hifive1.1.8以前用)
+	 *
+	 * @param {Controller} controller
+	 * @param {Object} defObj コントローラ定義オブジェクト
 	 */
 	function addControllerDef(controller, defObj) {
 		if (defObj.__controllerContext) {
@@ -1279,6 +1301,8 @@
 
 	/**
 	 * ログ用のObservableArrayを作成する
+	 *
+	 * @returns ログオブジェクトを格納するObservableArray
 	 */
 	function createLogArray() {
 		var ary = h5.core.data.createObservableArray();
@@ -1289,6 +1313,7 @@
 	/**
 	 * エレメントのスタイルを取得します
 	 *
+	 * @param {DOM|jQuery} elm
 	 * @returns styleオブジェクト
 	 */
 	function getStyle(elm) {
@@ -1297,7 +1322,10 @@
 	}
 
 	/**
-	 * devtoolWindow内の要素についてouterHeightを計算する。
+	 * devtoolWindow内の要素についてouterHeightを計算する
+	 *
+	 * @param {DOM|jQuery} elm
+	 * @returns 引数で渡された要素のouterHeight
 	 */
 	function getOuterHeight(elm) {
 		if (useJQueryMeasuringFunctions) {
@@ -1311,7 +1339,10 @@
 	}
 
 	/**
-	 * devtoolWindow内の要素についてouterWidthを計算する。
+	 * devtoolWindow内の要素についてouterWidthを計算する
+	 *
+	 * @param {DOM|jQuery} elm
+	 * @returns 引数で渡された要素のouterWidth
 	 */
 	function getOuterWidth(elm) {
 		if (useJQueryMeasuringFunctions) {
@@ -1325,7 +1356,10 @@
 	}
 
 	/**
-	 * offsetParentを取得する。
+	 * offsetParentを取得する
+	 *
+	 * @param {DOM|jQuery} elm
+	 * @returns 引数で渡された要素のoffsetParent
 	 */
 	function getOffsetParent(elm) {
 		var offsetParent = $(elm)[0];
@@ -1339,7 +1373,7 @@
 	/**
 	 * コントローラまたはロジックがすでにdisposeされているかどうかを判定する
 	 *
-	 * @param {Controller|Logic}
+	 * @param {Controller|Logic} target
 	 * @returns {Boolean}
 	 */
 	function isDisposed(target) {
@@ -1354,6 +1388,7 @@
 	 * </p>
 	 *
 	 * @param {Controller|Logic} target
+	 * @param {Function} callback メソッドが実行されたときに実行するコールバック関数
 	 * @returns {ObservableItem}
 	 */
 	function MethodCount(target, callback) {
@@ -2037,7 +2072,7 @@
 								if (this.selectedTarget !== controller) {
 									return;
 								}
-								var $targetLi = null
+								var $targetLi = null;
 								if ($.inArray(method, methods) !== -1
 										&& this
 												.$find('.controller-detail .tab-content .method.active').length) {
@@ -2141,7 +2176,7 @@
 				if (this.selectedTarget !== logic) {
 					return;
 				}
-				var $targetLi = null
+				var $targetLi = null;
 				if ($.inArray(method, methods) !== -1
 						&& this.$find('.logic-detail .tab-content .method.active').length) {
 					$targetLi = this.$find(
@@ -2344,7 +2379,7 @@
 				// ロジックの場合
 				// コントローラ名とログ用のObserbableArrayを持たせる
 				target._h5devtoolContext = target._h5devtoolContext || {
-					name: target.__name + '#' + p,
+					name: target.__name,
 					debugLog: createLogArray()
 				};
 				var $li = $(view.get('target-list-part', {
@@ -2466,7 +2501,9 @@
 		 *
 		 * @memberOf h5.devtool.BaseLogController
 		 */
-		_createLogHTML: function() {},
+		_createLogHTML: function() {
+		// setCreateHTMLで登録される。初期値はダミーのから関数
+		},
 
 		_selectLogObject: null,
 
@@ -3130,7 +3167,7 @@
 			// 呼び出し元のターゲットにもログを出す(ただし呼び出し元がdispose済みなら何もしない)
 			if (preTarget && preTarget !== target && preTarget._h5devtoolContext) {
 				var logObj = createLogObject(target, target.__name + '#' + fName, cls, 'BEGIN', '',
-						target.__name, preTarget._h5devtoolContext.indentLevel);
+						preTarget._h5devtoolContext.indentLevel);
 				addLogObject(preTarget._h5devtoolContext.debugLog, logObj);
 				preTarget._h5devtoolContext.indentLevel += 1;
 				data.beginLog.push({
@@ -3140,8 +3177,7 @@
 			}
 
 			// ターゲットのログ
-			var logObj = createLogObject(target, fName, cls, 'BEGIN', '', target.__name,
-					indentLevel);
+			var logObj = createLogObject(target, fName, cls, 'BEGIN', '', indentLevel);
 			data.logObj = logObj;
 			addLogObject(target._h5devtoolContext.debugLog, logObj);
 			target._h5devtoolContext.indentLevel += 1;
@@ -3152,7 +3188,7 @@
 
 			// コントローラ全部、ロジック全部の横断トレースログ
 			var wholeLog = createLogObject(target, target.__name + '#' + fName, cls, 'BEGIN', '',
-					target.__name, wholeTraceLogsIndentLevel);
+					wholeTraceLogsIndentLevel);
 			wholeTraceLogsIndentLevel++;
 			addLogObject(wholeTraceLogs, wholeLog);
 			data.wholeLog = wholeLog;
