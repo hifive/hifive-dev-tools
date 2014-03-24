@@ -21,7 +21,7 @@
 	if (!window.h5) {
 		// hifive自体がロードされていないので、ロードを中止する
 		return;
-	} else if (h5.debug && h5.devtool) {
+	} else if (h5.devtool) {
 		// 既にロード済みならロードを中止する
 		return;
 	}
