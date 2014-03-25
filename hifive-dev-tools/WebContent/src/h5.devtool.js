@@ -69,7 +69,7 @@
 	/**
 	 * デバッグツールのスタイル
 	 */
-	var H5DEBUG_STYLE = [{
+	var H5DEVTOOL_STYLE = [{
 		selector: '.h5devtool',
 		rule: {
 			backgroundColor: 'rgba(255,255,255,0.8)', // iframe版を考慮して背景に透過指定
@@ -541,9 +541,7 @@
 			display: 'block'
 		}
 	},
-	/**
-	 * ドロップダウンメニュー(bootstrapから流用)
-	 */
+	// ドロップダウンメニュー(bootstrapから流用)
 	{
 		selector: '.h5devtool .dropdown-menu',
 		rule: {
@@ -584,7 +582,7 @@
 		}
 	}];
 
-	var SPECIAL_H5DEBUG_STYLE = {
+	var SPECIAL_H5DEVTOOL_STYLE = {
 	//		IE: [{
 	//			// スタイルの調整(IE用)
 	//			// IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
@@ -812,7 +810,7 @@
 	/**
 	 * デバッグするウィンドウが閉じられたかどうかのフラグ
 	 */
-	var isDebugWindowClosed = false;
+	var isDevtoolWindowClosed = false;
 
 	var h5devtoolSettings = h5.core.data.createObservableItem({
 		LogMaxNum: {
@@ -978,7 +976,7 @@
 	 *
 	 * @returns デバッグウィンドウが開くまで待機するpromiseオブジェクト
 	 */
-	function openDebugWindow() {
+	function openDevtoolWindow() {
 		var dfd = h5.async.deferred();
 		var body = null;
 		var w = null;
@@ -1012,7 +1010,7 @@
 			if (w._h5devtool) {
 				// 既に開いているものがあったら、それを閉じて別のものを開く
 				w.close();
-				return openDebugWindow();
+				return openDevtoolWindow();
 			}
 			try {
 				// IEで、すでにデバッグウィンドウが開かれているとき、そのデバッグウィンドウのプロパティ_h5devtoolはundefinedになっている。
@@ -1020,7 +1018,7 @@
 				w.document;
 			} catch (e) {
 				w.close();
-				return openDebugWindow();
+				return openDevtoolWindow();
 			}
 
 			function setupWindow() {
@@ -1746,7 +1744,7 @@
 
 			// 初期化処理
 			this.win = context.args.win;
-			setCSS(this.win, H5DEBUG_STYLE, SPECIAL_H5DEBUG_STYLE);
+			setCSS(this.win, H5DEVTOOL_STYLE, SPECIAL_H5DEVTOOL_STYLE);
 			setCSS(window, H5PAGE_STYLE);
 			// コントローラの詳細表示エリア
 			view.append(this.$find('.left'), 'target-list');
@@ -3117,7 +3115,7 @@
 		target: '*',
 		interceptors: h5.u.createInterceptor(function(invocation, data) {
 			var target = invocation.target;
-			if (isDebugWindowClosed || isDisposed(target)
+			if (isDevtoolWindowClosed || isDisposed(target)
 					|| h5.u.str.startsWith(target.__name, 'h5.devtool')) {
 				// デバッグウィンドウが閉じられた、またはdisposeされた、またはデバッグコントローラなら何もしない
 				return invocation.proceed();
@@ -3197,7 +3195,7 @@
 			return invocation.proceed();
 		}, function(invocation, data) {
 			var target = invocation.target;
-			if (isDebugWindowClosed || isDisposed(target)) {
+			if (isDevtoolWindowClosed || isDisposed(target)) {
 				// デバッグウィンドウが閉じた、またはdisposeされたターゲットの場合は何もしない
 				// target.__nameがない(===disposeされた)場合は何もしない
 				return;
@@ -3261,7 +3259,7 @@
 	// コントローラのバインド
 	// -------------------------------------------------
 	$(function() {
-		openDebugWindow().done(function(win) {
+		openDevtoolWindow().done(function(win) {
 			devtoolWindow = win;
 			h5.core.controller($(win.document).find('.h5devtool'), debugController, {
 				win: win,
@@ -3278,9 +3276,9 @@
 					controller._controllerDebugController.removeOverlay(true);
 					// コントローラをdispose
 					controller.dispose();
-					// デバッグウィンドウが閉じられたフラグを立てる
-					// 以降、デバッグ用のアスペクトは動作しなくなる
-					isDebugWindowClosed = true;
+					// devtoolウィンドウが閉じられたフラグを立てる
+					// 以降、devtool用のアスペクトは動作しなくなる
+					isDevtoolWindowClosed = true;
 				}
 				if (win.addEventListener) {
 					win.addEventListener('unload', unloadFunc);
