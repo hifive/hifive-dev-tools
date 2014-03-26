@@ -26,9 +26,6 @@
 		return;
 	}
 
-	/**
-	 * デバッグコントローラ
-	 */
 	// =========================================================================
 	//
 	// Cache
@@ -67,7 +64,7 @@
 	var OVERLAY_BORDER_WIDTH = 3;
 
 	/**
-	 * デバッグツールのスタイル
+	 * ディベロッパツールのスタイル
 	 */
 	var H5DEVTOOL_STYLE = [{
 		selector: '.h5devtool',
@@ -96,7 +93,7 @@
 			left: 0
 		}
 	}, {
-		selector: '.h5devtool .debug-tab',
+		selector: '.h5devtool .devtool-tab',
 		rule: {
 			height: '100%'
 		}
@@ -276,17 +273,17 @@
 		}
 	},
 	/*
-	 * コントローラのデバッグ
+	 * コントローラ情報表示箇所
 	 */{
-		selector: '.h5devtool .debug-controller .controll',
+		selector: '.h5devtool .controller-info .controll',
 		rule: {
 			paddingLeft: '30px'
 		}
 	},
 	/*
-	 * コントローラのデバッグ
+	 * コントローラ情報の詳細
 	 */{
-		selector: '.h5devtool .debug-controller .controller-detail',
+		selector: '.h5devtool .controller-info .controller-detail',
 		rule: {
 			height: '100%'
 		}
@@ -295,7 +292,7 @@
 	 * コントローラ・ロジックリスト
 	 */
 	{
-		selector: '.h5devtool .debug-controller .targetlist',
+		selector: '.h5devtool .controller-info .targetlist',
 		rule: {
 			paddingTop: 0,
 			paddingLeft: '1.2em',
@@ -305,17 +302,17 @@
 			'*left': '-1.2em'
 		}
 	}, {
-		selector: '.h5devtool .debug-controller .targetlist .target-name',
+		selector: '.h5devtool .controller-info .targetlist .target-name',
 		rule: {
 			cursor: 'default'
 		}
 	}, {
-		selector: '.h5devtool .debug-controller .targetlist .target-name.selected',
+		selector: '.h5devtool .controller-info .targetlist .target-name.selected',
 		rule: {
 			background: 'rgb(170,237,255)!important'
 		}
 	}, {
-		selector: '.h5devtool .debug-controller .targetlist .target-name:hover',
+		selector: '.h5devtool .controller-info .targetlist .target-name:hover',
 		rule: {
 			background: 'rgb(220,247,254)'
 		}
@@ -325,18 +322,18 @@
 	 * イベントハンドラ
 	 */
 	{
-		selector: '.h5devtool .debug-controller .eventHandler ul',
+		selector: '.h5devtool .controller-info .eventHandler ul',
 		rule: {
 			listStyle: 'none',
 			margin: 0
 		}
 	}, {
-		selector: '.h5devtool .debug-controller .eventHandler ul li .key',
+		selector: '.h5devtool .controller-info .eventHandler ul li .key',
 		rule: {
 			lineHeight: '28px'
 		}
 	}, {
-		selector: '.h5devtool .debug-controller .eventHandler li.selected',
+		selector: '.h5devtool .controller-info .eventHandler li.selected',
 		rule: {
 			background: 'rgb(203,254,231)'
 		}
@@ -367,12 +364,12 @@
 	 * その他情報
 	 */
 	{
-		selector: '.h5devtool .debug-controller .otherInfo ul',
+		selector: '.h5devtool .controller-info .otherInfo ul',
 		rule: {
 			margin: 0
 		}
 	}, {
-		selector: '.h5devtool .debug-controller .otherInfo dt',
+		selector: '.h5devtool .controller-info .otherInfo dt',
 		rule: {
 			fontWeight: 'bold',
 			margin: '5px 0 5px 5px'
@@ -406,7 +403,7 @@
 			fontSize: '12px'
 		}
 	}, {
-		selector: '.h5devtool .debug-controller .detail',
+		selector: '.h5devtool .controller-info .detail',
 		rule: {
 			overflow: 'auto'
 		}
@@ -594,7 +591,7 @@
 	//		}]
 	};
 	/**
-	 * デバッグ対象になるページ側のスタイル
+	 * 元ページ側のスタイル
 	 */
 	var H5PAGE_STYLE = [{
 		selector: '.h5devtool-overlay, .h5devtool-overlay *',
@@ -670,7 +667,7 @@
 	// View
 	// =============================
 	/**
-	 * デバッグツールで使用するview
+	 * ディベロッパツールで使用するview
 	 */
 	var view = h5.core.view.createView();
 	// モバイル、タブレット用のラッパー。
@@ -680,17 +677,17 @@
 					'<div class="h5devtool-upper-right"><div class="h5devtool-controllBtn showhideBtn hideTool">↑</div><div class="h5devtool-controllBtn opencloseBtn closeTool">×</div></div><div class="h5devtool posfix" style="position:fix; left:0; top:0;"></div>');
 
 	// ルートのタブ
-	view.register('debug-tab', '<div class="debug-tab"><ul class="nav nav-tabs">'
-			+ '<li class="active" data-tab-page="debug-controller">コントローラ</li>'
+	view.register('devtool-tab', '<div class="devtool-tab"><ul class="nav nav-tabs">'
+			+ '<li class="active" data-tab-page="controller-info">コントローラ</li>'
 			+ '<li data-tab-page="trace">トレース</li>' + '<li data-tab-page="logger">ロガー</li>'
 			+ '<li data-tab-page="settings">設定</li>' + '</ul><div class="tab-content">'
-			+ '<div class="active debug-controller columnLayoutWrapper"></div>'
+			+ '<div class="active controller-info columnLayoutWrapper"></div>'
 			+ '<div class="trace whole"></div>' + '<div class="logger"></div>'
 			+ '<div class="settings"></div>' + '</div>');
 
 	// --------------------- コントローラ --------------------- //
-	// コントローラデバッグ画面
-	view.register('controllerDebugWrapper',
+	// コントローラ情報表示画面
+	view.register('controllerInfoWrapper',
 			'<div class="left ovfAuto"></div><div class="right ovfHidden"></div>');
 
 	// コントローラリストul
@@ -798,17 +795,17 @@
 	// =============================
 
 	/**
-	 * デバッグツールで使用するロガー
+	 * ディベロッパツールで使用するロガー
 	 */
 	var fwLogger = h5.log.createLogger('h5.devtool');
 
 	/**
-	 * デバッグするウィンドウ。window.openなら開いたウィンドウで、そうじゃなければページのwindowオブジェクト。
+	 * ディベロッパツールで使用するウィンドウ。window.openなら開いたウィンドウで、そうじゃなければページのwindowオブジェクト。
 	 */
 	var devtoolWindow = null;
 
 	/**
-	 * デバッグするウィンドウが閉じられたかどうかのフラグ
+	 * ディベロッパウィンドウが閉じられたかどうかのフラグ
 	 */
 	var isDevtoolWindowClosed = false;
 
@@ -972,9 +969,9 @@
 	}
 
 	/**
-	 * デバッグウィンドウを開く
+	 * ディベロッパウィンドウを開く
 	 *
-	 * @returns デバッグウィンドウが開くまで待機するpromiseオブジェクト
+	 * @returns ディベロッパウィンドウが開くまで待機するpromiseオブジェクト
 	 */
 	function openDevtoolWindow() {
 		var dfd = h5.async.deferred();
@@ -1013,8 +1010,8 @@
 				return openDevtoolWindow();
 			}
 			try {
-				// IEで、すでにデバッグウィンドウが開かれているとき、そのデバッグウィンドウのプロパティ_h5devtoolはundefinedになっている。
-				// そのため、デバッグウィンドウが開かれているかどうかはdocumentオブジェクトにアクセスしたときにエラーが出るかで確認する
+				// IEで、すでにディベロッパウィンドウが開かれているとき、そのディベロッパウィンドウのプロパティ_h5devtoolはundefinedになっている。
+				// そのため、ディベロッパウィンドウが開かれているかどうかはdocumentオブジェクトにアクセスしたときにエラーが出るかで確認する
 				w.document;
 			} catch (e) {
 				w.close();
@@ -1715,28 +1712,30 @@
 	h5.core.expose(contextMenuController);
 
 	/**
-	 * コントローラデバッグコントローラ<br>
-	 * デバッグコントローラの子コントローラ
+	 * ControllerInfoController
+	 * <p>
+	 * コントローラ及びコントローラが持つロジックの情報を表示するコントローラ
+	 * </p>
 	 *
-	 * @name h5.devtool.ControllerDebugController
+	 * @name h5.devtool.ControllerInfoController
 	 */
-	var controllerDebugController = {
+	var controllerInfoController = {
 		/**
-		 * @name h5.devtool.ControllerDebugController
+		 * @name h5.devtool.ControllerInfoController
 		 */
-		__name: 'h5.devtool.ControllerDebugController',
+		__name: 'h5.devtool.ControllerInfoController',
 		/**
-		 * @name h5.devtool.ControllerDebugController
+		 * @name h5.devtool.ControllerInfoController
 		 */
 		win: null,
 		/**
-		 * @name h5.devtool.ControllerDebugController
+		 * @name h5.devtool.ControllerInfoController
 		 */
 		$info: null,
 		/**
 		 * 選択中のコントローラまたはロジック
 		 *
-		 * @name h5.devtool.ControllerDebugController
+		 * @name h5.devtool.ControllerInfoController
 		 */
 		selectedTarget: null,
 
@@ -1752,7 +1751,7 @@
 			}
 		},
 		/**
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param context
 		 */
 		__ready: function(context) {
@@ -1780,7 +1779,7 @@
 		/**
 		 * クローズ時のイベント
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 */
 		'{.h5devtool} close': function() {
 			this.removeOverlay(true);
@@ -1795,7 +1794,7 @@
 		/**
 		 * コントローラが新たにバインドされた
 		 *
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param context
 		 */
 		'{document} h5controllerbound': function(context) {
@@ -1820,7 +1819,7 @@
 		/**
 		 * コントローラがアンバインドされた
 		 *
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param context
 		 */
 		'{document} h5controllerunbound': function(context) {
@@ -1842,7 +1841,7 @@
 		/**
 		 * マウスオーバーでコントローラのバインド先オーバレイ表示(PC用)
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param context
 		 * @param $el
 		 */
@@ -1861,7 +1860,7 @@
 		/**
 		 * マウスアウト
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param context
 		 * @param $el
 		 */
@@ -1875,7 +1874,7 @@
 		/**
 		 * コントローラリスト上のコントローラをクリック
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param context
 		 * @param $el
 		 */
@@ -1904,7 +1903,7 @@
 		/**
 		 * イベントハンドラにマウスオーバーで選択(PC用)
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 */
 		' .eventHandler li:not(.selected) mouseover': function(context, $el) {
 			this.selectEventHandler($el);
@@ -1912,7 +1911,7 @@
 		/**
 		 * イベントハンドラをクリックで選択(タブレット用)
 		 *
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'.eventHandler li:not(.selected) click': function(context, $el) {
 			this.selectEventHandler($el);
@@ -1920,7 +1919,7 @@
 		/**
 		 * イベントハンドラからカーソルを外した時(PC用)
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 */
 		' .eventHandler li.selected mouseleave': function(context, $el) {
 			this.selectEventHandler(null);
@@ -1929,7 +1928,7 @@
 		/**
 		 * イベントハンドラの選択
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param $el
 		 */
 		selectEventHandler: function($el) {
@@ -1992,7 +1991,7 @@
 		/**
 		 * 詳細画面(右側画面)をコントローラまたはロジックを基に作成。nullが渡されたら空白にする
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param target
 		 */
 		setDetail: function(target) {
@@ -2028,7 +2027,7 @@
 		/**
 		 * コントローラの詳細表示
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param controller
 		 */
 		_showControllerDetail: function(controller) {
@@ -2112,9 +2111,9 @@
 			var logAry = devtoolContext.devtoolLog;
 			h5.core.controller(this.$find('.controller-detail .trace'), traceLogController, {
 				traceLogs: logAry,
-				// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
+				// トレースログと違ってログのコントローラからControllerInfoControllerが辿れなくなるため
 				// 引数で渡してログコントローラに覚えさせておく
-				_parentControllerDebugCtrl: this
+				_parentControllerCtrlInfoCtrl: this
 			});
 
 			// その他情報
@@ -2151,7 +2150,7 @@
 		/**
 		 * ロジックの詳細表示
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param logic
 		 */
 		_showLogicDetail: function(logic) {
@@ -2210,9 +2209,9 @@
 			var logAry = devtoolContext.devtoolLog;
 			h5.core.controller(this.$find('.logic-detail .trace'), h5.devtool.TraceLogController, {
 				traceLogs: logAry,
-				// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
+				// トレースログと違ってログのコントローラからControllerInfoControllerが辿れなくなるため
 				// 引数で渡してログコントローラに覚えさせておく
-				_parentControllerDebugCtrl: this
+				_parentControllerCtrlInfoCtrl: this
 			});
 
 			// その他情報
@@ -2225,7 +2224,7 @@
 		/**
 		 * エレメントにコントローラまたはロジックを持たせる
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param el
 		 * @param target
 		 */
@@ -2235,7 +2234,7 @@
 		/**
 		 * エレメントに覚えさせたコントローラまたはロジックを取得する
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param el
 		 * @returns {Controller|Logic}
 		 */
@@ -2245,7 +2244,7 @@
 		/**
 		 * 選択を解除
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 */
 		unfocus: function() {
 			this.setDetail(null);
@@ -2258,7 +2257,7 @@
 		 * @param elem オーバレイ対象要素
 		 * @param classNames オーバレイ要素に追加するクラス名
 		 * @returns 追加したオーバレイ要素
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 */
 		overlay: function(elem, classNames) {
 			var className = ($.isArray(classNames) ? classNames : [classNames]).join(' ');
@@ -2323,7 +2322,7 @@
 		 *
 		 * @param {Boolean} [deleteAll=false] ボーダーだけのオーバレイも削除するかどうか
 		 * @param {jQuery} $exclude 除外するオーバーレイ要素
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 */
 		removeOverlay: function(deleteAll, $exclude) {
 			var $target = deleteAll ? $('.h5devtool-overlay')
@@ -2333,12 +2332,12 @@
 		/**
 		 * コントローラまたはロジックをコントローラリストに追加
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param target
 		 */
 		appendTargetToList: function(target, $ul) {
 			if (h5.u.str.startsWith(target.__name, 'h5.devtool')) {
-				// デバッグ用にバインドしたコントローラは無視
+				// Devtoolがバインドしているコントローラは無視
 				return;
 			}
 			// devtoolのコンテキストを取得(無ければ新しい空オブジェクトが作成される)
@@ -2415,7 +2414,7 @@
 		/**
 		 * コントローラをコントローラリストから削除
 		 *
-		 * @memberOf h5.devtool.ControllerDebugController
+		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param controller
 		 */
 		removeControllerList: function(controller) {
@@ -2428,7 +2427,7 @@
 			});
 		}
 	};
-	h5.core.expose(controllerDebugController);
+	h5.core.expose(controllerInfoController);
 
 	/**
 	 * デバッガの設定を行うコントローラ
@@ -2525,15 +2524,15 @@
 
 		_selectLogObject: null,
 
-		_parentControllerDebugCtrl: null,
+		_parentControllerCtrlInfoCtrl: null,
 
 		__ready: function(context) {
 			this._contextMenuController.contextMenuExp = '.logContextMenu';
 			this._contextMenuController.setFilter('*:not(.trace-list>li>*)');
 
-			// コントローラデバッグコントローラを参照できるように覚えておく
-			this._parentControllerDebugCtrl = context.args._parentControllerDebugCtrl
-					|| this.parentController.parentController._controllerDebugController;
+			// ControllerInfoControllerを参照できるように覚えておく
+			this._parentControllerCtrlInfoCtrl = context.args._parentControllerCtrlInfoCtrl
+					|| this.parentController.parentController._controllerInfoController;
 		},
 		/**
 		 * ログ配列のセット
@@ -2637,18 +2636,18 @@
 			// エレメントからログオブジェクトを取得
 			// コントローラまたはロジックを取得
 			var ctrlOrLogic = this._selectLogObject.target;
-			var debugCtrl = this._parentControllerDebugCtrl;
+			var ctrlInfoCtrl = this._parentControllerCtrlInfoCtrl;
 			// コントローラタブに切替
 			var $controllerTab = $(this.rootElement).parents('.h5devtool').find(
-					'*[data-tab-page="debug-controller"]');
+					'*[data-tab-page="controller-info"]');
 			if (!$controllerTab.hasClass('active')) {
 				$controllerTab.trigger('click');
-				debugCtrl.setTarget(ctrlOrLogic);
+				ctrlInfoCtrl.setTarget(ctrlOrLogic);
 			}
 
 			// 対応するコントローラまたはロジックを選択
-			debugCtrl.$find('.target-name').each(function() {
-				if (debugCtrl.getTargetFromElem(this) === ctrlOrLogic) {
+			ctrlInfoCtrl.$find('.target-name').each(function() {
+				if (ctrlInfoCtrl.getTargetFromElem(this) === ctrlOrLogic) {
 					$(this).trigger('mouseover');
 					$(this).trigger('click');
 					return false;
@@ -2667,13 +2666,13 @@
 				var isEventHandler = method.indexOf(' ') !== -1 && ctrlOrLogic.__controllerContext;
 				var tabCls = isEventHandler ? 'eventHandler' : 'method';
 				// イベントハンドラのタブを選択
-				var $tab = debugCtrl.$find('.controller-detail>.nav-tabs>*[data-tab-page="'
+				var $tab = ctrlInfoCtrl.$find('.controller-detail>.nav-tabs>*[data-tab-page="'
 						+ tabCls + '"]');
 				if (!$tab.hasClass('active')) {
 					$tab.trigger('click');
 				}
-				var $activeList = debugCtrl
-						.$find('.controller-detail .' + tabCls + ' .method-list');
+				var $activeList = ctrlInfoCtrl.$find('.controller-detail .' + tabCls
+						+ ' .method-list');
 
 
 				// 該当箇所までスクロール
@@ -2870,7 +2869,7 @@
 
 			//--------------------------------------------
 			// window.onerrorで拾った例外も出すようにする
-			// (bindするのはwindowはデバッグウィンドウのwindowじゃなくてアプリ側のwindowオブジェクト)
+			// (bindするのはwindowはディベロッパウィンドウのwindowじゃなくてアプリ側のwindowオブジェクト)
 			// unbindするときのためにコントローラでハンドラを覚えておく
 			//--------------------------------------------
 			this._onnerrorHandler = this.own(function(ev) {
@@ -2969,45 +2968,45 @@
 	h5.core.expose(tabController);
 
 	/**
-	 * デバッグコントローラ
+	 * ディベロッパツールコントローラ
 	 *
-	 * @name h5.devtool.DebugController
+	 * @name h5.devtool.DevtoolController
 	 */
-	var debugController = {
+	var devtoolController = {
 		/**
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
-		__name: 'h5.devtool.DebugController',
+		__name: 'h5.devtool.DevtoolController',
 		/**
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		win: null,
 		/**
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
-		_controllerDebugController: h5.devtool.ControllerDebugController,
+		_controllerInfoController: h5.devtool.ControllerInfoController,
 
 		/**
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		_tabController: h5.devtool.TabController,
 		/**
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		_traceLogController: h5.devtool.TraceLogController,
 		/**
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		_loggerController: h5.devtool.LoggerController,
 		/**
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		_settingsController: h5.devtool.SettingsController,
 		/**
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		__meta: {
-			_controllerDebugController: {
+			_controllerInfoController: {
 			// rootElementは__constructで追加してから設定している
 			},
 			_traceLogController: {},
@@ -3015,17 +3014,17 @@
 			_loggerController: {}
 		},
 		/**
-		 * @memberOf h5.devtool.DebugController
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		__construct: function(context) {
 			this.win = context.args.win;
 			// 必要な要素を追加
 
 			// 全体を包むタブの中身を追加
-			view.append(this.rootElement, 'debug-tab');
-			view.append(this.$find('.debug-controller'), 'controllerDebugWrapper');
+			view.append(this.rootElement, 'devtool-tab');
+			view.append(this.$find('.controller-info'), 'controllerInfoWrapper');
 			view.append(this.$find('.settings'), 'settings');
-			this.__meta._controllerDebugController.rootElement = this.$find('.debug-controller');
+			this.__meta._controllerInfoController.rootElement = this.$find('.controller-info');
 			this.__meta._traceLogController.rootElement = this.$find('.trace');
 			this.__meta._loggerController.rootElement = this.$find('.logger');
 			this.__meta._settingsController.rootElement = this.$find('.settings');
@@ -3041,7 +3040,7 @@
 								var args = obj.args;
 								if (args[1] && typeof args[1] === 'string'
 										&& args[1].indexOf('h5.devtool.') === 0) {
-									// デバッグツールが吐いてるログは出力しない
+									// ディベロッパツールが吐いてるログは出力しない
 									return;
 								}
 								loggerArray.push(obj);
@@ -3092,7 +3091,7 @@
 		/**
 		 * 隠すボタン
 		 * <p>
-		 * オーバレイを隠す。タブレット版の場合はデバッグツールも隠す。
+		 * オーバレイを隠す。タブレット版の場合はディベロッパツールも隠す。
 		 * </p>
 		 */
 		'{.h5devtool-controllBtn.showhideBtn.hideTool} click': function(context, $el) {
@@ -3115,7 +3114,7 @@
 			}
 		}
 	};
-	h5.core.expose(debugController);
+	h5.core.expose(devtoolController);
 
 	// =========================================================================
 	//
@@ -3137,14 +3136,14 @@
 			var target = invocation.target;
 			if (isDevtoolWindowClosed || isDisposed(target)
 					|| h5.u.str.startsWith(target.__name, 'h5.devtool')) {
-				// デバッグウィンドウが閉じられた、またはdisposeされた、またはデバッグコントローラなら何もしない
+				// ディベロッパウィンドウが閉じられた、またはdisposeされた、またはDevtoolのコントローラなら何もしない
 				return invocation.proceed();
 			}
 
 			// 関数名を取得
 			var fName = invocation.funcName;
 
-			// ControllerDebugControllerまたはLogicDebugControllerがバインドされる前にバインドされたコントローラの場合
+			// ControllerInfoControllerがバインドされる前にバインドされたコントローラの場合
 			// devtoolコンテキストがないので追加
 			var devtoolContext = getDevtoolContext(target);
 
@@ -3284,7 +3283,7 @@
 	$(function() {
 		openDevtoolWindow().done(function(win) {
 			devtoolWindow = win;
-			h5.core.controller($(win.document).find('.h5devtool'), debugController, {
+			h5.core.controller($(win.document).find('.h5devtool'), devtoolController, {
 				win: win,
 				// 全体のトレースログ
 				traceLogs: wholeTraceLogs,
@@ -3292,11 +3291,11 @@
 				loggerArray: loggerArray
 
 			}).readyPromise.done(function() {
-				// 閉じられたときにdebugControllerをdispose
+				// 閉じられたときにdevtoolControllerをdispose
 				var controller = this;
 				function unloadFunc() {
 					// オーバレイを削除
-					controller._controllerDebugController.removeOverlay(true);
+					controller._controllerInfoController.removeOverlay(true);
 					// コントローラをdispose
 					controller.dispose();
 					// devtoolウィンドウが閉じられたフラグを立てる
