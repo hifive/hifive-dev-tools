@@ -1418,6 +1418,21 @@
 		}
 	});
 
+	/**
+	 * コントローラまたはロジックからdevtoolコンテキストを取得する。 ない場合はからオブジェクトを作成する
+	 *
+	 * @param {Controller|Logic} target コントローラまたはロジック
+	 * @returns devtoolコンテキスト
+	 */
+	function getDevtoolContext(target) {
+		if (!target) {
+			return null;
+		}
+		var targetContext = target.__controllerContext || target.__logicContext;
+		targetContext.devtool = targetContext.devtool || {};
+		return targetContext.devtool;
+	}
+
 	// =========================================================================
 	//
 	// Controller
@@ -1987,8 +2002,9 @@
 			}
 
 			// methodCountオブジェクトを持たせる
-			if (!target._h5devtoolContext.methodCount._method) {
-				target._h5devtoolContext.methodCount._method = new MethodCount(target);
+			var devtoolContext = getDevtoolContext(target);
+			if (!devtoolContext.methodCount._method) {
+				devtoolContext.methodCount._method = new MethodCount(target);
 			}
 
 			// 詳細ビューに表示されているコントローラを取得
@@ -2022,7 +2038,8 @@
 			// メソッド(イベントハンドラ以外)とイベントハンドラを列挙
 			var methods = [];
 			var eventHandlers = [];
-			for ( var p in controller._h5devtoolContext.methodCount._method) {
+			var devtoolContext = getDevtoolContext(controller);
+			for ( var p in devtoolContext.methodCount._method) {
 				if (p.indexOf(' ') === -1) {
 					methods.push(p);
 				} else {
@@ -2053,17 +2070,17 @@
 				controller: controller.__controllerContext.controllerDef,
 				eventHandlers: eventHandlers,
 				_funcToStr: funcToStr,
-				methodCount: controller._h5devtoolContext.methodCount
+				methodCount: devtoolContext.methodCount
 			});
 
 			this._updateMethodView({
 				defObj: controller.__controllerContext.controllerDef,
 				methods: methods,
 				_funcToStr: funcToStr,
-				methodCount: controller._h5devtoolContext.methodCount
+				methodCount: devtoolContext.methodCount
 			});
 
-			controller._h5devtoolContext.methodCount
+			devtoolContext.methodCount
 					.registCallback(this
 							.own(function(method) {
 								// 表示中であればカウントを更新
@@ -2092,7 +2109,7 @@
 							}));
 
 			// ログ
-			var logAry = controller._h5devtoolContext.debugLog;
+			var logAry = devtoolContext.devtoolLog;
 			h5.core.controller(this.$find('.controller-detail .trace'), traceLogController, {
 				traceLogs: logAry,
 				// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
@@ -2162,14 +2179,15 @@
 			publicMethods.sort();
 			var methods = publicMethods.concat(privateMethods);
 
+			var devtoolContext = getDevtoolContext(logic);
 			view.update(this.$find('.logic-detail .tab-content .method'), 'method-list', {
 				defObj: logic.__logicContext.logicDef,
 				methods: methods,
 				_funcToStr: funcToStr,
-				methodCount: logic._h5devtoolContext.methodCount
+				methodCount: devtoolContext.methodCount
 			});
 
-			logic._h5devtoolContext.methodCount.registCallback(this.own(function(method) {
+			devtoolContext.methodCount.registCallback(this.own(function(method) {
 				// 表示中であればカウントを更新
 				if (this.selectedTarget !== logic) {
 					return;
@@ -2189,8 +2207,8 @@
 			}));
 
 			// ログ
-			var logAry = logic._h5devtoolContext.debugLog;
-			h5.core.controller(this.$find('.logic-detail .trace'), traceLogController, {
+			var logAry = devtoolContext.devtoolLog;
+			h5.core.controller(this.$find('.logic-detail .trace'), h5.devtool.TraceLogController, {
 				traceLogs: logAry,
 				// トレースログと違ってログのコントローラからコントローラデバッグコントローラが辿れなくなるため
 				// 引数で渡してログコントローラに覚えさせておく
@@ -2200,7 +2218,7 @@
 			// その他情報
 			view.update(this.$find('.logic-detail .tab-content .otherInfo'), 'logic-otherInfo', {
 				defObj: logic.__logicContext.logicDef,
-				instanceName: logic._h5devtoolContext.instanceName
+				instanceName: devtoolContext.instanceName
 			});
 		},
 
@@ -2323,17 +2341,17 @@
 				// デバッグ用にバインドしたコントローラは無視
 				return;
 			}
-			// _h5devtoolContextを持たせる
-			target._h5devtoolContext = target._h5devtoolContext || {};
+			// devtoolのコンテキストを取得(無ければ新しい空オブジェクトが作成される)
+			var devtoolContext = getDevtoolContext(target);
 
 			$ul = $ul || this.$find('.targetlist:first');
 			// ログ用のObservableArrayを持たせる
-			if (!target._h5devtoolContext.debugLog) {
-				target._h5devtoolContext.debugLog = createLogArray();
+			if (!devtoolContext.devtoolLog) {
+				devtoolContext.devtoolLog = createLogArray();
 			}
 
 			// メソッド・イベントハンドラの実行回数を保持するオブジェクトを持たせる
-			target._h5devtoolContext.methodCount = new MethodCount(target);
+			devtoolContext.methodCount = new MethodCount(target);
 
 			if (target.__controllerContext) {
 				// コントローラの場合
@@ -2352,8 +2370,10 @@
 						// 『コントローラ名#定義名』を覚えさせておく
 						var p = childControllerProperties[i];
 						var controller = target[p];
-						controller._h5devtoolContext = controller._h5devtoolContext || {};
-						controller._h5devtoolContext.instanceName = target.__name + '#' + p;
+						controller.__controllerContext.devtool = controller.__controllerContext.devtool
+								|| {};
+						controller.__controllerContext.devtool.instanceName = target.__name + '#'
+								+ p;
 						view.append($li, 'target-list');
 						this.appendTargetToList(controller, $li.find('ul:last'));
 					}
@@ -2368,17 +2388,17 @@
 							isAppendedLogiccUl = true;
 						}
 						// 『コントローラ名#定義名』を覚えさせておく
-						target[p]._h5devtoolContext = target[p]._h5devtoolContext || {};
-						target[p]._h5devtoolContext.instanceName = target.__name + '#' + p;
+						target[p].__logicContext.devtool = target[p].__logicContext.devtool || {};
+						target[p].__logicContext.devtool.instanceName = target.__name + '#' + p;
 						this.appendTargetToList(target[p], $li.find('ul:last'));
 					}
 				}
 			} else {
 				// ロジックの場合
 				// コントローラ名とログ用のObserbableArrayを持たせる
-				target._h5devtoolContext = target._h5devtoolContext || {
+				target.__logicContext.devtool = target.__logicContext.devtool || {
 					name: target.__name,
-					debugLog: createLogArray()
+					devtoolLog: createLogArray()
 				};
 				var $li = $(view.get('target-list-part', {
 					name: target.__name,
@@ -2561,9 +2581,8 @@
 			}), LOG_DELAY);
 		},
 		_updateView: function() {
-			// コントローラがdisposeされていたら何もしない(非同期で呼ばれるメソッドなのであり得る)
-			if (!this.__controllerContext) {
-				// コントローラがdisposeされていたら何もしない(非同期で呼ばれるメソッドなのであり得る)
+			// このコントローラがdisposeされていたら何もしない(非同期で呼ばれるメソッドなのであり得る)
+			if (isDisposed(this)) {
 				return;
 			}
 			var logArray = this._logArray;
@@ -3111,6 +3130,7 @@
 	// TODO アスペクトでやるのをやめる。
 	// アスペクトだと、メソッドがプロミスを返した時が分からない。(プロミスがresolve,rejectされた時に初めてpostに入るので。)
 	var preTarget = null;
+	var preTargetDevtoolContext = null;
 	var aspect = {
 		target: '*',
 		interceptors: h5.u.createInterceptor(function(invocation, data) {
@@ -3125,19 +3145,20 @@
 			var fName = invocation.funcName;
 
 			// ControllerDebugControllerまたはLogicDebugControllerがバインドされる前にバインドされたコントローラの場合
-			// _h5devtoolContextがないので追加
-			target._h5devtoolContext = target._h5devtoolContext || {};
+			// devtoolコンテキストがないので追加
+			var devtoolContext = getDevtoolContext(target);
+
 			// ログのインデントレベルを設定
-			target._h5devtoolContext.indentLevel = target._h5devtoolContext.indentLevel || 0;
+			devtoolContext.indentLevel = devtoolContext.indentLevel || 0;
 			// メソッドの呼び出し回数をカウント
-			var methodCount = target._h5devtoolContext.methodCount;
+			var methodCount = devtoolContext.methodCount;
 			if (!methodCount) {
 				methodCount = new MethodCount(target);
-				target._h5devtoolContext.methodCount = methodCount;
+				devtoolContext.methodCount = methodCount;
 			}
 			methodCount.count(fName);
 
-			var indentLevel = target._h5devtoolContext.indentLevel;
+			var indentLevel = devtoolContext.indentLevel;
 			var cls = '';
 			if (fName.indexOf(' ') !== -1 && target.__controllerContext) {
 				// コントローラかつ空白を含むメソッドの場合はイベントハンドラ
@@ -3158,16 +3179,16 @@
 			data.beginLog = [];
 
 			// ログを保持する配列をターゲットに持たせる
-			if (!target._h5devtoolContext.debugLog) {
-				target._h5devtoolContext.debugLog = createLogArray();
+			if (!devtoolContext.devtoolLog) {
+				devtoolContext.devtoolLog = createLogArray();
 			}
 
 			// 呼び出し元のターゲットにもログを出す(ただし呼び出し元がdispose済みなら何もしない)
-			if (preTarget && preTarget !== target && preTarget._h5devtoolContext) {
+			if (preTarget && preTarget !== target && preTargetDevtoolContext) {
 				var logObj = createLogObject(target, target.__name + '#' + fName, cls, 'BEGIN', '',
-						preTarget._h5devtoolContext.indentLevel);
-				addLogObject(preTarget._h5devtoolContext.debugLog, logObj);
-				preTarget._h5devtoolContext.indentLevel += 1;
+						preTargetDevtoolContext.indentLevel);
+				addLogObject(preTargetDevtoolContext.devtoolLog, logObj);
+				preTargetDevtoolContext.indentLevel += 1;
 				data.beginLog.push({
 					target: preTarget,
 					logObj: logObj
@@ -3177,8 +3198,8 @@
 			// ターゲットのログ
 			var logObj = createLogObject(target, fName, cls, 'BEGIN', '', indentLevel);
 			data.logObj = logObj;
-			addLogObject(target._h5devtoolContext.debugLog, logObj);
-			target._h5devtoolContext.indentLevel += 1;
+			addLogObject(devtoolContext.devtoolLog, logObj);
+			devtoolContext.indentLevel += 1;
 			data.beginLog.push({
 				target: target,
 				logObj: logObj
@@ -3192,19 +3213,20 @@
 			data.wholeLog = wholeLog;
 
 			preTarget = target;
+			preTargetDevtoolContext = devtoolContext;
 			return invocation.proceed();
 		}, function(invocation, data) {
 			var target = invocation.target;
 			if (isDevtoolWindowClosed || isDisposed(target)) {
-				// デバッグウィンドウが閉じた、またはdisposeされたターゲットの場合は何もしない
+				// devtoolウィンドウが閉じた、またはdisposeされたターゲットの場合は何もしない
 				// target.__nameがない(===disposeされた)場合は何もしない
 				return;
 			}
 			if (h5.u.str.startsWith(target.__name, 'h5.devtool')) {
 				return;
 			}
-			target._h5devtoolContext = target._h5devtoolContext || {};
-			target._h5devtoolContext.indentLevel = target._h5devtoolContext.indentLevel || 0;
+			var devtoolContext = getDevtoolContext(target);
+			devtoolContext.indentLevel = devtoolContext.indentLevel || 0;
 
 			// プロミスの判定
 			// penddingのプロミスを返した時はPOSTに入ってこないので、RESOLVEDかREJECTEDのどっちかになる。
@@ -3235,8 +3257,8 @@
 					logObj.time = time;
 					// プロミスならインデントを現在のインデント箇所で表示
 					logObj.indentWidth = isPromise ? 0 : logObj.indentWidth;
-					addLogObject(t._h5devtoolContext.debugLog, logObj);
-					t._h5devtoolContext.indentLevel -= 1;
+					addLogObject(getDevtoolContext(t).devtoolLog, logObj);
+					getDevtoolContext(t).indentLevel -= 1;
 				}
 			}
 
@@ -3249,6 +3271,7 @@
 			addLogObject(wholeTraceLogs, wholeLog);
 			wholeTraceLogsIndentLevel -= 1;
 			preTarget = null;
+			preTargetDevtoolContext = null;
 		}),
 		pointCut: '*'
 	};
