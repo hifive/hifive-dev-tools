@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="h5jsbuilder" basedir="." default="build">
+	<property name="WebContent" value="WebContent" />
+	<property name="srcDir" value="${WebContent}/src" />
+	<property name="buildDir" value="${WebContent}/build" />
+
+	<property name="lib.project.dir" value="./lib" />
+
+	<path id="base.path">
+		<fileset dir="${lib.project.dir}" includes="**/*.jar" />
+	</path>
+
+	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpathref="base.path" />
+
+	<target name="build">
+		<jscomp compilationLevel="simple" debug="false" output="${buildDir}/h5.devtool.min.js">
+			<sources dir="${srcDir}">
+				<file name="h5.devtool.js" />
+			</sources>
+		</jscomp>
+		<copy file="${srcDir}/h5devtool.html" todir="${buildDir}" />
+		<copy file="${srcDir}/h5.devtool.js" todir="${buildDir}" />
+	</target>
+</project>

@@ -377,7 +377,7 @@
 	}, {
 		selector: '.h5devtool .method-list .count',
 		rule: {
-			float: 'right',
+			'float': 'right',
 			fontWeight: 'bold',
 			fontSize: '30px',
 			position: 'relative',
@@ -420,7 +420,7 @@
 	}, {
 		selector: '.h5devtool .left',
 		rule: {
-			float: 'left',
+			'float': 'left',
 			height: '100%',
 			maxWidth: '350px',
 			border: '1px solid #20B5FF',
@@ -479,13 +479,13 @@
 			width: '100%',
 			margin: 0,
 			padding: 0,
-			float: 'left'
+			'float': 'left'
 
 		}
 	}, {
 		selector: '.h5devtool ul.nav-tabs>li',
 		rule: {
-			float: 'left',
+			'float': 'left',
 			padding: '3px',
 			border: '1px solid #ccc',
 			color: '#20B5FF',
@@ -523,7 +523,7 @@
 		selector: '.h5devtool .tab-content>*',
 		rule: {
 			overflow: 'auto',
-			float: 'left',
+			'float': 'left',
 			height: 'inherit',
 			width: '100%'
 		}
@@ -547,7 +547,7 @@
 			left: '0',
 			'z-index': '1000',
 			display: 'none',
-			float: 'left',
+			'float': 'left',
 			'min-width': '160px',
 			padding: '5px 0',
 			margin: '2px 0 0',
