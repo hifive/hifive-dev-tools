@@ -1328,7 +1328,7 @@
 			return $(elm).outerHeight();
 		}
 		var elmStyle = getStyle(elm);
-		parseInt(elmStyle.height) + parseInt(elmStyle.paddingTop)
+		return parseInt(elmStyle.height) + parseInt(elmStyle.paddingTop)
 				+ parseInt(elmStyle.paddingBottom) + parseInt(elmStyle.borderTopWidth)
 				+ parseInt(elmStyle.borderBottomWidth) + parseInt(elmStyle.marginTop)
 				+ parseInt(elmStyle.marginBottom);
