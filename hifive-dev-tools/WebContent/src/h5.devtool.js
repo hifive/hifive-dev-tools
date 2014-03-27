@@ -1190,7 +1190,7 @@
 						for (var j = 0, len = selectors.length; j < len; j++) {
 							if ($.isArray(val)) {
 								// マルチブラウザ対応で、同じキーに配列で値が設定されていた場合は全てaddRuleする
-								for (var k = 0, len = val.length; k++; k < len) {
+								for (var k = 0, len = val.length; k < len; k++) {
 									sheet.addRule(selectors[j], key + ':' + val[k]);
 								}
 							} else {
