@@ -1,1 +1,1 @@
-/* Copyright (C) 2013-2014 NS Solutions Corporation. Licensed under the Apache License, Version 2.0. hifive Developer Tool ver.{version} */
+/* Copyright (C) 2013-2014 NS Solutions Corporation. Licensed under the Apache License, Version 2.0. hifive Developer Tool ver.{version} gitCommitId {gitCommitId} */

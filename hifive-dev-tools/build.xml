@@ -4,6 +4,7 @@
 	<property name="WebContent" value="WebContent" />
 	<property name="srcDir" value="${WebContent}/src" />
 	<property name="buildDir" value="${WebContent}/build" />
+	<property name="config" value="config" />
 
 	<property name="lib.project.dir" value="./lib" />
 
@@ -13,12 +14,56 @@
 
 	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpathref="base.path" />
 
-	<target name="build">
-		<jscomp compilationLevel="simple" debug="false" output="${buildDir}/h5.devtool.min.js">
+	<target name="cleanCurrent">
+		<delete>
+			<fileset dir="${buildDir}/">
+				<include name="**" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="getVersion">
+		<input message="バージョン番号を入力してください。(ex. 1.0.1)" addproperty="versionNumber" />
+		<condition property="isCorrectNumber">
+			<matches pattern="[0-9]+\.[0-9]+\.[0-9]+" string="${versionNumber}" />
+		</condition>
+		<fail unless="isCorrectNumber" message="正しいバージョン番号を入力してください。" />
+	</target>
+
+	<target name="getGitHash">
+		<property name="git.dir" value="../.git/logs/HEAD" />
+		<available file="${git.dir}" property="git.exists" />
+		<fail unless="git.exists" message="${git.dir}が存在しません" />
+		<loadfile srcfile="${git.dir}" property="gitCommitId">
+			<filterchain>
+				<tailfilter lines="1" />
+				<replaceregex pattern="[A-z0-9]+ ([A-z0-9]+) .*" replace="\1" />
+			</filterchain>
+		</loadfile>
+		<echo message="gitCommitId: ${gitCommitId}" />
+	</target>
+
+	<target name="build" depends="cleanCurrent,getVersion,getGitHash">
+		<!-- ClosureCompilerを使ってmin版の作成。コンパイル後にヘッダ追記するので、build/tmp/フォルダにいったん出力する -->
+		<jscomp compilationLevel="simple" debug="false" output="${buildDir}/tmp/h5.devtool.min.js">
 			<sources dir="${srcDir}">
 				<file name="h5.devtool.js" />
 			</sources>
 		</jscomp>
+		<!-- min版のヘッダ挿入 -->
+		<!-- ヘッダにversion, gitCommitIdのセット -->
+		<copy file="${config}/min-build-header.txt" todir="${buildDir}/tmp" />
+		<replace file="${buildDir}/tmp/min-build-header.txt">
+			<replacefilter token="{version}" value="${versionNumber}" />
+			<replacefilter token="{gitCommitId}" value="${gitCommitId}" />
+		</replace>
+		<!-- ヘッダとソースを結合 -->
+		<concat destfile="${buildDir}/h5.devtool.min.js">
+			<filelist dir="${buildDir}/tmp" files="min-build-header.txt,h5.devtool.min.js" />
+		</concat>
+		<!-- tmpフォルダの削除 -->
+		<!-- <delete dir="${buildDir}/tmp" /> -->
+
 		<copy file="${srcDir}/h5devtool.html" todir="${buildDir}" />
 		<copy file="${srcDir}/h5.devtool.js" todir="${buildDir}" />
 	</target>
