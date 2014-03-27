@@ -37,6 +37,7 @@
 		<loadfile srcfile="${git.dir}" property="gitCommitId">
 			<filterchain>
 				<tailfilter lines="1" />
+				<striplinebreaks />
 				<replaceregex pattern="[A-z0-9]+ ([A-z0-9]+) .*" replace="\1" />
 			</filterchain>
 		</loadfile>
