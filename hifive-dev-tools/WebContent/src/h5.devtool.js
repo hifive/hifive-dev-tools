@@ -66,518 +66,565 @@
 	/**
 	 * ディベロッパツールのスタイル
 	 */
-	var H5DEVTOOL_STYLE = [{
-		selector: '.h5devtool',
-		rule: {
-			backgroundColor: 'rgba(255,255,255,0.8)', // iframe版を考慮して背景に透過指定
-			height: '100%',
-			width: '100%',
-			margin: 0,
-			padding: 0,
-			zIndex: 20000
-		}
-	}, {
-		selector: '.h5devtoolHTML', // IE8-用にHTML要素にもスタイルを当てる
-		rule: {
-			height: '100%',
-			width: '100%',
-			margin: 0,
-			padding: 0,
-			overflow: 'hidden' // IE7でスクロールバーが出てしまうためoverflow:hiddenを指定する
-		}
-	}, {
-		selector: '.h5devtool.posfix',
-		rule: {
-			position: 'fixed',
-			top: 0,
-			left: 0
-		}
-	}, {
-		selector: '.h5devtool .devtool-tab',
-		rule: {
-			height: '100%'
-		}
-	}, {
-		selector: '.h5devtool-upper-right',
-		rule: {
-			position: 'fixed',
-			zIndex: 20001,
-			top: 0,
-			left: '810px',
-			width: '100px',
-			textAlign: 'right'
-		}
-	}, {
-		selector: '.h5devtool .liststyle-none',
-		rule: {
-			listStyle: 'none'
-		}
-	}, {
-		selector: '.h5devtool .no-padding',
-		rule: {
-			padding: '0!important'
-		}
-	},
-	/*
-	 * 汎用スタイル
-	 */
-	{
-		selector: '.h5devtool .font-small',
-		rule: {
-			fontSize: '0.8em'
-		}
-	},
-	/*
-	 * トレースログ
-	 */
-	{
-		selector: '.h5devtool .trace',
-		rule: {
-			paddingLeft: 0,
-			margin: 0,
-			height: '100%',
-			paddingBottom: '60px', // .fixedControllsの高さ
-			overflow: 'visible!important',
-			'-moz-box-sizing': 'border-box',
-			'-webkit-box-sizing': 'border-box',
-			boxSizing: 'border-box'
-		}
-	}, {
-		selector: '.h5devtool .trace .lifecycleColor',
-		rule: {
-			color: '#15A2E3',
-			borderColor: '#15A2E3'
-		}
-	}, {
-		selector: '.h5devtool .trace .publicColor',
-		rule: {
-			color: '#31A120',
-			borderColor: '#31A120'
-		}
-	}, {
-		selector: '.h5devtool .trace .privateColor',
-		rule: {
-			color: '#4A370C',
-			borderColor: '#4A370C'
-		}
-	}, {
-		selector: '.h5devtool .trace .eventColor',
-		rule: {
-			color: '#861EC2',
-			borderColor: '#861EC2'
-		}
-	}, {
-		selector: '.h5devtool .trace .fixedControlls label',
-		rule: {
-			margin: '0 2px 4px 0',
-			borderWidth: '0 0 3px 0',
-			borderStyle: 'solid',
-			display: 'inline-block'
-		}
-	}, {
-		selector: '.h5devtool .trace .fixedControlls',
-		rule: {
-			paddingLeft: 0,
-			margin: 0,
-			backgroundColor: '#fff',
-			border: 'solid 1px gray',
-			padding: '3px',
-			height: '60px',
-			'-moz-box-sizing': 'border-box',
-			'-webkit-box-sizing': 'border-box',
-			boxSizing: 'border-box'
-		}
-	}, {
-		selector: '.h5devtool .trace-list',
-		rule: {
-			paddingLeft: 0,
-			margin: 0,
-			height: '100%',
-			color: 'gray',
-			whiteSpace: 'nowrap',
-			overflow: 'auto'
-		}
-	}, {
-		selector: '.h5devtool .trace-list>li.selected',
-		rule: {
-			backgroundColor: '#ddd'
-		}
-	}, {
-		selector: '.h5devtool .trace-list>li .time',
-		rule: {
-			marginRight: '1em'
-		}
-	}, {
-		selector: '.h5devtool .trace-list>li .tag',
-		rule: {
-			display: 'inline-block',
-			minWidth: '3em'
-		}
-	}, {
-		selector: '.h5devtool .trace-list>li .promiseState',
-		rule: {
-			display: 'inline-block',
-			marginRight: '0.5em'
-		}
-	},
-	/*
-	 * ロガー
-	 */
-	{
-		selector: '.h5devtool .logger p',
-		rule: {
-			margin: '4px 0 0 2px',
-			borderTop: '1px solid #eee',
-			fontSize: '12px'
-		}
-	}, {
-		selector: '.h5devtool .logger p.TRACE',
-		rule: {
-			color: '#000000'
-		}
-	}, {
-		selector: '.h5devtool .logger p.DEBUG',
-		rule: {
-			color: '#0000ff'
-		}
-	}, {
-		selector: '.h5devtool .logger p.INFO',
-		rule: {
-			color: '#000000'
-		}
-	}, {
-		selector: '.h5devtool .logger p.WARN',
-		rule: {
-			color: '#0000ff'
-		}
-	}, {
-		selector: '.h5devtool .logger p.ERROR',
-		rule: {
-			color: '#ff0000'
-		}
-	}, {
-		selector: '.h5devtool .logger p.EXCEPTION',
-		rule: {
-			color: '#ff0000',
-			fontWeight: 'bold'
-		}
-	},
-	/*
-	 * カラムレイアウトをコンテンツに持つタブコンテンツのラッパー
-	 * 各カラムでスクロールできればいいので、外側はoverflow:hidden
-	 */
-	{
-		selector: '.h5devtool .columnLayoutWrapper',
-		rule: {
-			overflow: 'hidden!important'
-		}
-	},
-	/*
-	 * コントローラ情報表示箇所
-	 */{
-		selector: '.h5devtool .controller-info .controll',
-		rule: {
-			paddingLeft: '30px'
-		}
-	},
-	/*
-	 * コントローラ情報の詳細
-	 */{
-		selector: '.h5devtool .controller-info .controller-detail',
-		rule: {
-			height: '100%'
-		}
-	},
-	/*
-	 * コントローラ・ロジックリスト
-	 */
-	{
-		selector: '.h5devtool .controller-info .targetlist',
-		rule: {
-			paddingTop: 0,
-			paddingLeft: '1.2em',
-			// IE7用
-			'*paddingLeft': 0,
-			'*position': 'relative',
-			'*left': '-1.2em'
-		}
-	}, {
-		selector: '.h5devtool .controller-info .targetlist .target-name',
-		rule: {
-			cursor: 'default'
-		}
-	}, {
-		selector: '.h5devtool .controller-info .targetlist .target-name.selected',
-		rule: {
-			background: 'rgb(170,237,255)!important'
-		}
-	}, {
-		selector: '.h5devtool .controller-info .targetlist .target-name:hover',
-		rule: {
-			background: 'rgb(220,247,254)'
-		}
-	},
+	var H5DEVTOOL_STYLE = [
+			{
+				selector: '.h5devtool',
+				rule: {
+					backgroundColor: 'rgba(255,255,255,0.8)', // iframe版を考慮して背景に透過指定
+					height: '100%',
+					width: '100%',
+					margin: 0,
+					padding: 0,
+					zIndex: 20000
+				}
+			},
+			{
+				selector: '.h5devtoolHTML', // IE8-用にHTML要素にもスタイルを当てる
+				rule: {
+					height: '100%',
+					width: '100%',
+					margin: 0,
+					padding: 0,
+					overflow: 'hidden' // IE7でスクロールバーが出てしまうためoverflow:hiddenを指定する
+				}
+			},
+			{
+				selector: '.h5devtool.posfix',
+				rule: {
+					position: 'fixed',
+					top: 0,
+					left: 0
+				}
+			},
+			{
+				selector: '.h5devtool .devtool-tab',
+				rule: {
+					height: '100%'
+				}
+			},
+			{
+				selector: '.h5devtool-upper-right',
+				rule: {
+					position: 'fixed',
+					zIndex: 20001,
+					top: 0,
+					left: '810px',
+					width: '100px',
+					textAlign: 'right'
+				}
+			},
+			{
+				selector: '.h5devtool .liststyle-none',
+				rule: {
+					listStyle: 'none'
+				}
+			},
+			{
+				selector: '.h5devtool .no-padding',
+				rule: {
+					padding: '0!important'
+				}
+			},
+			/*
+			 * 汎用スタイル
+			 */
+			{
+				selector: '.h5devtool .font-small',
+				rule: {
+					fontSize: '0.8em'
+				}
+			},
+			/*
+			 * トレースログ
+			 */
+			{
+				selector: '.h5devtool .trace',
+				rule: {
+					paddingLeft: 0,
+					margin: 0,
+					height: '100%',
+					paddingBottom: '60px', // .fixedControllsの高さ
+					overflow: 'visible!important',
+					'-moz-box-sizing': 'border-box',
+					'-webkit-box-sizing': 'border-box',
+					boxSizing: 'border-box'
+				}
+			},
+			{
+				selector: '.h5devtool .trace .lifecycleColor',
+				rule: {
+					color: '#15A2E3',
+					borderColor: '#15A2E3'
+				}
+			},
+			{
+				selector: '.h5devtool .trace .publicColor',
+				rule: {
+					color: '#31A120',
+					borderColor: '#31A120'
+				}
+			},
+			{
+				selector: '.h5devtool .trace .privateColor',
+				rule: {
+					color: '#4A370C',
+					borderColor: '#4A370C'
+				}
+			},
+			{
+				selector: '.h5devtool .trace .eventColor',
+				rule: {
+					color: '#861EC2',
+					borderColor: '#861EC2'
+				}
+			},
+			{
+				selector: '.h5devtool .trace .fixedControlls label',
+				rule: {
+					margin: '0 2px 4px 0',
+					borderWidth: '0 0 3px 0',
+					borderStyle: 'solid',
+					display: 'inline-block'
+				}
+			},
+			{
+				selector: '.h5devtool .trace .fixedControlls',
+				rule: {
+					paddingLeft: 0,
+					margin: 0,
+					backgroundColor: '#fff',
+					border: 'solid 1px gray',
+					padding: '3px',
+					height: '60px',
+					'-moz-box-sizing': 'border-box',
+					'-webkit-box-sizing': 'border-box',
+					boxSizing: 'border-box'
+				}
+			},
+			{
+				selector: '.h5devtool .trace-list',
+				rule: {
+					paddingLeft: 0,
+					margin: 0,
+					height: '100%',
+					color: 'gray',
+					whiteSpace: 'nowrap',
+					overflow: 'auto'
+				}
+			},
+			{
+				selector: '.h5devtool .trace-list>li.selected',
+				rule: {
+					backgroundColor: '#ddd'
+				}
+			},
+			{
+				selector: '.h5devtool .trace-list>li .time',
+				rule: {
+					marginRight: '1em'
+				}
+			},
+			{
+				selector: '.h5devtool .trace-list>li .tag',
+				rule: {
+					display: 'inline-block',
+					minWidth: '3em'
+				}
+			},
+			{
+				selector: '.h5devtool .trace-list>li .promiseState',
+				rule: {
+					display: 'inline-block',
+					marginRight: '0.5em'
+				}
+			},
+			/*
+			 * ロガー
+			 */
+			{
+				selector: '.h5devtool .logger p',
+				rule: {
+					margin: '4px 0 0 2px',
+					borderTop: '1px solid #eee',
+					fontSize: '12px'
+				}
+			},
+			{
+				selector: '.h5devtool .logger p.TRACE',
+				rule: {
+					color: '#000000'
+				}
+			},
+			{
+				selector: '.h5devtool .logger p.DEBUG',
+				rule: {
+					color: '#0000ff'
+				}
+			},
+			{
+				selector: '.h5devtool .logger p.INFO',
+				rule: {
+					color: '#000000'
+				}
+			},
+			{
+				selector: '.h5devtool .logger p.WARN',
+				rule: {
+					color: '#0000ff'
+				}
+			},
+			{
+				selector: '.h5devtool .logger p.ERROR',
+				rule: {
+					color: '#ff0000'
+				}
+			},
+			{
+				selector: '.h5devtool .logger p.EXCEPTION',
+				rule: {
+					color: '#ff0000',
+					fontWeight: 'bold'
+				}
+			},
+			/*
+			 * カラムレイアウトをコンテンツに持つタブコンテンツのラッパー
+			 * 各カラムでスクロールできればいいので、外側はoverflow:hidden
+			 */
+			{
+				selector: '.h5devtool .columnLayoutWrapper',
+				rule: {
+					overflow: 'hidden!important'
+				}
+			},
+			/*
+			 * コントローラ情報表示箇所
+			 */{
+				selector: '.h5devtool .controller-info .controll',
+				rule: {
+					paddingLeft: '30px'
+				}
+			},
+			/*
+			 * コントローラ情報の詳細
+			 */{
+				selector: '.h5devtool .controller-info .controller-detail',
+				rule: {
+					height: '100%'
+				}
+			},
+			/*
+			 * コントローラ・ロジックリスト
+			 */
+			{
+				selector: '.h5devtool .controller-info .targetlist',
+				rule: {
+					paddingTop: 0,
+					paddingLeft: '1.2em',
+					// IE7用
+					'*paddingLeft': 0,
+					'*position': 'relative',
+					'*left': '-1.2em'
+				}
+			},
+			{
+				selector: '.h5devtool .controller-info .targetlist .target-name',
+				rule: {
+					cursor: 'default'
+				}
+			},
+			{
+				selector: '.h5devtool .controller-info .targetlist .target-name.selected',
+				rule: {
+					background: 'rgb(170,237,255)!important'
+				}
+			},
+			{
+				selector: '.h5devtool .controller-info .targetlist .target-name:hover',
+				rule: {
+					background: 'rgb(220,247,254)'
+				}
+			},
 
-	/*
-	 * イベントハンドラ
-	 */
-	{
-		selector: '.h5devtool .controller-info .eventHandler ul',
-		rule: {
-			listStyle: 'none',
-			margin: 0
-		}
-	}, {
-		selector: '.h5devtool .controller-info .eventHandler ul li .key',
-		rule: {
-			lineHeight: '28px'
-		}
-	}, {
-		selector: '.h5devtool .controller-info .eventHandler li.selected',
-		rule: {
-			background: 'rgb(203,254,231)'
-		}
-	},
-	/*
-	 * メソッドリスト
-	 */
-	{
-		selector: '.h5devtool .method-list',
-		rule: {
-			listStyle: 'none',
-			margin: 0,
-			// IE7用
-			'*padding-right': '16px!important' // スクロールバーの下に隠れることがあるので右側にその分パディングを取る
-		}
-	}, {
-		selector: '.h5devtool .method-list .nocalled',
-		rule: {
-			background: '#6EB7DB'
-		}
-	}, {
-		selector: '.h5devtool .method-list .called',
-		rule: {
-			background: '#CBE6F3'
-		}
-	},
-	/*
-	 * その他情報
-	 */
-	{
-		selector: '.h5devtool .controller-info .otherInfo ul',
-		rule: {
-			margin: 0
-		}
-	}, {
-		selector: '.h5devtool .controller-info .otherInfo dt',
-		rule: {
-			fontWeight: 'bold',
-			margin: '5px 0 5px 5px'
-		}
-	}, {
-		selector: '.h5devtool .method-list .count',
-		rule: {
-			'float': 'right',
-			fontWeight: 'bold',
-			fontSize: '30px',
-			position: 'relative',
-			top: '16px',
-			right: '10px',
-			color: '#888'
-		}
-	}, {
-		selector: '.h5devtool .method-list pre',
-		rule: {
-			margin: '0 0 10px',
-			padding: '4px',
-			wordBreak: 'break-all',
-			wordWrap: 'break-word',
-			whiteSpace: 'pre',
-			whiteSpace: 'pre-wrap',
-			background: 'rgb(250,250,250)',
-			border: '1px solid rgb(213,213,213)',
-			'-webkit-border-radius': '4px',
-			'-moz-border-radius': '4px',
-			borderRadius: '4px',
-			fontFamily: 'Monaco,Menlo,Consolas,"Courier New",monospace',
-			fontSize: '12px'
-		}
-	}, {
-		selector: '.h5devtool .controller-info .detail',
-		rule: {
-			overflow: 'auto'
-		}
-	}, {
-		selector: '.h5devtool .ovfAuto',
-		rule: {
-			overflow: 'auto'
-		}
-	}, {
-		selector: '.h5devtool .ovfHidden',
-		rule: {
-			overflow: 'hidden'
-		}
-	}, {
-		selector: '.h5devtool .left',
-		rule: {
-			'float': 'left',
-			height: '100%',
-			maxWidth: '350px',
-			border: '1px solid #20B5FF',
-			'-moz-box-sizing': 'border-box',
-			'-webkit-box-sizing': 'border-box',
-			boxSizing: 'border-box',
-			// IE7用
-			'*position': 'absolute',
-			'*height': 'auto',
-			'*top': 0,
-			'*left': 0,
-			'*bottom': 0,
-			'*width': '350px'
-		}
-	}, {
-		selector: '.h5devtool .right',
-		rule: {
-			height: '100%',
-			border: '1px solid #20B5FF',
-			borderLeft: 'none',
-			'-moz-box-sizing': 'border-box',
-			'-webkit-box-sizing': 'border-box',
-			boxSizing: 'border-box',
-			// IE7用
-			'*position': 'absolute',
-			'*height': 'auto',
-			'*width': 'auto',
-			'*top': 0,
-			'*left': '350px',
-			'*right': 0,
-			'*bottom': 0
-		}
-	}, {
-		selector: '.h5devtool .eventHandler .menu',
-		rule: {
-			display: 'none'
-		}
-	}, {
-		selector: '.h5devtool .eventHandler .menu>*',
-		rule: {
-			display: 'inline-block'
-		}
-	}, {
-		selector: '.h5devtool .eventHandler .selected .menu',
-		rule: {
-			display: 'inline-block'
-		}
-	},
-	/*
-	 * タブ
-	 */
-	{
-		selector: '.h5devtool ul.nav-tabs',
-		rule: {
-			listStyle: 'none',
-			width: '100%',
-			margin: 0,
-			padding: 0,
-			'float': 'left'
+			/*
+			 * イベントハンドラ
+			 */
+			{
+				selector: '.h5devtool .controller-info .eventHandler ul',
+				rule: {
+					listStyle: 'none',
+					margin: 0
+				}
+			},
+			{
+				selector: '.h5devtool .controller-info .eventHandler ul li .key',
+				rule: {
+					lineHeight: '28px'
+				}
+			},
+			{
+				selector: '.h5devtool .controller-info .eventHandler li.selected',
+				rule: {
+					background: 'rgb(203,254,231)'
+				}
+			},
+			/*
+			 * メソッドリスト
+			 */
+			{
+				selector: '.h5devtool .method-list',
+				rule: {
+					listStyle: 'none',
+					margin: 0,
+					// IE7用
+					'*padding-right': '16px!important' // スクロールバーの下に隠れることがあるので右側にその分パディングを取る
+				}
+			},
+			{
+				selector: '.h5devtool .method-list .nocalled',
+				rule: {
+					// マルチブラウザ対応
+					background: [
+							'-webkit-gradient(linear, left top, right top, color-stop(0.95, #C3E0EF), color-stop(0.00, #F5FBFE))',
+							'-webkit-linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%)',
+							'-moz-linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%);',
+							'-o-linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%)',
+							'-ms-linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%)',
+							'linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%)']
 
-		}
-	}, {
-		selector: '.h5devtool ul.nav-tabs>li',
-		rule: {
-			'float': 'left',
-			padding: '3px',
-			border: '1px solid #ccc',
-			color: '#20B5FF',
-			marginLeft: '-1px',
-			cursor: 'pointer'
-		}
-	}, {
-		selector: '.h5devtool ul.nav-tabs>li.active',
-		rule: {
-			color: '#000',
-			borderBottom: 'none'
-		}
-	}, {
-		selector: '.h5devtool .tab-content',
-		rule: {
-			marginTop: '-1px',
-			width: '100%',
-			height: '100%',
-			paddingBottom: '30px',
-			'-moz-box-sizing': 'border-box',
-			'-webkit-box-sizing': 'border-box',
-			boxSizing: 'border-box',
-			// IE7用
-			'*position': 'absolute',
-			'*height': 'auto',
-			'*top': '26px',
-			'*left': 0,
-			'*bottom': 0,
-			'*right': '20px',
-			'*paddingBottom': 0,
-			'*overflow-y': 'auto',
-			'*overflow-x': 'hidden'
-		}
-	}, {
-		selector: '.h5devtool .tab-content>*',
-		rule: {
-			overflow: 'auto',
-			'float': 'left',
-			height: 'inherit',
-			width: '100%'
-		}
-	}, {
-		selector: '.h5devtool .tab-content>*',
-		rule: {
-			display: 'none'
-		}
-	}, {
-		selector: '.h5devtool .tab-content>.active',
-		rule: {
-			display: 'block'
-		}
-	},
-	// ドロップダウンメニュー(bootstrapから流用)
-	{
-		selector: '.h5devtool .dropdown-menu',
-		rule: {
-			position: ' absolute',
-			top: '100%',
-			left: '0',
-			'z-index': '1000',
-			display: 'none',
-			'float': 'left',
-			'min-width': '160px',
-			padding: '5px 0',
-			margin: '2px 0 0',
-			'list-style': 'none',
-			'background-color': '#fff',
-			border: '1px solid #ccc',
-			border: '1px solid rgba(0,0,0,0.2)',
-			'-webkit-border-radius': '6px',
-			'-moz-border-radius': '6px',
-			'border-radius': '6px',
-			'-webkit-box-shadow': '0 5px 10px rgba(0,0,0,0.2)',
-			'-moz-box-shadow': '0 5px 10px rgba(0,0,0,0.2)',
-			'box-shadow': '0 5px 10px rgba(0,0,0,0.2)',
-			'-webkit-background-clip': 'padding-box',
-			'-moz-background-clip': 'padding',
-			'background-clip': 'padding-box'
-		}
-	}, {
-		selector: '.h5devtool .dropdown-menu li',
-		rule: {
-			fontSize: '0.8em',
-			padding: '8px',
-			cursor: 'pointer'
-		}
-	}, {
-		selector: '.h5devtool .dropdown-menu li:hover',
-		rule: {
-			backgroundColor: '#eee'
-		}
-	}];
+				}
+			},
+			{
+				selector: '.h5devtool .method-list .called',
+				rule: {
+					// マルチブラウザ対応
+					background: [
+							'-webkit-gradient(linear, left top, right top, color-stop(0.95, #6EB7DB), color-stop(0.00, #C3E0EF))',
+							'-webkit-linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%)',
+							'-moz-linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%);',
+							'-o-linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%)',
+							'-ms-linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%)',
+							'linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%)']
+
+				}
+			},
+			/*
+			 * その他情報
+			 */
+			{
+				selector: '.h5devtool .controller-info .otherInfo ul',
+				rule: {
+					margin: 0
+				}
+			}, {
+				selector: '.h5devtool .controller-info .otherInfo dt',
+				rule: {
+					fontWeight: 'bold',
+					margin: '5px 0 5px 5px'
+				}
+			}, {
+				selector: '.h5devtool .method-list .count',
+				rule: {
+					'float': 'right',
+					fontWeight: 'bold',
+					fontSize: '30px',
+					position: 'relative',
+					top: '16px',
+					right: '10px',
+					color: '#888'
+				}
+			}, {
+				selector: '.h5devtool .method-list pre',
+				rule: {
+					margin: '0 0 10px',
+					padding: '4px',
+					wordBreak: 'break-all',
+					wordWrap: 'break-word',
+					whiteSpace: 'pre',
+					whiteSpace: 'pre-wrap',
+					background: 'rgb(250,250,250)',
+					border: '1px solid rgb(213,213,213)',
+					'-webkit-border-radius': '4px',
+					'-moz-border-radius': '4px',
+					borderRadius: '4px',
+					fontFamily: 'Monaco,Menlo,Consolas,"Courier New",monospace',
+					fontSize: '12px'
+				}
+			}, {
+				selector: '.h5devtool .controller-info .detail',
+				rule: {
+					overflow: 'auto'
+				}
+			}, {
+				selector: '.h5devtool .ovfAuto',
+				rule: {
+					overflow: 'auto'
+				}
+			}, {
+				selector: '.h5devtool .ovfHidden',
+				rule: {
+					overflow: 'hidden'
+				}
+			}, {
+				selector: '.h5devtool .left',
+				rule: {
+					'float': 'left',
+					height: '100%',
+					maxWidth: '350px',
+					border: '1px solid #20B5FF',
+					'-moz-box-sizing': 'border-box',
+					'-webkit-box-sizing': 'border-box',
+					boxSizing: 'border-box',
+					// IE7用
+					'*position': 'absolute',
+					'*height': 'auto',
+					'*top': 0,
+					'*left': 0,
+					'*bottom': 0,
+					'*width': '350px'
+				}
+			}, {
+				selector: '.h5devtool .right',
+				rule: {
+					height: '100%',
+					border: '1px solid #20B5FF',
+					borderLeft: 'none',
+					'-moz-box-sizing': 'border-box',
+					'-webkit-box-sizing': 'border-box',
+					boxSizing: 'border-box',
+					// IE7用
+					'*position': 'absolute',
+					'*height': 'auto',
+					'*width': 'auto',
+					'*top': 0,
+					'*left': '350px',
+					'*right': 0,
+					'*bottom': 0
+				}
+			}, {
+				selector: '.h5devtool .eventHandler .menu',
+				rule: {
+					display: 'none'
+				}
+			}, {
+				selector: '.h5devtool .eventHandler .menu>*',
+				rule: {
+					display: 'inline-block'
+				}
+			}, {
+				selector: '.h5devtool .eventHandler .selected .menu',
+				rule: {
+					display: 'inline-block'
+				}
+			},
+			/*
+			 * タブ
+			 */
+			{
+				selector: '.h5devtool ul.nav-tabs',
+				rule: {
+					listStyle: 'none',
+					width: '100%',
+					margin: 0,
+					padding: 0,
+					'float': 'left'
+
+				}
+			}, {
+				selector: '.h5devtool ul.nav-tabs>li',
+				rule: {
+					'float': 'left',
+					padding: '3px',
+					border: '1px solid #ccc',
+					color: '#20B5FF',
+					marginLeft: '-1px',
+					cursor: 'pointer'
+				}
+			}, {
+				selector: '.h5devtool ul.nav-tabs>li.active',
+				rule: {
+					color: '#000',
+					borderBottom: 'none'
+				}
+			}, {
+				selector: '.h5devtool .tab-content',
+				rule: {
+					marginTop: '-1px',
+					width: '100%',
+					height: '100%',
+					paddingBottom: '30px',
+					'-moz-box-sizing': 'border-box',
+					'-webkit-box-sizing': 'border-box',
+					boxSizing: 'border-box',
+					// IE7用
+					'*position': 'absolute',
+					'*height': 'auto',
+					'*top': '26px',
+					'*left': 0,
+					'*bottom': 0,
+					'*right': '20px',
+					'*paddingBottom': 0,
+					'*overflow-y': 'auto',
+					'*overflow-x': 'hidden'
+				}
+			}, {
+				selector: '.h5devtool .tab-content>*',
+				rule: {
+					overflow: 'auto',
+					'float': 'left',
+					height: 'inherit',
+					width: '100%'
+				}
+			}, {
+				selector: '.h5devtool .tab-content>*',
+				rule: {
+					display: 'none'
+				}
+			}, {
+				selector: '.h5devtool .tab-content>.active',
+				rule: {
+					display: 'block'
+				}
+			},
+			// ドロップダウンメニュー(bootstrapから流用)
+			{
+				selector: '.h5devtool .dropdown-menu',
+				rule: {
+					position: ' absolute',
+					top: '100%',
+					left: '0',
+					'z-index': '1000',
+					display: 'none',
+					'float': 'left',
+					'min-width': '160px',
+					padding: '5px 0',
+					margin: '2px 0 0',
+					'list-style': 'none',
+					'background-color': '#fff',
+					border: '1px solid #ccc',
+					border: '1px solid rgba(0,0,0,0.2)',
+					'-webkit-border-radius': '6px',
+					'-moz-border-radius': '6px',
+					'border-radius': '6px',
+					'-webkit-box-shadow': '0 5px 10px rgba(0,0,0,0.2)',
+					'-moz-box-shadow': '0 5px 10px rgba(0,0,0,0.2)',
+					'box-shadow': '0 5px 10px rgba(0,0,0,0.2)',
+					'-webkit-background-clip': 'padding-box',
+					'-moz-background-clip': 'padding',
+					'background-clip': 'padding-box'
+				}
+			}, {
+				selector: '.h5devtool .dropdown-menu li',
+				rule: {
+					fontSize: '0.8em',
+					padding: '8px',
+					cursor: 'pointer'
+				}
+			}, {
+				selector: '.h5devtool .dropdown-menu li:hover',
+				rule: {
+					backgroundColor: '#eee'
+				}
+			}];
 
 	var SPECIAL_H5DEVTOOL_STYLE = {
 	//		IE: [{
@@ -1097,7 +1144,14 @@
 				for ( var p in rule) {
 					var key = hyphenate(p);
 					var val = rule[p];
-					cssStr += key + ':' + val + ';';
+					if ($.isArray(val)) {
+						// マルチブラウザ対応で、同じキーに配列で値が設定されていた場合は全てcssStrに含める
+						for (var j = 0, len = val.length; j < len; j++) {
+							cssStr += key + ':' + val[j] + ';';
+						}
+					} else {
+						cssStr += key + ':' + val + ';';
+					}
 				}
 				cssStr += '}';
 				sheet.insertRule(cssStr, sheet.cssRules.length);
@@ -1118,7 +1172,14 @@
 					} else {
 						var selectors = selector.split(',');
 						for (var j = 0, len = selectors.length; j < len; j++) {
-							sheet.addRule(selectors[j], key + ':' + val);
+							if ($.isArray(val)) {
+								// マルチブラウザ対応で、同じキーに配列で値が設定されていた場合は全てaddRuleする
+								for (var k = 0, len = val.length; k++; k < len) {
+									sheet.addRule(selectors[j], key + ':' + val[k]);
+								}
+							} else {
+								sheet.addRule(selectors[j], key + ':' + val);
+							}
 						}
 					}
 				}
@@ -2127,6 +2188,7 @@
 								}
 								var $count = $targetLi.find('.count');
 								$count.text(parseInt($count.text()) + 1);
+								$targetLi.removeClass('nocalled').addClass('called');
 							}));
 
 			// ログ
