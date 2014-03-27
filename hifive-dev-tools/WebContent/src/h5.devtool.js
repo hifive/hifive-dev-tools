@@ -38,11 +38,11 @@
 	// =========================================================================
 	/**
 	 * window.openで開くかどうか。 <br>
-	 * window.openで開く場合はtrue、ページ上に表示するならfalse
+	 * window.openで開く場合はtrue、ページ上に表示(iframe版)ならfalse
 	 */
-	var useWindowOpen = h5.env.ua.isDesktop;
-	//	useWindowOpen = true;
-	//	useWindowOpen = false;
+	//	TODO 今は必ずwindow.open()を使用するようにしている(タブレットでもwindow.open()で動作する。)
+	// iframe版を使用することがもうないならソースコードを修正する。
+	var useWindowOpen = true;
 
 	// =========================================================================
 	//
