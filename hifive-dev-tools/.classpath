@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="lib" path="lib/closurecompiler/args4j-2.0.12.jar"/>
-	<classpathentry kind="lib" path="lib/closurecompiler/closure-compiler-r1810.jar"/>
-	<classpathentry kind="lib" path="lib/closurecompiler/guava-10.0.1.jar"/>
-	<classpathentry kind="lib" path="lib/closurecompiler/jsr305-1.3.9.jar"/>
-	<classpathentry kind="lib" path="lib/closurecompiler/protobuf-java-2.4.1.jar"/>
+	<classpathentry kind="lib" path="lib/closurecompiler/compiler.jar"/>
 	<classpathentry kind="output" path=""/>
 </classpath>

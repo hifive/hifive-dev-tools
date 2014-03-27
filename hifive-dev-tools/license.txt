@@ -20,4 +20,15 @@ URL:http://nodejs.org/
 License:MIT license
 	https://raw.github.com/joyent/node/v0.10.16/LICENSE
 Local Modifications: None.
+
 -----
+Code under:
+lib/closurecompiler
+
+Closure Compiler
+URL:https://code.google.com/p/closure-compiler/
+License:Apache License 2.0
+	http://www.apache.org/licenses/LICENSE-2.0
+Local Modifications: None.
+
+
