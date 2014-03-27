@@ -15,7 +15,7 @@
 
 	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpathref="base.path" />
 
-	<target name="cleanCurrent">
+	<target name="clean">
 		<delete>
 			<fileset dir="${buildDir}/">
 				<include name="**" />
@@ -45,7 +45,7 @@
 		<echo message="gitCommitId: ${gitCommitId}" />
 	</target>
 
-	<target name="build" depends="cleanCurrent,getVersion,getGitHash">
+	<target name="build" depends="clean,getVersion,getGitHash">
 		<!-- ClosureCompilerを使ってmin版の作成。コンパイル後にヘッダ追記するので、build/tmp/フォルダにいったん出力する -->
 		<jscomp compilationLevel="simple" debug="false" output="${buildDir}/tmp/h5.devtool.min.js">
 			<sources dir="${srcDir}">
@@ -70,7 +70,7 @@
 		<copy file="${srcDir}/h5.devtool.js" todir="${buildDir}" />
 	</target>
 
-	<target name="build-head" depends="cleanCurrent,getGitHash">
+	<target name="build-head" depends="clean,getGitHash">
 		<!-- ClosureCompilerを使ってmin版の作成。コンパイル後にヘッダ追記するので、build/tmp/フォルダにいったん出力する -->
 		<jscomp compilationLevel="simple" debug="false" output="${buildHeadDir}/tmp/h5.devtool.min.js">
 			<sources dir="${srcDir}">
