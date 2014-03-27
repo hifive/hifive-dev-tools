@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<project name="h5jsbuilder" basedir="." default="build">
+<project name="h5devtool-builder" basedir="." default="build">
 	<property name="WebContent" value="WebContent" />
 	<property name="srcDir" value="${WebContent}/src" />
 	<property name="buildDir" value="${WebContent}/build" />
