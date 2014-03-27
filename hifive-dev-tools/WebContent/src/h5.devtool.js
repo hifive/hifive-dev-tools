@@ -632,8 +632,18 @@
 				}
 			}];
 
-	var SPECIAL_H5DEVTOOL_STYLE = {
-	//		IE: [{
+	var MOBILE_STYLE = {
+		// モバイルの時だけ適用するスタイルを設定します
+		selector: '.h5devtool .trace-list>li',
+		rule: {
+			lineHeight: '2em'
+		}
+	};
+
+	var SPECIAL_UA_H5DEVTOOL_STYLE = {
+	//		// h5.env.ua[property]がtrueの時のスタイルを設定します。
+	//		// h5.env.ua.isIEがtrueの時に設定するスタイルは、"isIE"というプロパティでスタイルを定義します。
+	//		isIE: [{
 	//			// スタイルの調整(IE用)
 	//			// IEだと、親要素とそのさらに親要素がpadding指定されているとき、height:100%の要素を置くと親の親のpadding分が無視されている？
 	//			// その分を調整する。
@@ -1123,17 +1133,17 @@
 			return '-' + s.toLowerCase();
 		});
 	}
-	function setCSS(devWindow, styleDef, specialStyleDef) {
+	function setCSS(devWindow, styleDef, specialUAStyleDef) {
 		// ウィンドウが開きっぱなしの時はスタイル追加はしない
 		var doc = devWindow.document;
 		if ($(doc).find('style.h5devtool-style').length && devWindow != window) {
 			return;
 		}
 		var cssArray = styleDef;
-		if (specialStyleDef) {
-			for ( var p in specialStyleDef) {
-				if (h5.env.ua['is' + p]) {
-					cssArray = cssArray.concat(specialStyleDef[p]);
+		if (specialUAStyleDef) {
+			for ( var p in specialUAStyleDef) {
+				if (h5.env.ua[p]) {
+					cssArray = cssArray.concat(specialUAStyleDef[p]);
 				}
 			}
 		}
@@ -1869,7 +1879,8 @@
 
 			// 初期化処理
 			this.win = context.args.win;
-			setCSS(this.win, H5DEVTOOL_STYLE, SPECIAL_H5DEVTOOL_STYLE);
+			setCSS(this.win, h5.env.ua.isDesktop ? H5DEVTOOL_STYLE : H5DEVTOOL_STYLE
+					.concat(MOBILE_STYLE), SPECIAL_UA_H5DEVTOOL_STYLE);
 			setCSS(window, H5PAGE_STYLE);
 			// コントローラの詳細表示エリア
 			view.append(this.$find('.left'), 'target-list');
@@ -3394,39 +3405,42 @@
 	// コントローラのバインド
 	// -------------------------------------------------
 	$(function() {
-		openDevtoolWindow().done(function(win) {
-			devtoolWindow = win;
-			h5.core.controller($(win.document).find('.h5devtool'), devtoolController, {
-				win: win,
-				// 全体のトレースログ
-				traceLogs: wholeTraceLogs,
-				// ロガー
-				loggerArray: loggerArray
+		openDevtoolWindow()
+				.done(function(win) {
+					devtoolWindow = win;
+					h5.core.controller($(win.document).find('.h5devtool'), devtoolController, {
+						win: win,
+						// 全体のトレースログ
+						traceLogs: wholeTraceLogs,
+						// ロガー
+						loggerArray: loggerArray
 
-			}).readyPromise.done(function() {
-				// 閉じられたときにdevtoolControllerをdispose
-				var controller = this;
-				function unloadFunc() {
-					// オーバレイを削除
-					controller._controllerInfoController.removeOverlay(true);
-					// コントローラをdispose
-					controller.dispose();
-					// devtoolウィンドウが閉じられたフラグを立てる
-					// 以降、devtool用のアスペクトは動作しなくなる
-					isDevtoolWindowClosed = true;
-				}
-				if (win.addEventListener) {
-					win.addEventListener('unload', unloadFunc);
-				} else {
-					win.attachEvent('onunload', unloadFunc);
-				}
-			});
-		}).fail(function(reason) {
-			// ポップアップブロックされると失敗する
-			// アラートをだして何もしない
-			if (reason === 'block') {
-				alert('[hifive Developer Tool]\r\n別ウィンドウのオープンに失敗しました。ポップアップブロックを設定している場合は一時的に解除してください。');
-			}
-		});
+					}).readyPromise.done(function() {
+						// 閉じられたときにdevtoolControllerをdispose
+						var controller = this;
+						function unloadFunc() {
+							// オーバレイを削除
+							controller._controllerInfoController.removeOverlay(true);
+							// コントローラをdispose
+							controller.dispose();
+							// devtoolウィンドウが閉じられたフラグを立てる
+							// 以降、devtool用のアスペクトは動作しなくなる
+							isDevtoolWindowClosed = true;
+						}
+						if (win.addEventListener) {
+							win.addEventListener('unload', unloadFunc);
+						} else {
+							win.attachEvent('onunload', unloadFunc);
+						}
+					});
+				})
+				.fail(
+						function(reason) {
+							// ポップアップブロックされると失敗する
+							// アラートをだして何もしない
+							if (reason === 'block') {
+								alert('[hifive Developer Tool]\r\n別ウィンドウのオープンに失敗しました。ポップアップブロックを設定している場合は一時的に解除してください。');
+							}
+						});
 	});
 })(jQuery);
