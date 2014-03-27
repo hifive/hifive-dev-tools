@@ -2,9 +2,10 @@
 
 <project name="h5jsbuilder" basedir="." default="build">
 	<property name="WebContent" value="WebContent" />
-	<property name="srcDir" value="${WebContent}/src" />
-	<property name="buildDir" value="${WebContent}/build" />
-	<property name="buildHeadDir" value="${WebContent}/build" />
+	<!-- ${file.separator}は"/"でも同様に動作するが、パスをechoで出力する時のために${file.separator}を使用している -->
+	<property name="srcDir" value="${WebContent}${file.separator}src" />
+	<property name="buildDir" value="${WebContent}${file.separator}build" />
+	<property name="buildHeadDir" value="${WebContent}${file.separator}build" />
 	<property name="config" value="config" />
 
 	<property name="lib.project.dir" value="./lib" />
@@ -68,6 +69,8 @@
 
 		<copy file="${srcDir}/h5devtool.html" todir="${buildDir}" />
 		<copy file="${srcDir}/h5.devtool.js" todir="${buildDir}" />
+
+		<echo message="ビルドしたファイルを${basedir}${path.separator}${buildDir}に出力しました。" />
 	</target>
 
 	<target name="build-head" depends="clean,getGitHash">
@@ -93,5 +96,7 @@
 
 		<copy file="${srcDir}/h5devtool.html" todir="${buildHeadDir}" />
 		<copy file="${srcDir}/h5.devtool.js" todir="${buildHeadDir}" />
+
+		<echo message="ビルドしたファイルを${basedir}${file.separator}${buildHeadDir}に出力しました。" />
 	</target>
 </project>
