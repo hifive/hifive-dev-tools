@@ -1533,10 +1533,20 @@
 			// jQuery2.0.Xで、windowに属していない、別ウィンドウ内の要素についてwindow.getComputedStyle(elm)をしており、
 			// IEだとそれが原因でエラーになるため。
 			$contextMenu.addClass('open');
+			var pageX,pageY;
+			if (context.event.originalEvent.targetTouches) {
+				// タッチイベントの場合
+				var touch = context.event.originalEvent.targetTouches[0];
+				pageX = touch.pageX;
+				pageY = touch.pageY;
+			} else {
+				pageX = context.event.pageX;
+				pageY = context.event.pageY;
+			}
 			var offsetParent = getOffsetParent($contextMenu);
 			var offsetParentOffset = $(offsetParent).offset();
-			var left = context.event.pageX - offsetParentOffset.left;
-			var top = context.event.pageY - offsetParentOffset.top;
+			var left = pageX - offsetParentOffset.left;
+			var top = pageY - offsetParentOffset.top;
 			var outerWidth = getOuterWidth($contextMenu);
 			var outerHeight = getOuterHeight($contextMenu);
 			var scrollLeft = scrollPosition('Left')();
@@ -1659,17 +1669,15 @@
 			}
 		},
 
+		'{rootElement} touchstart': function(context) {
+			// トレースログ以外のタッチなら無視
+			if (this.$find('.trace-list>li>*').filter(context.event.target).length) {
+				this._contextmenu(context);
+			}
+		},
+
 		'{rootElement} contextmenu': function(context) {
-			this.close();
-			// _filterがfalseを返したら何もしない
-			if (this._filter && this._filter(context) === false) {
-				return;
-			}
-			if (this.targetAll) {
-				context.event.preventDefault();
-				context.event.stopPropagation();
-				this._open(context);
-			}
+			this._contextmenu(context);
 		},
 
 		'{document.body} click': function(context) {
@@ -1708,6 +1716,19 @@
 		'> .contextMenu li a click': function(context) {
 			context.event.stopPropagation();
 			this.close(context.event.target);
+		},
+
+		_contextmenu: function(context) {
+			this.close();
+			// _filterがfalseを返したら何もしない
+			if (this._filter && this._filter(context) === false) {
+				return;
+			}
+			if (this.targetAll) {
+				context.event.preventDefault();
+				context.event.stopPropagation();
+				this._open(context);
+			}
 		}
 	};
 	h5.core.expose(contextMenuController);
