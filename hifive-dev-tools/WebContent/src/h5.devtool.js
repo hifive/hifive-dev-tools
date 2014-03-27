@@ -406,6 +406,12 @@
 							'linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%)']
 
 				}
+			}, {
+				// 点滅させるときのスタイル
+				selector: '.h5devtool .method-list .blink',
+				rule: {
+					background: '#0ff'
+				}
 			},
 			/*
 			 * その他情報
@@ -1490,6 +1496,28 @@
 		var targetContext = target.__controllerContext || target.__logicContext;
 		targetContext.devtool = targetContext.devtool || {};
 		return targetContext.devtool;
+	}
+
+	/**
+	 * 要素を点滅させる
+	 *
+	 * @param {DOM|jQuery} elm
+	 */
+	function blinkElm(elm) {
+		var $elm = $(elm);
+		function _blink(count) {
+			$elm.addClass('blink');
+			setTimeout(function() {
+				$elm.removeClass('blink');
+				if (!count) {
+					return;
+				}
+				setTimeout(function() {
+					_blink(--count);
+				}, 100);
+			}, 100);
+		}
+		_blink(4);
 	}
 
 	// =========================================================================
@@ -2772,6 +2800,7 @@
 				});
 				if (li) {
 					$activeList.parent().scrollTop(scrollVal);
+					blinkElm(li);
 				}
 			}, 0);
 		}
