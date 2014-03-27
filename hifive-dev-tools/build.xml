@@ -23,7 +23,7 @@
 		</delete>
 	</target>
 
-	<target name="getVersion">
+	<target name="getVersion" unless="versionNumber">
 		<input message="バージョン番号を入力してください。(ex. 1.0.1)" addproperty="versionNumber" />
 		<condition property="isCorrectNumber">
 			<matches pattern="[0-9]+\.[0-9]+\.[0-9]+" string="${versionNumber}" />
@@ -73,31 +73,11 @@
 		<echo message="ビルドしたファイルを${outputDir}に出力しました。" />
 	</target>
 
-	<target name="build-head" depends="clean,getGitHash">
-		<!-- ClosureCompilerを使ってmin版の作成。コンパイル後にヘッダ追記するので、build/tmp/フォルダにいったん出力する -->
-		<jscomp compilationLevel="simple" debug="false" output="${buildHeadDir}/tmp/h5.devtool.min.js">
-			<sources dir="${srcDir}">
-				<file name="h5.devtool.js" />
-			</sources>
-		</jscomp>
-		<!-- min版のヘッダ挿入 -->
-		<!-- ヘッダにversion, gitCommitIdのセット -->
-		<copy file="${config}/min-build-header.txt" todir="${buildHeadDir}/tmp" />
-		<replace file="${buildHeadDir}/tmp/min-build-header.txt">
-			<replacefilter token="{version}" value="0.0.0" />
-			<replacefilter token="{gitCommitId}" value="${gitCommitId}" />
-		</replace>
-		<!-- ヘッダとソースを結合 -->
-		<concat destfile="${buildHeadDir}/h5.devtool.min.js">
-			<filelist dir="${buildHeadDir}/tmp" files="min-build-header.txt,h5.devtool.min.js" />
-		</concat>
-		<!-- tmpフォルダの削除 -->
-		<delete dir="${buildHeadDir}/tmp" />
+	<target name="setHeadVersion">
+		<property name="versionNumber" value="0.0.0" />
+	</target>
 
-		<copy file="${srcDir}/h5devtool.html" todir="${buildHeadDir}" />
-		<copy file="${srcDir}/h5.devtool.js" todir="${buildHeadDir}" />
+	<target name="build-head" depends="setHeadVersion, build">
 
-		<property name="outputDir" location="${buildHeadDir}" />
-		<echo message="ビルドしたファイルを${outputDir}に出力しました。" />
 	</target>
 </project>
