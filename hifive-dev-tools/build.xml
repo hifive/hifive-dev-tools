@@ -62,7 +62,7 @@
 			<filelist dir="${buildDir}/tmp" files="min-build-header.txt,h5.devtool.min.js" />
 		</concat>
 		<!-- tmpフォルダの削除 -->
-		<!-- <delete dir="${buildDir}/tmp" /> -->
+		<delete dir="${buildDir}/tmp" />
 
 		<copy file="${srcDir}/h5devtool.html" todir="${buildDir}" />
 		<copy file="${srcDir}/h5.devtool.js" todir="${buildDir}" />
