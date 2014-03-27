@@ -69,7 +69,7 @@
 		<copy file="${srcDir}/h5devtool.html" todir="${buildDir}" />
 		<copy file="${srcDir}/h5.devtool.js" todir="${buildDir}" />
 
-		<property name="outputDir" location="${basedir}/${buildHeadDir}" />
+		<property name="outputDir" location="${buildDir}" />
 		<echo message="ビルドしたファイルを${outputDir}に出力しました。" />
 	</target>
 
@@ -97,7 +97,7 @@
 		<copy file="${srcDir}/h5devtool.html" todir="${buildHeadDir}" />
 		<copy file="${srcDir}/h5.devtool.js" todir="${buildHeadDir}" />
 
-		<property name="outputDir" location="${basedir}/${buildDir}" />
+		<property name="outputDir" location="${buildHeadDir}" />
 		<echo message="ビルドしたファイルを${outputDir}に出力しました。" />
 	</target>
 </project>
