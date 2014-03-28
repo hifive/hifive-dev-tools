@@ -6,7 +6,7 @@
 	<property name="build.tmp.dir" value="${build.tmp.dir}" />
 	<property name="build.min.filename" value="h5.devtool.min.js" />
 	<property name="min.header.filename" value="min-build-header.txt" />
-	<property name="config" value="config" />
+	<property name="config.dir" value="config" />
 
 	<property name="lib.project.dir" value="./lib" />
 
@@ -55,7 +55,7 @@
 		</jscomp>
 		<!-- min版のヘッダ挿入 -->
 		<!-- ヘッダにversion, gitCommitIdのセット -->
-		<copy file="${config}/${min.header.filename}" todir="${build.tmp.dir}" />
+		<copy file="${config.dir}/${min.header.filename}" todir="${build.tmp.dir}" />
 		<replace file="${build.tmp.dir}/${min.header.filename}">
 			<replacefilter token="{version}" value="${versionNumber}" />
 			<replacefilter token="{gitCommitId}" value="${gitCommitId}" />
