@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="h5devtool-builder" basedir="." default="build">
-	<property name="WebContent" value="WebContent" />
-	<property name="srcDir" value="${WebContent}/src" />
-	<property name="buildDir" value="${WebContent}/build" />
-	<property name="buildHeadDir" value="${WebContent}/build" />
+	<property name="webcontent.dir" value="WebContent" />
+	<property name="src.dir" value="${webcontent.dir}/src" />
+	<property name="build.dir" value="${webcontent.dir}/build" />
+	<property name="build.tmp.dir" value="${build.tmp.dir}" />
+	<property name="build.min.filename" value="h5.devtool.min.js" />
+	<property name="min.header.filename" value="min-build-header.txt" />
 	<property name="config" value="config" />
 
 	<property name="lib.project.dir" value="./lib" />
@@ -16,7 +18,7 @@
 
 	<target name="clean">
 		<delete>
-			<fileset dir="${buildDir}/">
+			<fileset dir="${build.dir}/">
 				<include name="**" />
 			</fileset>
 		</delete>
@@ -45,31 +47,31 @@
 	</target>
 
 	<target name="build" depends="clean,getVersion,getGitHash">
-		<!-- ClosureCompilerを使ってmin版の作成。コンパイル後にヘッダ追記するので、build/tmp/フォルダにいったん出力する -->
-		<jscomp compilationLevel="simple" debug="false" output="${buildDir}/tmp/h5.devtool.min.js">
-			<sources dir="${srcDir}">
+		<!-- ClosureCompilerを使ってmin版の作成。コンパイル後にヘッダ追記するので、build.tmp.dirにいったん出力する -->
+		<jscomp compilationLevel="simple" debug="false" output="${build.tmp.dir}/${build.min.filename}">
+			<sources dir="${src.dir}">
 				<file name="h5.devtool.js" />
 			</sources>
 		</jscomp>
 		<!-- min版のヘッダ挿入 -->
 		<!-- ヘッダにversion, gitCommitIdのセット -->
-		<copy file="${config}/min-build-header.txt" todir="${buildDir}/tmp" />
-		<replace file="${buildDir}/tmp/min-build-header.txt">
+		<copy file="${config}/${min.header.filename}" todir="${build.tmp.dir}" />
+		<replace file="${build.tmp.dir}/${min.header.filename}">
 			<replacefilter token="{version}" value="${versionNumber}" />
 			<replacefilter token="{gitCommitId}" value="${gitCommitId}" />
 		</replace>
 		<!-- ヘッダとソースを結合 -->
-		<concat destfile="${buildDir}/h5.devtool.min.js">
-			<filelist dir="${buildDir}/tmp" files="min-build-header.txt,h5.devtool.min.js" />
+		<concat destfile="${build.dir}/${build.min.filename}">
+			<filelist dir="${build.tmp.dir}" files="${min.header.filename},${build.min.filename}" />
 		</concat>
 		<!-- tmpフォルダの削除 -->
-		<delete dir="${buildDir}/tmp" />
+		<delete dir="${build.tmp.dir}" />
 
-		<copy file="${srcDir}/h5devtool.html" todir="${buildDir}" />
-		<copy file="${srcDir}/h5.devtool.js" todir="${buildDir}" />
+		<copy file="${src.dir}/h5devtool.html" todir="${build.dir}" />
+		<copy file="${src.dir}/h5.devtool.js" todir="${build.dir}" />
 
-		<property name="outputDir" location="${buildDir}" />
-		<echo message="ビルドしたファイルを${outputDir}に出力しました。" />
+		<property name="output.dir" location="${build.dir}" />
+		<echo message="ビルドしたファイルを${output.dir}に出力しました。" />
 	</target>
 
 	<target name="setHeadVersion">
