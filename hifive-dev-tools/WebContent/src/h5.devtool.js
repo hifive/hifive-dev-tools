@@ -3427,6 +3427,12 @@
 							// 以降、devtool用のアスペクトは動作しなくなる
 							isDevtoolWindowClosed = true;
 						}
+						// unloadFuncのバインドを行う
+						// jQuery1系でIEを使用するとエラーが起きるので、nativeでバインドしている。
+						// # jQuery1系でIEの場合、unload時にjQueryがjQueryキャッシュを削除しようとする。
+						// # win.jQuery111012331231のようなオブジェクトをdeleteで消そうとしていて、
+						// # IEの場合はwindowオブジェクトに対してdeleteできないのでエラーになる。
+						// # windowの場合はdeleteを使用しないようになっているが、別windowの場合はdeleteが使われてしまう。
 						if (win.addEventListener) {
 							win.addEventListener('unload', unloadFunc);
 						} else {
