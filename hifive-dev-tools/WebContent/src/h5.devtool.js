@@ -2339,6 +2339,7 @@
 								var $this = $(this);
 								if ($this.text() === method) {
 									$targetLi = $this.parent();
+									return false;
 								}
 							});
 				}
