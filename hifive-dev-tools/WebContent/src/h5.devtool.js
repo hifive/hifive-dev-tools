@@ -2208,21 +2208,37 @@
 								if (this.selectedTarget !== controller) {
 									return;
 								}
+								// 対象のメソッドまたはイベントハンドラのliを表示中のもの(activeなもの)から探索する
 								var $targetLi = null;
 								if ($.inArray(method, methods) !== -1
 										&& this
 												.$find('.controller-detail .tab-content .method.active').length) {
-									$targetLi = this.$find(
-											'.controller-detail .tab-content .method.active .name:contains('
-													+ method + ')').parent();
+									// メソッドから探索
+									this.$find(
+											'.controller-detail .tab-content .method.active .name')
+											.each(function() {
+												var $this = $(this);
+												if ($this.text() === method) {
+													$targetLi = $this.parent();
+													return false;
+												}
+											});
 								} else if ($.inArray(method, eventHandlers) !== -1
 										&& this
 												.$find('.controller-detail .tab-content .eventHandler.active').length) {
-									$targetLi = this.$find(
-											'.controller-detail .tab-content .eventHandler.active .key:contains('
-													+ method + ')').parent();
+									// イベントハンドラから探索
+									this
+											.$find(
+													'.controller-detail .tab-content .eventHandler.active .key')
+											.each(function() {
+												var $this = $(this);
+												if ($this.text() === method) {
+													$targetLi = $this.parent();
+													return false;
+												}
+											});
 								}
-								if (!$targetLi || !$targetLi.length) {
+								if (!$targetLi) {
 									return;
 								}
 								var $count = $targetLi.find('.count');
@@ -2314,14 +2330,19 @@
 				if (this.selectedTarget !== logic) {
 					return;
 				}
+				// 対象のメソッドを表示中のものから探索する
 				var $targetLi = null;
 				if ($.inArray(method, methods) !== -1
 						&& this.$find('.logic-detail .tab-content .method.active').length) {
-					$targetLi = this.$find(
-							'.logic-detail .tab-content .method.active .name:contains(' + method
-									+ ')').parent();
+					$targetLi = this.$find('.logic-detail .tab-content .method.active .name').each(
+							function() {
+								var $this = $(this);
+								if ($this.text() === method) {
+									$targetLi = $this.parent();
+								}
+							});
 				}
-				if (!$targetLi || !$targetLi.length) {
+				if (!$targetLi) {
 					return;
 				}
 				var $count = $targetLi.find('.count');
