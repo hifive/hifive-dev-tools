@@ -2239,7 +2239,7 @@
 									return;
 								}
 								var $count = $targetLi.find('.count');
-								$count.text(parseInt($count.text()) + 1);
+								$count.text(devtoolContext.methodCount.get(method));
 								$targetLi.removeClass('nocalled').addClass('called');
 							}));
 
@@ -2344,7 +2344,7 @@
 					return;
 				}
 				var $count = $targetLi.find('.count');
-				$count.text(parseInt($count.text()) + 1);
+				$count.text(devtoolContext.methodCount.get(method));
 			}));
 
 			// ログ
