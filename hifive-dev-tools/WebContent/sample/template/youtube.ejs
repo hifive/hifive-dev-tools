@@ -1,0 +1,42 @@
+<script type="text/ejs" id="list">
+[% for (var i = 0, len = entry.length; i < len; i++) {
+ var group = entry[i].media$group;
+ var title = group.media$title.$t;
+ var url = entry[i].id.$t
+ var id = url.substr(url.lastIndexOf('/') + 1);
+ %]
+<li data-videoid="[%= id %]">
+	<div class="thumbnail">
+		<img src="http://i.ytimg.com/vi/[%= id %]/default.jpg">
+		<span>[%= title %]</span>
+	</div>
+</li>
+[% } %]
+</script>
+
+<script type="text/ejs" id="favorite-item">
+<div class="favorite-item contextMenuBtn" data-videoid="[%= id %]">
+	<img src="[%= img %]">
+	<span>[%= title %]</span>
+</div>
+</script>
+
+<script type="text/ejs" id="empty_list">
+<li class="emptyList">
+	<div class="thumbnail"></div>
+</li>
+</script>
+
+<script type="text/ejs" id="player">
+<iframe class="video" src="[%= 'http://www.youtube.com/embed/' + id %]?autoplay=1&controls=0&origin=http://localhost:8080" frameborder="0" allowfullscreen></iframe>
+</script>
+
+<script type="text/ejs" id="comment">
+[% for(var i = 0, l = comments.length; i < l; i++){ var c = comments[i]; %]
+<div class="entry"><span class="comment-author">[%= c.name %]</span><p class="comment-contents">[%= c.comment %]</p></div>
+[% } %]
+</script>
+
+<script type="text/ejs" id="videoInfo">
+<h3>[%= title.$t %]</h3><p>[%= content.$t %]</p>
+</script>

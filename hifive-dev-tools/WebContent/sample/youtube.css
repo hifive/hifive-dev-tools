@@ -1,0 +1,250 @@
+html,body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	overflow: hidden;
+}
+
+.playerContainer {
+	width: 100%;
+	height: 100%;
+	margin-top: -30px;
+	padding-top: 30px;
+	box-sizing: border-box;
+	/* 	background-color: #F7D98E; */
+	color: #14574F;
+}
+
+.playerContainer .contentWrap {
+	width: 100%;
+	height: 100%;
+	padding-top: 24px;
+	box-sizing: border-box;
+	overflow-y: auto;
+}
+
+/**********************************************************
+タイトルバー
+**********************************************************/
+.playerContainer .title-bar {
+	font-size: 1.5em;
+	text-align: center;
+	height: 48px;
+	padding-bottom: 10px;
+}
+
+.playerContainer .title-bar form {
+	display: inline-block;;
+	margin-top: 26px;
+}
+
+.playerContainer .title-bar input[type="text"] {
+	width: 400px;
+}
+
+.playerContainer .title-bar .logoWrapper {
+	float: left;
+	height: 100%;
+	overflow: visible;
+}
+
+.playerContainer .title-bar .logoWrapper img {
+	height: 70px;
+	margin: 0 10px 0 10px;
+	position: relative;
+	top: 10px;
+	float: left;
+}
+
+.playerContainer .title-bar .logoWrapper span {
+	font-size: 16px;
+	font-weight: bold;
+	line-height: 0;
+	white-space: nowrap;
+	position: relative;
+	top: 100%;
+	/** IE8のみ **/
+	display: block\9;
+	top: 120%\9;
+}
+
+/**********************************************************
+検索
+**********************************************************/
+.playerContainer .search {
+	float: left;
+	width: 220px;
+	height: 100%;
+}
+
+.playerContainer .player {
+	text-align: center;
+	height: 100%;
+	padding-left: 220px;
+	/** IE7用 **/
+	*padding-left: 0px;
+}
+
+.playerContainer .search .search-result-lists {
+	list-style: none;
+	margin: 4px 0 0 4px;
+	overflow: auto;
+}
+
+.playerContainer .search .search-result-lists li {
+	cursor: pointer;
+}
+
+.playerContainer .search .thumbnail {
+	min-height: 150px;
+	overflow-y: hidden;
+}
+
+.playerContainer .search .thumbnail span {
+	float: left;
+}
+
+/**********************************************************
+スクリーン
+**********************************************************/
+.playerContainer .screen {
+	height: 460px;
+}
+
+.playerContainer .screen .videoInfo {
+	height: 100px;
+}
+
+.playerContainer .screen .videoInfo h3 {
+	text-align: left;
+	margin: 0 0 10px 12px;
+	height: 24px;
+	white-space: nowrap;
+}
+
+.playerContainer .screen .videoInfo p {
+	text-align: left;
+	height: 64px;
+	overflow-y: auto;
+	padding: 0 10px;
+}
+
+/**********************************************************
+コントロール
+**********************************************************/
+.playerContainer .controll {
+	width: 640px;
+	margin: 0 auto;
+	height: 28px;
+	overflow-y: hidden;
+}
+
+.playerContainer .controll .icon {
+	cursor: pointer;
+	padding: 3px 10px;
+	border: 1px solid #ccc;
+	display: inline-block;
+	/** IE7用 **/
+	*display: inline;
+	*zoom: 1;
+}
+
+.playerContainer .controll .icon.hidden {
+	display: none;
+}
+
+/**********************************************************
+カルーセル部品
+**********************************************************/
+.carouselWrapper {
+	cursor: pointer;
+	height: 132px;
+}
+
+.carouselWrapper .left-arrow,.carouselWrapper .right-arrow {
+	height: 100%;
+	cursor: pointer;
+	display: block;
+	padding-top: 40px;
+}
+
+.carouselWrapper .left-arrow.disabled,.carouselWrapper .right-arrow.disabled
+	{
+	opacity: 0.3;
+}
+
+.carouselWrapper .empty-guide {
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	border: 2px solid #ccc;
+	color: #ccc;
+	font-size: 3em;
+	box-sizing: border-box;
+	-ms-box-sizing: border-box;
+	/** IE7用 **/
+	width: 98%;
+	height: 98%;
+}
+
+.carouselWrapper .empty-guide span {
+	position: relative;
+	line-height: 0;
+	top: 50%;
+	display: block;
+}
+
+.carouselWrapper .carousel {
+	height: 100%;
+	width: 100%;
+}
+
+.dropdown-menu .divider {
+	/** IE7用 **/
+	*width: 160px;
+}
+/**********************************************************
+お気に入り
+**********************************************************/
+.playerContainer .favorite {
+	margin: 10px auto 0 auto;
+	width: 732px;
+}
+
+.playerContainer .favorite .dropdown-menu a {
+	text-align: left;
+}
+
+.playerContainer .favorite-item {
+	width: 120px;
+	overflow: hidden;
+}
+
+.playerContainer .favorite-item img {
+	width: 120px;
+	height: 90px;
+}
+
+.playerContainer .favorite-item span {
+	display: block;
+	height: 90px;
+}
+
+/**********************************************************
+コメント
+**********************************************************/
+.playerContainer .comment {
+	text-align: left;
+	overflow: auto;
+	margin: 0 0 0 5px;
+	min-height: 100px;
+}
+
+.playerContainer .comment-author {
+	font-size: 0.8em;
+}
+
+.playerContainer .comment-contents {
+	margin: 0 0 1em 1em;
+}
+

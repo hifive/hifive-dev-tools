@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta charset="UTF-8">
+<meta http-equiv="content-language" content="ja">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="../res/lib/bootstrap/css/bootstrap.min.css">
+
+<link rel="stylesheet" href="../res/lib/hifive/h5.css">
+
+<link rel="stylesheet" href="youtube.css">
+
+<!-- IE8以下なら1系、それ以外なら2系のjQueryを使用する -->
+<!--[if lt IE 9]>
+<script src="../res/lib/jquery/jquery-1.js"></script>
+<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="../res/lib/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+
+<script src="../res/lib/bootstrap/js/bootstrap.min.js"></script>
+
+<script src="../res/lib/hifive/ejs-h5mod.js"></script>
+<script src="../res/lib/hifive/h5.dev.js"></script>
+
+<!-- hifiveディベロッパーツール設定と読み込み -->
+<script>
+	window.__h5_devtool_page = '../build/h5devtool.html';
+</script>
+<script src="../build/h5.devtool.min.js"></script>
+
+<script src="../res/lib/hifiveUI/contextMenu.js"></script>
+<script src="../res/lib/hifiveUI/LoopCarouselWrapper.js"></script>
+<script src="search/SearchLogic.js"></script>
+<script src="search/SearchController.js"></script>
+<script src="screen/ScreenController.js"></script>
+<script src="playback/PlaybackController.js"></script>
+<script src="favorite/FavoriteLogic.js"></script>
+<script src="favorite/FavoriteController.js"></script>
+<script src="comment/CommentLogic.js"></script>
+<script src="comment/CommentController.js"></script>
+<script src="page/PageLogic.js"></script>
+<script src="page/PageController.js"></script>
+<script src="init.js"></script>
+<title>hifive コントローラ連携サンプル</title>
+</head>
+<body>
+	<div class="playerContainer">
+		<div class="title-bar">
+			<div class="logoWrapper">
+				<img src="images/hifive_logo_clear.png"> <span>コントローラ連携サンプル</span>
+			</div>
+			<form class="form-search corner-all box">
+				<input type="text" class="input-medium search-query" placeholder="キーワード" /> <input type="submit"
+					class="btn btn-submit corner-all" value="検索" />
+			</form>
+		</div>
+		<div class="contentWrap">
+			<div class="search">
+				<div>
+					<div class="result-message">
+						検索結果: <span class="search-count">0</span>件
+					</div>
+					<ul class="search-result-lists  nav-list nav"></ul>
+				</div>
+			</div>
+			<div class="player">
+				<div class="screen">
+					<div class="videoInfo"></div>
+					<div id="youtube-player"></div>
+				</div>
+				<div class="controll">
+					<div class="icon play">
+						<i class="icon-play"></i>
+					</div>
+					<div class="icon pause hidden">
+						<i class="icon-pause"></i>
+					</div>
+					<div class="icon stop">
+						<i class="icon-stop"></i>
+					</div>
+					<div class="icon cue">
+						<i class="icon-fast-backward"></i>
+					</div>
+					<div class="icon backword">
+						<i class="icon-backward"></i>
+					</div>
+					<div class="icon forward">
+						<i class="icon-forward"></i>
+					</div>
+					<div class="icon registFav">
+						<i class="icon-star-empty"></i>
+					</div>
+				</div>
+				<div class="favorite carouselWrapper contextMenuBox" data-targetall="false">
+					<div class="carousel">
+						<div class="empty-guide">
+							<span>お気に入りリストがここに表示されます</span>
+						</div>
+					</div>
+					<ul class="dropdown-menu contextMenu" role="menu">
+						<li><a tabindex="-1" href="#play">再生</a></li>
+						<li class="divider"></li>
+						<li><a tabindex="-1" href="#open">YouTubeで開く</a></li>
+						<li><a tabindex="-1" href="#remove">削除</a></li>
+					</ul>
+				</div>
+				<div class="comment"></div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
