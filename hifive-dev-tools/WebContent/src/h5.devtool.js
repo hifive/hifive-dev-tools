@@ -1090,7 +1090,8 @@
 				$(w.document.getElementsByTagName('html')).addClass('h5devtoolHTML');
 
 				// タイトルの設定
-				w.document.title = 'hifive Developer Tool ver.' + H5_DEV_TOOL_VERSION;
+				w.document.title = h5.u.str.format('[devtool]{0} - hifive Developer Tool ver.{1}',
+						window.document.title, H5_DEV_TOOL_VERSION);
 			}
 
 
@@ -2299,8 +2300,8 @@
 			$target.find('.method-list>*').each(
 					function() {
 						var $this = $(this);
-						devtoolContext.methodCount.registCountElement($this.find('.name').text(), $this
-								.find('.count'));
+						devtoolContext.methodCount.registCountElement($this.find('.name').text(),
+								$this.find('.count'));
 					});
 
 			// ログ
