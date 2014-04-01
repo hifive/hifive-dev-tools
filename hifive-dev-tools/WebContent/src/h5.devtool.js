@@ -2069,6 +2069,7 @@
 			this.selectedTarget = target;
 			this.setDetail(target);
 		},
+
 		/**
 		 * イベントハンドラにマウスオーバーで選択(PC用)
 		 *
@@ -2389,14 +2390,14 @@
 		},
 
 		/**
-		 * エレメントにコントローラまたはロジックを持たせる
+		 * エレメントにコントローラまたはロジックのIDを持たせる
 		 *
 		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param el
 		 * @param target
 		 */
 		setTargetToElem: function(el, target) {
-			$(el).data('h5devtool-target', target);
+			$(el).data('h5devtool-targetId', getDevtoolContext(target).id);
 		},
 		/**
 		 * エレメントに覚えさせたコントローラまたはロジックを取得する
@@ -2406,7 +2407,7 @@
 		 * @returns {Controller|Logic}
 		 */
 		getTargetFromElem: function(el) {
-			return $(el).data('h5devtool-target');
+			return getDevtoolTarget($(el).data('h5devtool-targetId'));
 		},
 		/**
 		 * 選択を解除
