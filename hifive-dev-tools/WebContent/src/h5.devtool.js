@@ -1474,22 +1474,25 @@
 
 		for ( var p in defObj) {
 			if ($.isFunction(defObj[p])) {
-				this._method[p] = 0;
+				this._method[p] = {
+					count: 0
+				};
 			}
 		}
 	}
 	$.extend(MethodCount.prototype, {
 		count: function(method) {
-			this._method[method]++;
-			if (this._callback) {
-				return this._callback(method);
+			var val = ++this._method[method].count;
+			if (this._method[method].$countElement) {
+				this._method[method].$countElement.text(val);
 			}
+			return val;
 		},
 		get: function(method) {
-			return this._method[method];
+			return this._method[method].count;
 		},
-		registCallback: function(callback) {
-			this._callback = callback;
+		registCountElement: function(methodName, $countElement) {
+			this._method[methodName].$countElement = $countElement;
 		}
 	});
 
@@ -2198,51 +2201,6 @@
 				methodCount: devtoolContext.methodCount
 			});
 
-			devtoolContext.methodCount
-					.registCallback(this
-							.own(function(method) {
-								// 表示中であればカウントを更新
-								if (this.selectedTarget !== controller) {
-									return;
-								}
-								// 対象のメソッドまたはイベントハンドラのliを表示中のもの(activeなもの)から探索する
-								var $targetLi = null;
-								if ($.inArray(method, methods) !== -1
-										&& this
-												.$find('.controller-detail .tab-content .method.active').length) {
-									// メソッドから探索
-									this.$find(
-											'.controller-detail .tab-content .method.active .name')
-											.each(function() {
-												var $this = $(this);
-												if ($this.text() === method) {
-													$targetLi = $this.parent();
-													return false;
-												}
-											});
-								} else if ($.inArray(method, eventHandlers) !== -1
-										&& this
-												.$find('.controller-detail .tab-content .eventHandler.active').length) {
-									// イベントハンドラから探索
-									this
-											.$find(
-													'.controller-detail .tab-content .eventHandler.active .key')
-											.each(function() {
-												var $this = $(this);
-												if ($this.text() === method) {
-													$targetLi = $this.parent();
-													return false;
-												}
-											});
-								}
-								if (!$targetLi) {
-									return;
-								}
-								var $count = $targetLi.find('.count');
-								$count.text(devtoolContext.methodCount.get(method));
-								$targetLi.removeClass('nocalled').addClass('called');
-							}));
-
 			// ログ
 			var logAry = devtoolContext.devtoolLog;
 			h5.core.controller(this.$find('.controller-detail .trace'), traceLogController, {
@@ -2268,10 +2226,25 @@
 		_updateEventHandlerView: function(obj) {
 			var $target = this.$find('.controller-detail .tab-content .eventHandler');
 			view.update($target, 'eventHandler-list', obj);
+			obj.eventHandlers;
+			// メソッドが対応するDOMをmethodCountに登録
+			$target.find('.method-list>*').each(
+					function() {
+						var $this = $(this);
+						obj.methodCount.registCountElement($this.find('.key').text(), $this
+								.find('.count'));
+					});
 		},
 		_updateMethodView: function(obj) {
 			var $target = this.$find('.controller-detail .tab-content .method');
 			view.update($target, 'method-list', obj);
+			// メソッドが対応するDOMをmethodCountに登録
+			$target.find('.method-list>*').each(
+					function() {
+						var $this = $(this);
+						obj.methodCount.registCountElement($this.find('.name').text(), $this
+								.find('.count'));
+					});
 		},
 		/**
 		 * 表示中のタブが押されたら更新する
@@ -2315,37 +2288,20 @@
 			var methods = publicMethods.concat(privateMethods);
 
 			var devtoolContext = getDevtoolContext(logic);
-			view.update(this.$find('.logic-detail .tab-content .method'), 'method-list', {
+			var $target = this.$find('.logic-detail .tab-content .method');
+			view.update($target, 'method-list', {
 				defObj: logic.__logicContext.logicDef,
 				methods: methods,
 				_funcToStr: funcToStr,
 				methodCount: devtoolContext.methodCount
 			});
-
-			devtoolContext.methodCount.registCallback(this.own(function(method) {
-				// 表示中であればカウントを更新
-				if (this.selectedTarget !== logic) {
-					return;
-				}
-				// 対象のメソッドを表示中のものから探索する
-				var $targetLi = null;
-				if ($.inArray(method, methods) !== -1
-						&& this.$find('.logic-detail .tab-content .method.active').length) {
-					$targetLi = this.$find('.logic-detail .tab-content .method.active .name').each(
-							function() {
-								var $this = $(this);
-								if ($this.text() === method) {
-									$targetLi = $this.parent();
-									return false;
-								}
-							});
-				}
-				if (!$targetLi) {
-					return;
-				}
-				var $count = $targetLi.find('.count');
-				$count.text(devtoolContext.methodCount.get(method));
-			}));
+			// メソッドが対応するDOMをmethodCountに登録
+			$target.find('.method-list>*').each(
+					function() {
+						var $this = $(this);
+						devtoolContext.methodCount.registCountElement($this.find('.name').text(), $this
+								.find('.count'));
+					});
 
 			// ログ
 			var logAry = devtoolContext.devtoolLog;
