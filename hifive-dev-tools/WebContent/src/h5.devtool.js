@@ -1768,11 +1768,8 @@
 			}
 		},
 
-		'{rootElement} touchstart': function(context) {
-			// トレースログ以外のタッチなら無視
-			if (this.$find('.trace-list>li>*').filter(context.event.target).length) {
-				this._contextmenu(context);
-			}
+		'.trace-list>li>* touchstart': function(context) {
+			this._contextmenu(context);
 		},
 
 		'{rootElement} contextmenu': function(context) {
