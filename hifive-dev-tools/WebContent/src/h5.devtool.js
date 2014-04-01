@@ -1497,7 +1497,7 @@
 		get: function(method) {
 			return this._method[method].count;
 		},
-		registCallback: function(f) {
+		registerCallback: function(f) {
 			this._callback = f;
 		},
 		removeCallback: function() {
@@ -1547,7 +1547,7 @@
 	 *
 	 * @param {Controller|Logic} target
 	 */
-	function registDevtoolTarget(target) {
+	function registerDevtoolTarget(target) {
 		var id = target.__name + '_' + new Date().getTime() + '_' + parseInt(Math.random() * 1000);
 		targetMap[id] = target;
 		getDevtoolContext(target).id = id;
@@ -2284,7 +2284,7 @@
 				var $this = $(this);
 				methodCountMap[targetId + '#' + $this.find('.key').text()] = $this.find('.count');
 			});
-			this._registMethodCountCallback(getDevtoolTarget(obj.id), obj.methodCount);
+			this._registerMethodCountCallback(getDevtoolTarget(obj.id), obj.methodCount);
 		},
 		_updateMethodView: function(obj) {
 			var $target = this.$find('.controller-detail .tab-content .method');
@@ -2296,7 +2296,7 @@
 				var $this = $(this);
 				methodCountMap[targetId + '#' + $this.find('.name').text()] = $this.find('.count');
 			});
-			this._registMethodCountCallback(getDevtoolTarget(obj.id), obj.methodCount);
+			this._registerMethodCountCallback(getDevtoolTarget(obj.id), obj.methodCount);
 		},
 		/**
 		 * 表示中のタブが押されたら更新する
@@ -2354,7 +2354,7 @@
 				var $this = $(this);
 				methodCountMap[targetId + '#' + $this.find('.name').text()] = $this.find('.count');
 			});
-			this._registMethodCountCallback(logic, devtoolContext.methodCount);
+			this._registerMethodCountCallback(logic, devtoolContext.methodCount);
 
 			// ログ
 			var logAry = devtoolContext.devtoolLog;
@@ -2378,8 +2378,8 @@
 		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param {MethodCount} methodCount
 		 */
-		_registMethodCountCallback: function(target, methodCount) {
-			methodCount.registCallback(this.own(function(method) {
+		_registerMethodCountCallback: function(target, methodCount) {
+			methodCount.registerCallback(this.own(function(method) {
 				if (isDisposed(target) || this.selectedTarget !== target) {
 					// dispose済み、または選択中でない、なら何もしない
 					return;
@@ -2511,7 +2511,7 @@
 			// devtoolのコンテキストを取得(無ければ新しい空オブジェクトが作成される)
 			var devtoolContext = getDevtoolContext(target);
 			// ターゲットマップに登録
-			registDevtoolTarget(target);
+			registerDevtoolTarget(target);
 
 			$ul = $ul || this.$find('.targetlist:first');
 			// ログ用のObservableArrayを持たせる
