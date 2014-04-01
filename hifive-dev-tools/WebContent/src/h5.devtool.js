@@ -941,6 +941,11 @@
 	 */
 	var useJQueryMeasuringFunctions = !$().jquery.match(/^2.*/);
 
+	/**
+	 * devtoolで表示しているコントローラまたはロジックのマップ。idからコントローラまたはロジックを特定できる
+	 */
+	var targetMap = {};
+
 	// =============================
 	// Functions
 	// =============================
@@ -1484,16 +1489,19 @@
 	$.extend(MethodCount.prototype, {
 		count: function(method) {
 			var val = ++this._method[method].count;
-			if (this._method[method].$countElement) {
-				this._method[method].$countElement.text(val);
+			if (this._callback) {
+				this._callback(method);
 			}
 			return val;
 		},
 		get: function(method) {
 			return this._method[method].count;
 		},
-		registCountElement: function(methodName, $countElement) {
-			this._method[methodName].$countElement = $countElement;
+		registCallback: function(f) {
+			this._callback = f;
+		},
+		removeCallback: function() {
+			this._callback = null;
 		}
 	});
 
@@ -1532,6 +1540,36 @@
 			}, 100);
 		}
 		_blink(4);
+	}
+
+	/**
+	 * コントローラまたはターゲットを登録する
+	 *
+	 * @param {Controller|Logic} target
+	 */
+	function registDevtoolTarget(target) {
+		var id = target.__name + new Date().getTime() + parseInt(Math.random() * 1000);
+		targetMap[id] = target;
+		getDevtoolContext(target).id = id;
+	}
+
+	/**
+	 * 登録されたコントローラまたはロジックを取得する
+	 *
+	 * @param {String} id
+	 * @returns {Controller|Logic}
+	 */
+	function getDevtoolTarget(id) {
+		return targetMap[id];
+	}
+
+	/**
+	 * コントローラまたはターゲットの登録を削除する
+	 *
+	 * @param {Controller|Logic} target
+	 */
+	function removeDevtoolTarget(id) {
+		delete targetMap[id];
 	}
 
 	// =========================================================================
@@ -1861,6 +1899,13 @@
 		 */
 		selectedTarget: null,
 
+		/**
+		 * コントローラまたはロジックのメソッド名と、実行回数表示DOMのマップ
+		 *
+		 * @name h5.devtool.ControllerInfoController
+		 */
+		_methodCountMap: {},
+
 		__init: function() {
 			// 既存のコントローラにコントローラ定義オブジェクトを持たせる(hifive1.1.8以前用)
 			// このコントローラがコントローラ定義オブジェクトを持ってるかどうかでhifiveのバージョン判定
@@ -1960,6 +2005,7 @@
 				this.unfocus();
 			}
 			this.removeControllerList(controller);
+			removeDevtoolTarget(getDevtoolContext(controller).id);
 		},
 		/**
 		 * マウスオーバーでコントローラのバインド先オーバレイ表示(PC用)
@@ -2189,6 +2235,7 @@
 			});
 
 			this._updateEventHandlerView({
+				id: devtoolContext.id,
 				controller: controller.__controllerContext.controllerDef,
 				eventHandlers: eventHandlers,
 				_funcToStr: funcToStr,
@@ -2196,6 +2243,7 @@
 			});
 
 			this._updateMethodView({
+				id: devtoolContext.id,
 				defObj: controller.__controllerContext.controllerDef,
 				methods: methods,
 				_funcToStr: funcToStr,
@@ -2228,24 +2276,26 @@
 			var $target = this.$find('.controller-detail .tab-content .eventHandler');
 			view.update($target, 'eventHandler-list', obj);
 			obj.eventHandlers;
-			// メソッドが対応するDOMをmethodCountに登録
-			$target.find('.method-list>*').each(
-					function() {
-						var $this = $(this);
-						obj.methodCount.registCountElement($this.find('.key').text(), $this
-								.find('.count'));
-					});
+			// メソッドの実行回数に対応するDOMをマップで持っておく
+			var methodCountMap = this._methodCountMap;
+			var targetId = obj.id;
+			$target.find('.method-list>*').each(function() {
+				var $this = $(this);
+				methodCountMap[targetId + '#' + $this.find('.key').text()] = $this.find('.count');
+			});
+			this._registMethodCountCallback(getDevtoolTarget(obj.id), obj.methodCount);
 		},
 		_updateMethodView: function(obj) {
 			var $target = this.$find('.controller-detail .tab-content .method');
 			view.update($target, 'method-list', obj);
-			// メソッドが対応するDOMをmethodCountに登録
-			$target.find('.method-list>*').each(
-					function() {
-						var $this = $(this);
-						obj.methodCount.registCountElement($this.find('.name').text(), $this
-								.find('.count'));
-					});
+			// メソッドの実行回数に対応するDOMをマップで持っておく
+			var methodCountMap = this._methodCountMap;
+			var targetId = obj.id;
+			$target.find('.method-list>*').each(function() {
+				var $this = $(this);
+				methodCountMap[targetId + '#' + $this.find('.name').text()] = $this.find('.count');
+			});
+			this._registMethodCountCallback(getDevtoolTarget(obj.id), obj.methodCount);
 		},
 		/**
 		 * 表示中のタブが押されたら更新する
@@ -2297,12 +2347,13 @@
 				methodCount: devtoolContext.methodCount
 			});
 			// メソッドが対応するDOMをmethodCountに登録
-			$target.find('.method-list>*').each(
-					function() {
-						var $this = $(this);
-						devtoolContext.methodCount.registCountElement($this.find('.name').text(),
-								$this.find('.count'));
-					});
+			var methodCountMap = this._methodCountMap;
+			var targetId = devtoolContext.id;
+			$target.find('.method-list>*').each(function() {
+				var $this = $(this);
+				methodCountMap[targetId + '#' + $this.find('.name').text()] = $this.find('.count');
+			});
+			this._registMethodCountCallback(logic, devtoolContext.methodCount);
 
 			// ログ
 			var logAry = devtoolContext.devtoolLog;
@@ -2318,6 +2369,23 @@
 				defObj: logic.__logicContext.logicDef,
 				instanceName: devtoolContext.instanceName
 			});
+		},
+
+		/**
+		 * メソッドカウントにメソッドをカウントするコールバックを登録
+		 *
+		 * @memberOf h5.devtool.ControllerInfoController
+		 * @param {MethodCount} methodCount
+		 */
+		_registMethodCountCallback: function(target, methodCount) {
+			methodCount.registCallback(this.own(function(method) {
+				if (isDisposed(target) || this.selectedTarget !== target) {
+					// dispose済み、または選択中でない、なら何もしない
+					return;
+				}
+				var targetId = getDevtoolContext(target).id;
+				this._methodCountMap[targetId + '#' + method].text(methodCount.get(method));
+			}));
 		},
 
 		/**
@@ -2441,6 +2509,8 @@
 			}
 			// devtoolのコンテキストを取得(無ければ新しい空オブジェクトが作成される)
 			var devtoolContext = getDevtoolContext(target);
+			// ターゲットマップに登録
+			registDevtoolTarget(target);
 
 			$ul = $ul || this.$find('.targetlist:first');
 			// ログ用のObservableArrayを持たせる
