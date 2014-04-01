@@ -1548,7 +1548,7 @@
 	 * @param {Controller|Logic} target
 	 */
 	function registDevtoolTarget(target) {
-		var id = target.__name + new Date().getTime() + parseInt(Math.random() * 1000);
+		var id = target.__name + '_' + new Date().getTime() + '_' + parseInt(Math.random() * 1000);
 		targetMap[id] = target;
 		getDevtoolContext(target).id = id;
 	}
