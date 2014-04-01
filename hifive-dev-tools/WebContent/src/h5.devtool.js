@@ -410,7 +410,7 @@
 				// 点滅させるときのスタイル
 				selector: '.h5devtool .method-list .blink',
 				rule: {
-					background: '#0ff'
+					background: '#FF9617'
 				}
 			},
 			/*
@@ -1674,7 +1674,7 @@
 			// jQuery2.0.Xで、windowに属していない、別ウィンドウ内の要素についてwindow.getComputedStyle(elm)をしており、
 			// IEだとそれが原因でエラーになるため。
 			$contextMenu.addClass('open');
-			var pageX,pageY;
+			var pageX, pageY;
 			if (context.event.originalEvent.targetTouches) {
 				// タッチイベントの場合
 				var touch = context.event.originalEvent.targetTouches[0];
