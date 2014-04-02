@@ -2276,7 +2276,6 @@
 		_updateEventHandlerView: function(obj) {
 			var $target = this.$find('.controller-detail .tab-content .eventHandler');
 			view.update($target, 'eventHandler-list', obj);
-			obj.eventHandlers;
 			// メソッドの実行回数に対応するDOMをマップで持っておく
 			var methodCountMap = this._methodCountMap;
 			var targetId = obj.id;
