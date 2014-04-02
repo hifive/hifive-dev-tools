@@ -1,3 +1,20 @@
+@charset "utf-8";
+/*
+ * Copyright (C) 2013-2014 NS Solutions Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 html,body {
 	margin: 0;
 	padding: 0;
@@ -24,7 +41,7 @@ html,body {
 }
 
 /**********************************************************
-ƒ^ƒCƒgƒ‹ƒo[
+ã‚¿ã‚¤ãƒˆãƒ«ãƒãƒ¼
 **********************************************************/
 .playerContainer .title-bar {
 	font-size: 1.5em;
@@ -63,13 +80,13 @@ html,body {
 	white-space: nowrap;
 	position: relative;
 	top: 100%;
-	/** IE8‚Ì‚İ **/
+	/** IE8ã®ã¿ **/
 	display: block\9;
-	top: 120%\9;
+	top: 120% \9;
 }
 
 /**********************************************************
-ŒŸõ
+æ¤œç´¢
 **********************************************************/
 .playerContainer .search {
 	float: left;
@@ -81,7 +98,7 @@ html,body {
 	text-align: center;
 	height: 100%;
 	padding-left: 220px;
-	/** IE7—p **/
+	/** IE7ç”¨ **/
 	*padding-left: 0px;
 }
 
@@ -105,7 +122,7 @@ html,body {
 }
 
 /**********************************************************
-ƒXƒNƒŠ[ƒ“
+ã‚¹ã‚¯ãƒªãƒ¼ãƒ³
 **********************************************************/
 .playerContainer .screen {
 	height: 460px;
@@ -130,7 +147,7 @@ html,body {
 }
 
 /**********************************************************
-ƒRƒ“ƒgƒ[ƒ‹
+ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«
 **********************************************************/
 .playerContainer .controll {
 	width: 640px;
@@ -144,7 +161,7 @@ html,body {
 	padding: 3px 10px;
 	border: 1px solid #ccc;
 	display: inline-block;
-	/** IE7—p **/
+	/** IE7ç”¨ **/
 	*display: inline;
 	*zoom: 1;
 }
@@ -154,7 +171,7 @@ html,body {
 }
 
 /**********************************************************
-ƒJƒ‹[ƒZƒ‹•”•i
+ã‚«ãƒ«ãƒ¼ã‚»ãƒ«éƒ¨å“
 **********************************************************/
 .carouselWrapper {
 	cursor: pointer;
@@ -168,8 +185,7 @@ html,body {
 	padding-top: 40px;
 }
 
-.carouselWrapper .left-arrow.disabled,.carouselWrapper .right-arrow.disabled
-	{
+.carouselWrapper .left-arrow.disabled,.carouselWrapper .right-arrow.disabled {
 	opacity: 0.3;
 }
 
@@ -182,7 +198,7 @@ html,body {
 	font-size: 3em;
 	box-sizing: border-box;
 	-ms-box-sizing: border-box;
-	/** IE7—p **/
+	/** IE7ç”¨ **/
 	width: 98%;
 	height: 98%;
 }
@@ -200,11 +216,11 @@ html,body {
 }
 
 .dropdown-menu .divider {
-	/** IE7—p **/
+	/** IE7ç”¨ **/
 	*width: 160px;
 }
 /**********************************************************
-‚¨‹C‚É“ü‚è
+ãŠæ°—ã«å…¥ã‚Š
 **********************************************************/
 .playerContainer .favorite {
 	margin: 10px auto 0 auto;
@@ -231,7 +247,7 @@ html,body {
 }
 
 /**********************************************************
-ƒRƒƒ“ƒg
+ã‚³ãƒ¡ãƒ³ãƒˆ
 **********************************************************/
 .playerContainer .comment {
 	text-align: left;
@@ -247,4 +263,3 @@ html,body {
 .playerContainer .comment-contents {
 	margin: 0 0 1em 1em;
 }
-
