@@ -2642,12 +2642,14 @@
 			this.$find('input').each(function() {
 				setObj[this.name] = this.value;
 			});
-			try {
+			var error = h5devtoolSettings.validate(setObj);
+			if (!error) {
 				h5devtoolSettings.set(setObj);
-			} catch (e) {
-				// TODO エラー処理
-				devtoolWindow.alert(e.message);
+				return;
 			}
+			// validateが通らない場合
+			// 今はログ表示件数しか設定項目がないが、増えた場合はvalidateエラーメッセージを作成する
+			devtoolWindow.alert('ログの最大表示件数は0以上の整数値で入力してください');
 		}
 	};
 	h5.core.expose(settingsController);
