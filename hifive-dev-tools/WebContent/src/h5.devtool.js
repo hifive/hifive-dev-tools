@@ -3232,7 +3232,23 @@
 		},
 
 		/**
+		 * キー操作
+		 *
+		 * @memberOf h5.devtool.DevtoolController
+		 */
+		'{document} keydown': function(context) {
+			var event = context.event;
+			var key = event.keyCode;
+			if (key === 116 && useWindowOpen) {
+				// F5キーによる更新の防止
+				context.event.preventDefault();
+			}
+		},
+
+		/**
 		 * 何もない箇所をクリック
+		 *
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'.left click': function(context, $el) {
 			if (context.event.target !== $el[0]) {
@@ -3242,6 +3258,8 @@
 		},
 		/**
 		 * 閉じるボタン(モバイル用) 閉じて、オーバレイも消える。
+		 *
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'{.h5devtool-controllBtn.opencloseBtn.closeTool} click': function(context, $el) {
 			$el.text('▼').removeClass('closeTool').addClass('openTool');
@@ -3251,6 +3269,8 @@
 		},
 		/**
 		 * 開くボタン(モバイル用)
+		 *
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'{.h5devtool-controllBtn.opencloseBtn.openTool} click': function(context, $el) {
 			$el.text('×').removeClass('openTool').addClass('closeTool');
@@ -3261,10 +3281,12 @@
 		},
 
 		/**
-		 * 隠すボタン
+		 * 隠すボタン(モバイル用)
 		 * <p>
 		 * オーバレイを隠す。タブレット版の場合はディベロッパツールも隠す。
 		 * </p>
+		 *
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'{.h5devtool-controllBtn.showhideBtn.hideTool} click': function(context, $el) {
 			$el.text('↓').removeClass('hideTool').addClass('showTool');
@@ -3275,7 +3297,9 @@
 			}
 		},
 		/**
-		 * 見るボタン
+		 * 見るボタン(モバイル用)
+		 *
+		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'{.h5devtool-controllBtn.showhideBtn.showTool} click': function(context, $el) {
 			$el.text('↑').removeClass('showTool').addClass('hideTool');
