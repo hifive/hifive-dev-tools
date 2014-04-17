@@ -1572,6 +1572,21 @@
 		delete targetMap[id];
 	}
 
+	/**
+	 * イベントリスナをバインド
+	 *
+	 * @param {Object} target addEventlisterたはatacheEvent
+	 * @param {String} event イベント名
+	 * @param {Function} listener イベントリスナ
+	 */
+	function bindListener(target, event, listener) {
+		if (target.addEventListener) {
+			target.addEventListener(event, listener);
+		} else {
+			target.attachEvent('on' + event, listener);
+		}
+	}
+
 	// =========================================================================
 	//
 	// Controller
@@ -3505,22 +3520,13 @@
 						// # win.jQuery111012331231のようなオブジェクトをdeleteで消そうとしていて、
 						// # IEの場合はwindowオブジェクトに対してdeleteできないのでエラーになる。
 						// # windowの場合はdeleteを使用しないようになっているが、別windowの場合はdeleteが使われてしまう。
-						if (win.addEventListener) {
-							win.addEventListener('unload', unloadFunc);
-							if (win != window) {
-								// 親ウィンドウが閉じた時(遷移した時)にDevtoolウィンドウを閉じる。
-								// IEの場合、明示的にclose()を呼ばないと遷移先でwindow.open()した時に新しく開かずに閉じていないDevtoolウィンドウが取得されてしまうため。
-								window.addEventListener('unload', function() {
-									win.close();
-								});
-							}
-						} else {
-							win.attachEvent('onunload', unloadFunc);
-							if (win != window) {
-								window.attachEvent('onunload', function() {
-									win.close();
-								});
-							}
+						bindListener(win, 'unload', unloadFunc);
+						if (win != window) {
+							// 親ウィンドウが閉じた時(遷移した時)にDevtoolウィンドウを閉じる。
+							// IEの場合、明示的にclose()を呼ばないと遷移先でwindow.open()した時に新しく開かずに閉じていないDevtoolウィンドウが取得されてしまうため。
+							bindListener(window, 'unload', function() {
+								win.close();
+							});
 						}
 					});
 				})
