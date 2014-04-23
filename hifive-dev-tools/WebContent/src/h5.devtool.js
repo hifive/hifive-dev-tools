@@ -836,10 +836,10 @@
 							+ '<dt>テンプレートパス一覧</dt><dd>[% if(!controller.__templates){ %]なし'
 							+ '[% }else{ %]<ul class="no-padding">[% var templates = typeof controller.__templates === "string"? [controller.__templates]: controller.__templates; '
 							+ 'for(var i = 0, l = templates.length; i < l; i++){ %]<li>[%= templates[i] %]</li>[% } %]</ul>[% } %]</dd>'
-							+ '<dt>登録されたテンプレートID一覧</dt><dd>[% if(registedTemplates.length === 0){ %]なし'
-							+ '[% }else{ %]<ul class="no-padding">[% for(var i = 0, l = registedTemplates.length; i < l; i++){ %]<li>[%= registedTemplates[i] %]</li>[% } %]</ul>[% } %]</dd>'
-							+ '<dt>使用可能なテンプレートID一覧</dt><dd>[% if(availableTemplates.length === 0){ %]なし'
-							+ '[% }else{ %]<ul class="no-padding">[% for(var i = 0, l = availableTemplates.length; i < l; i++){ %]<li>[%= availableTemplates[i] %]</li>[% } %]</ul>[% } %]</dd>'
+							+ '<dt>このコントローラで登録されたテンプレートID一覧</dt><dd>[% if(registedTemplates.length === 0){ %]なし'
+							+ '[% }else{ %][%= registedTemplates.join(", ") %][% } %]</dd>'
+							+ '<dt>利用可能なテンプレートID一覧</dt><dd>[% if(availableTemplates.length === 0){ %]なし'
+							+ '[% }else{ %][%= availableTemplates.join(", ") %][% } %]</dd>'
 							+ '</dl>');
 
 	// --------------------- ロジック --------------------- //
