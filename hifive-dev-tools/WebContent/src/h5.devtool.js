@@ -97,6 +97,14 @@
 				}
 			},
 			{
+				// 高さ100%で、中身が多いときはスクロールバーを出すスタイルのリスト
+				selector: '.h5devtool .floating-list',
+				rule: {
+					height: '100%',
+					overflow: 'auto'
+				}
+			},
+			{
 				selector: '.h5devtool .devtool-tab',
 				rule: {
 					height: '100%'
@@ -140,14 +148,7 @@
 			{
 				selector: '.h5devtool .trace',
 				rule: {
-					paddingLeft: 0,
-					margin: 0,
-					height: '100%',
-					paddingBottom: '60px', // .fixedControllsの高さ
-					overflow: 'visible!important',
-					'-moz-box-sizing': 'border-box',
-					'-webkit-box-sizing': 'border-box',
-					boxSizing: 'border-box'
+					paddingBottom: '60px' // .fixedControllsの高さ
 				}
 			},
 			{
@@ -206,10 +207,8 @@
 				rule: {
 					paddingLeft: 0,
 					margin: 0,
-					height: '100%',
 					color: 'gray',
 					whiteSpace: 'nowrap',
-					overflow: 'auto'
 				}
 			},
 			{
@@ -349,6 +348,18 @@
 			 * イベントハンドラ
 			 */
 			{
+				selector: '.h5devtool .eventHandler .fixedController',
+				rule: {
+					height: '24px',
+				}
+			},
+			{
+				selector: '.h5devtool .eventHandler',
+				rule: {
+					paddingBottom: '24px', // .fixedControllsの高さ
+				}
+			},
+			{
 				selector: '.h5devtool .controller-info .eventHandler ul',
 				rule: {
 					listStyle: 'none',
@@ -370,6 +381,18 @@
 			/*
 			 * メソッドリスト
 			 */
+			{
+				selector: '.h5devtool .method .fixedController',
+				rule: {
+					height: '24px',
+				}
+			},
+			{
+				selector: '.h5devtool .method',
+				rule: {
+					paddingBottom: '24px', // .fixedControllsの高さ
+				}
+			},
 			{
 				selector: '.h5devtool .method-list',
 				rule: {
@@ -578,7 +601,19 @@
 					overflow: 'auto',
 					'float': 'left',
 					height: 'inherit',
-					width: '100%'
+					width: '100%',
+					paddingLeft: 0,
+					margin: 0,
+					height: '100%',
+					'-moz-box-sizing': 'border-box',
+					'-webkit-box-sizing': 'border-box',
+					boxSizing: 'border-box'
+				}
+			}, {
+				// fixedControllerを持つコンテンツ
+				selector: '.h5devtool .tab-content>*.hasfix',
+				rule: {
+					overflow: 'visible!important'
 				}
 			}, {
 				selector: '.h5devtool .tab-content>*',
@@ -745,7 +780,7 @@
 			+ '<li data-tab-page="trace">トレース</li>' + '<li data-tab-page="logger">ロガー</li>'
 			+ '<li data-tab-page="settings">設定</li>' + '</ul><div class="tab-content">'
 			+ '<div class="active controller-info columnLayoutWrapper"></div>'
-			+ '<div class="trace whole"></div>' + '<div class="logger"></div>'
+			+ '<div class="trace whole hasfix"></div>' + '<div class="logger"></div>'
 			+ '<div class="settings"></div>' + '</div>');
 
 	// --------------------- コントローラ --------------------- //
@@ -767,23 +802,24 @@
 					+ '<li data-tab-page="method">メソッド</li>'
 					+ '<li data-tab-page="trace">トレース</li>'
 					+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
-					+ '<div class="active eventHandler"></div>' + '<div class="method"></div>'
-					+ '<div class="trace"></div>' + '<div class="otherInfo"></div></div>');
+					+ '<div class="active eventHandler hasfix"></div>'
+					+ '<div class="method hasfix"></div>' + '<div class="trace hasfix"></div>'
+					+ '<div class="otherInfo"></div></div>');
 
 	// イベントハンドラリスト
 	view
 			.register(
 					'eventHandler-list',
-					'<ul class="liststyle-none no-padding method-list">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
+					'<div class="fixedControlls">[% if(eventHandlers.length){ %]<select class="method-select"></select></div><ul class="liststyle-none no-padding method-list floating-list">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
 							+ '<li class="[%= (methodCount.get(p)?"called":"nocalled") %]"><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span>'
 							+ '<span class="name">[%= p %]</span><span class="count">[%= methodCount.get(p) %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
-							+ '[% } %]</ul>');
+							+ '[% } %]</ul>[% } else { %]<p>なし</p>[% } %]');
 
 	// メソッドリスト(コントローラ、ロジック、共通)
 	view
 			.register(
 					'method-list',
-					'<ul class="liststyle-none no-padding method-list">[% for(var i = 0, l = methods.length; i < l; i++){ var p = methods[i];%]'
+					'<div class="fixedControlls"><select class="method-select"></select></div><ul class="liststyle-none no-padding method-list floating-list">[% for(var i = 0, l = methods.length; i < l; i++){ var p = methods[i];%]'
 							+ '<li class="[%= (methodCount.get(p)?"called":"nocalled") %]"><span class="name">[%= p %]</span><span class="count">[%= methodCount.get(p) %]</span><pre class="value">[%= _funcToStr(defObj[p]) %]</pre></li>'
 							+ '[% } %]</ul>');
 	// その他情報
@@ -812,8 +848,8 @@
 					+ '<li class="active" data-tab-page="method">メソッド</li>'
 					+ '<li data-tab-page="trace">トレース</li>'
 					+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
-					+ '<div class="active method"></div>' + '<div class="trace"></div>'
-					+ '<div class="otherInfo"></div></div>');
+					+ '<div class="active method hasfix"></div>'
+					+ '<div class="trace hasfix"></div>' + '<div class="otherInfo"></div></div>');
 
 	// その他情報
 	view.register('logic-otherInfo', '<dl><dt>名前</dt><dd>[%= defObj.__name %]</dd>'
@@ -831,7 +867,7 @@
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '<span class="font-small">（ログを右クリックまたはタッチで関数にジャンプ）</span></div>'
-							+ '<ul class="trace-list liststyle-none no-padding" data-h5-loop-context="logs"></ul>'
+							+ '<ul class="trace-list liststyle-none no-padding floating-list" data-h5-loop-context="logs"></ul>'
 							+ '<ul class="contextMenu logContextMenu dropdown-menu"><li class="showFunction"><span>関数を表示</span></li></ul>');
 
 	// トレースログのli
@@ -1588,6 +1624,28 @@
 		}
 	}
 
+	/**
+	 * 第1引数で指定されたメソッドリスト要素を、第2引数のメソッド名を持つliまでスクロールする。 第3引数で点滅させるかどうか指定する。
+	 *
+	 * @param {jQuery} $methodList
+	 * @param {string} method
+	 * @param {boolean} isBlink
+	 */
+	function scrollByMethodName($methodList, method, isBlink) {
+		var scrollVal = 0;
+		var li = null;
+		$methodList.find('li').each(function() {
+			if ($.trim($(this).find('.name').text()) === method) {
+				scrollVal = this.offsetTop - this.parentNode.offsetTop;
+				li = this;
+				return false;
+			}
+		});
+		if (li) {
+			$methodList.scrollTop(scrollVal);
+			blinkElm(li);
+		}
+	}
 	// =========================================================================
 	//
 	// Controller
@@ -2162,6 +2220,16 @@
 				alert('イベントターゲットがありません');
 			}
 		},
+
+		/**
+		 * メソッドにジャンプ
+		 */
+		'.method-select change': function(context, $el) {
+			var method = $el.val();
+			var $methodList = $el.parents('.active').eq(0).find('.method-list');
+			scrollByMethodName($methodList, method, true);
+		},
+
 		/**
 		 * タブの切り替え
 		 */
@@ -2297,7 +2365,15 @@
 		},
 		_updateEventHandlerView: function(obj) {
 			var $target = this.$find('.instance-detail .tab-content .eventHandler');
+			// viewの更新
 			view.update($target, 'eventHandler-list', obj);
+			// セレクトボックスを追加
+			var $select = $target.find('.method-select');
+			for (var i = 0, l = obj.eventHandlers.length; i < l; i++) {
+				$select.append(h5.u.str.format('<option value="{0}">{0}</option>',
+						obj.eventHandlers[i]));
+			}
+
 			// メソッドの実行回数に対応するDOMをマップで持っておく
 			var methodCountMap = this._methodCountMap;
 			var targetId = obj.id;
@@ -2307,9 +2383,16 @@
 			});
 			this._registerMethodCountCallback(getDevtoolTarget(obj.id), obj.methodCount);
 		},
+
 		_updateMethodView: function(obj) {
 			var $target = this.$find('.instance-detail .tab-content .method');
+			// viewの更新
 			view.update($target, 'method-list', obj);
+			// セレクトボックスを追加
+			var $select = $target.find('.method-select');
+			for (var i = 0, l = obj.methods.length; i < l; i++) {
+				$select.append(h5.u.str.format('<option value="{0}">{0}</option>', obj.methods[i]));
+			}
 			// メソッドの実行回数に対応するDOMをマップで持っておく
 			var methodCountMap = this._methodCountMap;
 			var targetId = obj.id;
@@ -2361,7 +2444,8 @@
 
 			var devtoolContext = getDevtoolContext(logic);
 			var $target = this.$find('.instance-detail .tab-content .method');
-			view.update($target, 'method-list', {
+			this._updateMethodView({
+				id: devtoolContext.id,
 				defObj: logic.__logicContext.logicDef,
 				methods: methods,
 				_funcToStr: funcToStr,
@@ -2407,7 +2491,9 @@
 					return;
 				}
 				var targetId = getDevtoolContext(target).id;
-				this._methodCountMap[targetId + '#' + method].text(methodCount.get(method));
+				var $target = this._methodCountMap[targetId + '#' + method];
+				$target.text(methodCount.get(method));
+				$target.parent().addClass('called');
 			}));
 		},
 
@@ -2869,19 +2955,7 @@
 
 
 				// 該当箇所までスクロール
-				var scrollVal = 0;
-				var li = null;
-				$activeList.find('li').each(function() {
-					if ($.trim($(this).find('.name').text()) === method) {
-						scrollVal = this.offsetTop - this.parentNode.offsetTop;
-						li = this;
-						return false;
-					}
-				});
-				if (li) {
-					$activeList.parent().scrollTop(scrollVal);
-					blinkElm(li);
-				}
+				scrollByMethodName($activeList, method, true);
 			}, 0);
 		}
 	};
@@ -2953,7 +3027,7 @@
 			}
 			return html;
 		},
-		'.fixedControlls input[type="checkbox"] change': function(context, $el) {
+		'input[type="checkbox"] change': function(context, $el) {
 			var cls = $el.attr('name');
 			if ($el.prop('checked')) {
 				this._condition.hideCls[cls] = false;
