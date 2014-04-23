@@ -838,7 +838,7 @@
 							+ 'for(var i = 0, l = templates.length; i < l; i++){ %]<li>[%= templates[i] %]</li>[% } %]</ul>[% } %]</dd>'
 							+ '<dt>登録されたテンプレートID一覧</dt><dd>[% if(registedTemplates.length === 0){ %]なし'
 							+ '[% }else{ %]<ul class="no-padding">[% for(var i = 0, l = registedTemplates.length; i < l; i++){ %]<li>[%= registedTemplates[i] %]</li>[% } %]</ul>[% } %]</dd>'
-							+ '<dt>使用可能ななテンプレートID一覧</dt><dd>[% if(availableTemplates.length === 0){ %]なし'
+							+ '<dt>使用可能なテンプレートID一覧</dt><dd>[% if(availableTemplates.length === 0){ %]なし'
 							+ '[% }else{ %]<ul class="no-padding">[% for(var i = 0, l = availableTemplates.length; i < l; i++){ %]<li>[%= availableTemplates[i] %]</li>[% } %]</ul>[% } %]</dd>'
 							+ '</dl>');
 
