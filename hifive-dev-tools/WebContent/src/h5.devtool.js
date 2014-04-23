@@ -836,8 +836,8 @@
 							+ '<dt>テンプレートパス一覧</dt><dd>[% if(!controller.__templates){ %]なし'
 							+ '[% }else{ %]<ul class="no-padding">[% var templates = typeof controller.__templates === "string"? [controller.__templates]: controller.__templates; '
 							+ 'for(var i = 0, l = templates.length; i < l; i++){ %]<li>[%= templates[i] %]</li>[% } %]</ul>[% } %]</dd>'
-							+ '<dt>有効なテンプレートID一覧</dt><dd>[% if(!$.isEmptyObject(controller.view.__view.__cachedTemplates)){ %]なし'
-							+ '[% }else{ %]<ul class="no-padding">[% for(var p in controller.view.__view.__cachedTemplates){ %]<li>[%= p %]p</li>[% } %]</ul>[% } %]</dd>'
+							+ '<dt>有効なテンプレートID一覧</dt><dd>[% if(availableTemplates.length === 0){ %]なし'
+							+ '[% }else{ %]<ul class="no-padding">[% for(var i = 0, l = availableTemplates.length; i < l; i++){ %]<li>[%= availableTemplates[i] %]</li>[% } %]</ul>[% } %]</dd>'
 							+ '</dl>');
 
 	// --------------------- ロジック --------------------- //
@@ -2356,11 +2356,35 @@
 			for (var i = 0, l = childControllerProperties.length; i < l; i++) {
 				childControllerNames.push(controller[childControllerProperties[i]].__name);
 			}
+
+			// 有効なテンプレートの列挙
+			var availableTemplates = [];
+			var ctrl = controller;
+			var v = ctrl.view.__view;
+			while (true) {
+				var templates = v.__cachedTemplates;
+				for ( var p in templates) {
+					if ($.inArray(p, availableTemplates) === -1) {
+						availableTemplates.push(p);
+					}
+				}
+				if (v === h5.core.view) {
+					break;
+				}
+				if (ctrl.parentController) {
+					ctrl = ctrl.parentController;
+					v = ctrl.view.__view;
+				} else {
+					v = h5.core.view;
+				}
+			}
+
 			view.update(this.$find('.instance-detail .tab-content .otherInfo'),
 					'controller-otherInfo', {
 						controller: controller,
 						childControllerNames: childControllerNames,
-						_formatDOM: formatDOM
+						_formatDOM: formatDOM,
+						availableTemplates: availableTemplates
 					});
 		},
 		_updateEventHandlerView: function(obj) {
