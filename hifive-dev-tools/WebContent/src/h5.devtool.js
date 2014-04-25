@@ -97,6 +97,14 @@
 				}
 			},
 			{
+				// 高さ100%で、中身が多いときはスクロールバーを出すスタイルのリスト
+				selector: '.h5devtool .floating-list',
+				rule: {
+					height: '100%',
+					overflow: 'auto'
+				}
+			},
+			{
 				selector: '.h5devtool .devtool-tab',
 				rule: {
 					height: '100%'
@@ -140,14 +148,7 @@
 			{
 				selector: '.h5devtool .trace',
 				rule: {
-					paddingLeft: 0,
-					margin: 0,
-					height: '100%',
-					paddingBottom: '60px', // .fixedControllsの高さ
-					overflow: 'visible!important',
-					'-moz-box-sizing': 'border-box',
-					'-webkit-box-sizing': 'border-box',
-					boxSizing: 'border-box'
+					paddingBottom: '60px' // .fixedControllsの高さ
 				}
 			},
 			{
@@ -206,10 +207,8 @@
 				rule: {
 					paddingLeft: 0,
 					margin: 0,
-					height: '100%',
 					color: 'gray',
 					whiteSpace: 'nowrap',
-					overflow: 'auto'
 				}
 			},
 			{
@@ -307,7 +306,7 @@
 			/*
 			 * コントローラ情報の詳細
 			 */{
-				selector: '.h5devtool .controller-info .controller-detail',
+				selector: '.h5devtool .controller-info .instance-detail',
 				rule: {
 					height: '100%'
 				}
@@ -349,6 +348,18 @@
 			 * イベントハンドラ
 			 */
 			{
+				selector: '.h5devtool .eventHandler .fixedController',
+				rule: {
+					height: '24px',
+				}
+			},
+			{
+				selector: '.h5devtool .eventHandler',
+				rule: {
+					paddingBottom: '24px', // .fixedControllsの高さ
+				}
+			},
+			{
 				selector: '.h5devtool .controller-info .eventHandler ul',
 				rule: {
 					listStyle: 'none',
@@ -356,7 +367,7 @@
 				}
 			},
 			{
-				selector: '.h5devtool .controller-info .eventHandler ul li .key',
+				selector: '.h5devtool .controller-info .eventHandler ul li .name',
 				rule: {
 					lineHeight: '28px'
 				}
@@ -370,6 +381,18 @@
 			/*
 			 * メソッドリスト
 			 */
+			{
+				selector: '.h5devtool .method .fixedController',
+				rule: {
+					height: '24px',
+				}
+			},
+			{
+				selector: '.h5devtool .method',
+				rule: {
+					paddingBottom: '24px', // .fixedControllsの高さ
+				}
+			},
 			{
 				selector: '.h5devtool .method-list',
 				rule: {
@@ -578,7 +601,19 @@
 					overflow: 'auto',
 					'float': 'left',
 					height: 'inherit',
-					width: '100%'
+					width: '100%',
+					paddingLeft: 0,
+					margin: 0,
+					height: '100%',
+					'-moz-box-sizing': 'border-box',
+					'-webkit-box-sizing': 'border-box',
+					boxSizing: 'border-box'
+				}
+			}, {
+				// fixedControllerを持つコンテンツ
+				selector: '.h5devtool .tab-content>*.hasfix',
+				rule: {
+					overflow: 'visible!important'
 				}
 			}, {
 				selector: '.h5devtool .tab-content>*',
@@ -745,7 +780,7 @@
 			+ '<li data-tab-page="trace">トレース</li>' + '<li data-tab-page="logger">ロガー</li>'
 			+ '<li data-tab-page="settings">設定</li>' + '</ul><div class="tab-content">'
 			+ '<div class="active controller-info columnLayoutWrapper"></div>'
-			+ '<div class="trace whole"></div>' + '<div class="logger"></div>'
+			+ '<div class="trace whole hasfix"></div>' + '<div class="logger"></div>'
 			+ '<div class="settings"></div>' + '</div>');
 
 	// --------------------- コントローラ --------------------- //
@@ -762,28 +797,29 @@
 
 	// 詳細情報画面
 	view.register('controller-detail',
-			'<div class="detail controller-detail"><ul class="nav nav-tabs">'
+			'<div class="detail instance-detail controller-detail"><ul class="nav nav-tabs">'
 					+ '<li class="active" data-tab-page="eventHandler">イベントハンドラ</li>'
 					+ '<li data-tab-page="method">メソッド</li>'
 					+ '<li data-tab-page="trace">トレース</li>'
 					+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
-					+ '<div class="active eventHandler"></div>' + '<div class="method"></div>'
-					+ '<div class="trace"></div>' + '<div class="otherInfo"></div></div>');
+					+ '<div class="active eventHandler hasfix"></div>'
+					+ '<div class="method hasfix"></div>' + '<div class="trace hasfix"></div>'
+					+ '<div class="otherInfo"></div></div>');
 
 	// イベントハンドラリスト
 	view
 			.register(
 					'eventHandler-list',
-					'<ul class="liststyle-none no-padding method-list">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
+					'<div class="fixedControlls">[% if(eventHandlers.length){ %]<select class="method-select"></select></div><ul class="liststyle-none no-padding method-list floating-list">[% for(var i = 0, l = eventHandlers.length; i < l; i++){ var p = eventHandlers[i]; %]'
 							+ '<li class="[%= (methodCount.get(p)?"called":"nocalled") %]"><span class="menu">ターゲット:<select class="eventTarget"></select><button class="trigger">実行</button></span>'
-							+ '<span class="key">[%= p %]</span><span class="count">[%= methodCount.get(p) %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
-							+ '[% } %]</ul>');
+							+ '<span class="name">[%= p %]</span><span class="count">[%= methodCount.get(p) %]</span><pre class="value">[%= _funcToStr(controller[p]) %]</pre></li>'
+							+ '[% } %]</ul>[% } else { %]<p>なし</p>[% } %]');
 
 	// メソッドリスト(コントローラ、ロジック、共通)
 	view
 			.register(
 					'method-list',
-					'<ul class="liststyle-none no-padding method-list">[% for(var i = 0, l = methods.length; i < l; i++){ var p = methods[i];%]'
+					'<div class="fixedControlls"><select class="method-select"></select></div><ul class="liststyle-none no-padding method-list floating-list">[% for(var i = 0, l = methods.length; i < l; i++){ var p = methods[i];%]'
 							+ '<li class="[%= (methodCount.get(p)?"called":"nocalled") %]"><span class="name">[%= p %]</span><span class="count">[%= methodCount.get(p) %]</span><pre class="value">[%= _funcToStr(defObj[p]) %]</pre></li>'
 							+ '[% } %]</ul>');
 	// その他情報
@@ -800,19 +836,22 @@
 							+ '<dt>テンプレートパス一覧</dt><dd>[% if(!controller.__templates){ %]なし'
 							+ '[% }else{ %]<ul class="no-padding">[% var templates = typeof controller.__templates === "string"? [controller.__templates]: controller.__templates; '
 							+ 'for(var i = 0, l = templates.length; i < l; i++){ %]<li>[%= templates[i] %]</li>[% } %]</ul>[% } %]</dd>'
-							+ '<dt>有効なテンプレートID一覧</dt><dd>[% if(!$.isEmptyObject(controller.view.__view.__cachedTemplates)){ %]なし'
-							+ '[% }else{ %]<ul class="no-padding">[% for(var p in controller.view.__view.__cachedTemplates){ %]<li>[%= p %]p</li>[% } %]</ul>[% } %]</dd>'
+							+ '<dt>このコントローラで登録されたテンプレートID一覧</dt><dd>[% if(registedTemplates.length === 0){ %]なし'
+							+ '[% }else{ %][%= registedTemplates.join(", ") %][% } %]</dd>'
+							+ '<dt>利用可能なテンプレートID一覧</dt><dd>[% if(availableTemplates.length === 0){ %]なし'
+							+ '[% }else{ %][%= availableTemplates.join(", ") %][% } %]</dd>'
 							+ '</dl>');
 
 	// --------------------- ロジック --------------------- //
 
 	// 詳細情報画面
-	view.register('logic-detail', '<div class="detail logic-detail"><ul class="nav nav-tabs">'
-			+ '<li class="active" data-tab-page="method">メソッド</li>'
-			+ '<li data-tab-page="trace">トレース</li>'
-			+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
-			+ '<div class="active method"></div>' + '<div class="trace"></div>'
-			+ '<div class="otherInfo"></div></div>');
+	view.register('logic-detail',
+			'<div class="detail instance-detail logic-detail"><ul class="nav nav-tabs">'
+					+ '<li class="active" data-tab-page="method">メソッド</li>'
+					+ '<li data-tab-page="trace">トレース</li>'
+					+ '<li data-tab-page="otherInfo">その他情報</li></ul><div class="tab-content">'
+					+ '<div class="active method hasfix"></div>'
+					+ '<div class="trace hasfix"></div>' + '<div class="otherInfo"></div></div>');
 
 	// その他情報
 	view.register('logic-otherInfo', '<dl><dt>名前</dt><dd>[%= defObj.__name %]</dd>'
@@ -830,7 +869,7 @@
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '<span class="font-small">（ログを右クリックまたはタッチで関数にジャンプ）</span></div>'
-							+ '<ul class="trace-list liststyle-none no-padding" data-h5-loop-context="logs"></ul>'
+							+ '<ul class="trace-list liststyle-none no-padding floating-list" data-h5-loop-context="logs"></ul>'
 							+ '<ul class="contextMenu logContextMenu dropdown-menu"><li class="showFunction"><span>関数を表示</span></li></ul>');
 
 	// トレースログのli
@@ -1587,6 +1626,28 @@
 		}
 	}
 
+	/**
+	 * 第1引数で指定されたメソッドリスト要素を、第2引数のメソッド名を持つliまでスクロールする。 第3引数で点滅させるかどうか指定する。
+	 *
+	 * @param {jQuery} $methodList
+	 * @param {string} method
+	 * @param {boolean} isBlink
+	 */
+	function scrollByMethodName($methodList, method, isBlink) {
+		var scrollVal = 0;
+		var li = null;
+		$methodList.find('li').each(function() {
+			if ($.trim($(this).find('.name').text()) === method) {
+				scrollVal = this.offsetTop - this.parentNode.offsetTop;
+				li = this;
+				return false;
+			}
+		});
+		if (li) {
+			$methodList.scrollTop(scrollVal);
+			blinkElm(li);
+		}
+	}
 	// =========================================================================
 	//
 	// Controller
@@ -1945,8 +2006,6 @@
 			setCSS(window, H5PAGE_STYLE);
 			// コントローラの詳細表示エリア
 			view.append(this.$find('.left'), 'target-list');
-			view.append(this.$find('.right'), 'controller-detail');
-			view.append(this.$find('.right'), 'logic-detail');
 			this.$find('.right>.detail').css('display', 'none');
 
 			// この時点ですでにバインドされているコントローラがあった場合、h5controllerboundイベントで拾えないので
@@ -2068,6 +2127,7 @@
 				return;
 			}
 			var target = this.getTargetFromElem($el);
+
 			this.$find('.target-name').removeClass('selected');
 			$el.addClass('selected');
 			this.setTarget(target);
@@ -2124,7 +2184,7 @@
 			}
 			$el.addClass('selected');
 			var controller = this.getTargetFromElem(this.$find('.target-name.selected'));
-			var key = $.trim($el.find('.key').text());
+			var key = $.trim($el.find('.name').text());
 			var $target = getTargetFromEventHandlerKey(key, controller);
 
 			// 取得結果を保存。これはクリックしてイベントを発火させるとき用です。
@@ -2153,7 +2213,7 @@
 		 * イベントを実行
 		 */
 		' .eventHandler .trigger click': function(context, $el) {
-			var evName = $.trim($el.closest('li').find('.key').text()).match(/ (\S+)$/)[1];
+			var evName = $.trim($el.closest('li').find('.name').text()).match(/ (\S+)$/)[1];
 			var target = $el.closest('.menu').find('option:selected').data('h5devtool-eventTarget');
 			if (target) {
 				// TODO evNameがmouse/keyboard/touch系ならネイティブのイベントでやる
@@ -2162,6 +2222,16 @@
 				alert('イベントターゲットがありません');
 			}
 		},
+
+		/**
+		 * メソッドにジャンプ
+		 */
+		'.method-select change': function(context, $el) {
+			var method = $el.val();
+			var $methodList = $el.parents('.active').eq(0).find('.method-list');
+			scrollByMethodName($methodList, method, true);
+		},
+
 		/**
 		 * タブの切り替え
 		 */
@@ -2174,14 +2244,32 @@
 			}
 		},
 		/**
+		 * 詳細画面をクリア(要素の削除とコントローラのdispose)
+		 *
+		 * @memberOf h5.devtool.ControllerInfoController
+		 * @param target
+		 */
+		_clearDetailView: function() {
+			// 詳細ビューに表示されているコントローラを取得
+			var controllers = h5.core.controllerManager.getControllers(this.$find('.right'), {
+				deep: true
+			});
+			// 元々詳細ビューにバインドされていたコントローラをアンバインド
+			for (var i = 0, l = controllers.length; i < l; i++) {
+				controllers[i].dispose();
+			}
+			this.$find('.right').html('');
+		},
+
+		/**
 		 * 詳細画面(右側画面)をコントローラまたはロジックを基に作成。nullが渡されたら空白にする
 		 *
 		 * @memberOf h5.devtool.ControllerInfoController
 		 * @param target
 		 */
 		setDetail: function(target) {
+			this._clearDetailView();
 			if (target == null) {
-				this.$find('.detail .tab-content>*').html('');
 				return;
 			}
 
@@ -2191,22 +2279,12 @@
 				devtoolContext.methodCount._method = new MethodCount(target);
 			}
 
-			// 詳細ビューに表示されているコントローラを取得
-			var controllers = h5.core.controllerManager.getControllers(this.$find('.detail'), {
-				deep: true
-			});
-
 			// コントローラの場合はコントローラの詳細ビューを表示
 			if (target.__controllerContext) {
 				this._showControllerDetail(target);
 			} else {
 				// ロジックの場合はロジックの詳細ビューを表示
 				this._showLogicDetail(target);
-			}
-
-			// 元々詳細ビューにバインドされていたコントローラをアンバインド
-			for (var i = 0, l = controllers.length; i < l; i++) {
-				controllers[i].dispose();
 			}
 		},
 		/**
@@ -2216,8 +2294,7 @@
 		 * @param controller
 		 */
 		_showControllerDetail: function(controller) {
-			this.$find('.logic-detail').css('display', 'none');
-			this.$find('.controller-detail').css('display', 'block');
+			view.update(this.$find('.right'), 'controller-detail');
 
 			// メソッド(イベントハンドラ以外)とイベントハンドラを列挙
 			var methods = [];
@@ -2268,7 +2345,7 @@
 
 			// ログ
 			var logAry = devtoolContext.devtoolLog;
-			h5.core.controller(this.$find('.controller-detail .trace'), traceLogController, {
+			h5.core.controller(this.$find('.instance-detail .trace'), traceLogController, {
 				traceLogs: logAry,
 				// トレースログと違ってログのコントローラからControllerInfoControllerが辿れなくなるため
 				// 引数で渡してログコントローラに覚えさせておく
@@ -2281,28 +2358,48 @@
 			for (var i = 0, l = childControllerProperties.length; i < l; i++) {
 				childControllerNames.push(controller[childControllerProperties[i]].__name);
 			}
-			view.update(this.$find('.controller-detail .tab-content .otherInfo'),
+
+			view.update(this.$find('.instance-detail .tab-content .otherInfo'),
 					'controller-otherInfo', {
 						controller: controller,
 						childControllerNames: childControllerNames,
-						_formatDOM: formatDOM
+						_formatDOM: formatDOM,
+						// getAvailableTemplatesはhifivemain Issue#297 で拡張されたメソッド
+						// https://github.com/hifive/hifivemain/issues/297)
+						availableTemplates: controller.view.getAvailableTemplates(true),
+						registedTemplates: controller.view.getAvailableTemplates(),
 					});
 		},
 		_updateEventHandlerView: function(obj) {
-			var $target = this.$find('.controller-detail .tab-content .eventHandler');
+			var $target = this.$find('.instance-detail .tab-content .eventHandler');
+			// viewの更新
 			view.update($target, 'eventHandler-list', obj);
+			// セレクトボックスを追加
+			var $select = $target.find('.method-select');
+			for (var i = 0, l = obj.eventHandlers.length; i < l; i++) {
+				$select.append(h5.u.str.format('<option value="{0}">{0}</option>',
+						obj.eventHandlers[i]));
+			}
+
 			// メソッドの実行回数に対応するDOMをマップで持っておく
 			var methodCountMap = this._methodCountMap;
 			var targetId = obj.id;
 			$target.find('.method-list>*').each(function() {
 				var $this = $(this);
-				methodCountMap[targetId + '#' + $this.find('.key').text()] = $this.find('.count');
+				methodCountMap[targetId + '#' + $this.find('.name').text()] = $this.find('.count');
 			});
 			this._registerMethodCountCallback(getDevtoolTarget(obj.id), obj.methodCount);
 		},
+
 		_updateMethodView: function(obj) {
-			var $target = this.$find('.controller-detail .tab-content .method');
+			var $target = this.$find('.instance-detail .tab-content .method');
+			// viewの更新
 			view.update($target, 'method-list', obj);
+			// セレクトボックスを追加
+			var $select = $target.find('.method-select');
+			for (var i = 0, l = obj.methods.length; i < l; i++) {
+				$select.append(h5.u.str.format('<option value="{0}">{0}</option>', obj.methods[i]));
+			}
 			// メソッドの実行回数に対応するDOMをマップで持っておく
 			var methodCountMap = this._methodCountMap;
 			var targetId = obj.id;
@@ -2329,8 +2426,7 @@
 		 * @param logic
 		 */
 		_showLogicDetail: function(logic) {
-			this.$find('.logic-detail').css('display', 'block');
-			this.$find('.controller-detail').css('display', 'none');
+			view.update(this.$find('.right'), 'logic-detail');
 
 			// メソッドリスト
 			// public, privateの順で辞書順ソート
@@ -2354,8 +2450,9 @@
 			var methods = publicMethods.concat(privateMethods);
 
 			var devtoolContext = getDevtoolContext(logic);
-			var $target = this.$find('.logic-detail .tab-content .method');
-			view.update($target, 'method-list', {
+			var $target = this.$find('.instance-detail .tab-content .method');
+			this._updateMethodView({
+				id: devtoolContext.id,
 				defObj: logic.__logicContext.logicDef,
 				methods: methods,
 				_funcToStr: funcToStr,
@@ -2372,18 +2469,20 @@
 
 			// ログ
 			var logAry = devtoolContext.devtoolLog;
-			h5.core.controller(this.$find('.logic-detail .trace'), h5.devtool.TraceLogController, {
-				traceLogs: logAry,
-				// トレースログと違ってログのコントローラからControllerInfoControllerが辿れなくなるため
-				// 引数で渡してログコントローラに覚えさせておく
-				_parentControllerCtrlInfoCtrl: this
-			});
+			h5.core.controller(this.$find('.instance-detail .trace'),
+					h5.devtool.TraceLogController, {
+						traceLogs: logAry,
+						// トレースログと違ってログのコントローラからControllerInfoControllerが辿れなくなるため
+						// 引数で渡してログコントローラに覚えさせておく
+						_parentControllerCtrlInfoCtrl: this
+					});
 
 			// その他情報
-			view.update(this.$find('.logic-detail .tab-content .otherInfo'), 'logic-otherInfo', {
-				defObj: logic.__logicContext.logicDef,
-				instanceName: devtoolContext.instanceName
-			});
+			view.update(this.$find('.instance-detail .tab-content .otherInfo'), 'logic-otherInfo',
+					{
+						defObj: logic.__logicContext.logicDef,
+						instanceName: devtoolContext.instanceName
+					});
 		},
 
 		/**
@@ -2399,7 +2498,9 @@
 					return;
 				}
 				var targetId = getDevtoolContext(target).id;
-				this._methodCountMap[targetId + '#' + method].text(methodCount.get(method));
+				var $target = this._methodCountMap[targetId + '#' + method];
+				$target.text(methodCount.get(method));
+				$target.parent().addClass('called');
 			}));
 		},
 
@@ -2828,7 +2929,6 @@
 					'*[data-tab-page="controller-info"]');
 			if (!$controllerTab.hasClass('active')) {
 				$controllerTab.trigger('click');
-				ctrlInfoCtrl.setTarget(ctrlOrLogic);
 			}
 
 			// 対応するコントローラまたはロジックを選択
@@ -2851,31 +2951,18 @@
 				// メソッド名に空白文字がありかつターゲットがコントローラならイベントハンドラ
 				var isEventHandler = method.indexOf(' ') !== -1 && ctrlOrLogic.__controllerContext;
 				var tabCls = isEventHandler ? 'eventHandler' : 'method';
-				// イベントハンドラのタブを選択
-				var $tab = ctrlInfoCtrl.$find('.controller-detail>.nav-tabs>*[data-tab-page="'
+				// イベントハンドラまたはメソッドのタブを選択
+				var $tab = ctrlInfoCtrl.$find('.instance-detail>.nav-tabs>*[data-tab-page="'
 						+ tabCls + '"]');
 				if (!$tab.hasClass('active')) {
 					$tab.trigger('click');
 				}
-				var $activeList = ctrlInfoCtrl.$find('.controller-detail .' + tabCls
+				var $activeList = ctrlInfoCtrl.$find('.instance-detail .' + tabCls
 						+ ' .method-list');
 
 
 				// 該当箇所までスクロール
-				var scrollVal = 0;
-				var textElmSelector = isEventHandler ? '.key' : '.name';
-				var li = null;
-				$activeList.find('li').each(function() {
-					if ($.trim($(this).find(textElmSelector).text()) === method) {
-						scrollVal = this.offsetTop - this.parentNode.offsetTop;
-						li = this;
-						return false;
-					}
-				});
-				if (li) {
-					$activeList.parent().scrollTop(scrollVal);
-					blinkElm(li);
-				}
+				scrollByMethodName($activeList, method, true);
 			}, 0);
 		}
 	};
@@ -2947,7 +3034,7 @@
 			}
 			return html;
 		},
-		'.fixedControlls input[type="checkbox"] change': function(context, $el) {
+		'input[type="checkbox"] change': function(context, $el) {
 			var cls = $el.attr('name');
 			if ($el.prop('checked')) {
 				this._condition.hideCls[cls] = false;

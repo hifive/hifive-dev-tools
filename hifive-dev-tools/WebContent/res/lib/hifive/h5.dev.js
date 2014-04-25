@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2013 NS Solutions Corporation
+ * Copyright (C) 2012-2014 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
  * limitations under the License.
  *
  * hifive
- *   version 1.1.9
- *   gitCommitId : 58e46627ddece7a9d2b2421a2764ccce6000cb6c
- *   build at 2014/03/17 13:40:48.837 (+0900)
+ *   version Nightly_2014-04-23_17-01-10-704
+ *   gitCommitId : c3328601f5118af5befd3fbbabe7464b34add764
+ *   build at 2014/04/23 17:01:12.180 (+0900)
  *   (util,controller,modelWithBinding,view,ui,api.geo,api.sqldb,api.storage)
  */
 (function($){
@@ -31,7 +31,7 @@
 
 	//h5存在チェック
 	if (window.h5) {
-		if (window.h5.env && (window.h5.env.version === '1.1.9')) {
+		if (window.h5.env && (window.h5.env.version === 'Nightly_2014-04-23_17-01-10-704')) {
 			// 既にロード済みのhifiveと同じバージョンをロードしようとした場合は何もしない
 			return;
 		}
@@ -55,7 +55,7 @@
 	};
 
 	h5.env = {
-		version: '1.1.9'
+		version: 'Nightly_2014-04-23_17-01-10-704'
 	};
 
 	// =========================================================================
@@ -161,7 +161,7 @@ window.com = {
  * @param mapObj {Object} { (エラーコード): (フォーマット文字列) }という構造のオブジェクト
  */
 function addFwErrorCodeMap(mapObj) {
-	for (code in mapObj) {
+	for (var code in mapObj) {
 		if (mapObj.hasOwnProperty(code)) {
 			errorCodeToMessageMap[code] = mapObj[code];
 		}
@@ -510,7 +510,7 @@ var h5internal = {
 		'"': '&quot;',
 		'<': '&lt;',
 		'>': '&gt;',
-		"'": '&apos;'
+		"'": '&#39;'
 	};
 
 	/**
@@ -704,7 +704,7 @@ var h5internal = {
 		var nsArray = namespace.split('.');
 		var len = nsArray.length;
 
-		for ( var i = 0; i < len; i++) {
+		for (var i = 0; i < len; i++) {
 			if (!isValidNamespaceIdentifier(nsArray[i])) {
 				// 名前空間として不正な文字列ならエラー
 				throwFwError(ERR_CODE_NAMESPACE_INVALID, 'h5.u.obj.ns()');
@@ -712,7 +712,7 @@ var h5internal = {
 		}
 
 		var parentObj = window;
-		for ( var i = 0; i < len; i++) {
+		for (var i = 0; i < len; i++) {
 			var name = nsArray[i];
 			if (parentObj[name] === undefined) {
 				parentObj[name] = {};
@@ -792,7 +792,7 @@ var h5internal = {
 			throwFwError(ERR_CODE_INVALID_SCRIPT_PATH);
 		}
 
-		for ( var i = 0, l = resources.length; i < l; i++) {
+		for (var i = 0, l = resources.length; i < l; i++) {
 			var path = resources[i];
 			if (!isString(path) || !$.trim(path)) {
 				throwFwError(ERR_CODE_INVALID_SCRIPT_PATH);
@@ -934,7 +934,7 @@ var h5internal = {
 						progressCallback = function() {
 							var results = argsToArray(arguments);
 
-							for ( var i = 0; i < loadedScripts.length; i++) {
+							for (var i = 0; i < loadedScripts.length; i++) {
 								var result = results[i];
 
 								if (!result) {
@@ -1101,7 +1101,7 @@ var h5internal = {
 	 *
 	 * @param {String} str HTML文字列
 	 * @returns {String} エスケープ済HTML文字列
-	 * @name escapeHTML
+	 * @name escapeHtml
 	 * @function
 	 * @memberOf h5.u.str
 	 */
@@ -1175,7 +1175,7 @@ var h5internal = {
 		// 循環参照チェック用配列
 		var objStack = [];
 		function existStack(obj) {
-			for ( var i = 0, len = objStack.length; i < len; i++) {
+			for (var i = 0, len = objStack.length; i < len; i++) {
 				if (obj === objStack[i]) {
 					return true;
 				}
@@ -1184,7 +1184,7 @@ var h5internal = {
 		}
 
 		function popStack(obj) {
-			for ( var i = 0, len = objStack.length; i < len; i++) {
+			for (var i = 0, len = objStack.length; i < len; i++) {
 				if (obj === objStack[i]) {
 					objStack.splice(i, 1);
 				}
@@ -1262,7 +1262,7 @@ var h5internal = {
 				objStack.push(val);
 				var indexStack = [];
 				ret = typeToCode(type) + '[';
-				for ( var i = 0, len = val.length; i < len; i++) {
+				for (var i = 0, len = val.length; i < len; i++) {
 					indexStack[i.toString()] = true;
 					var elm;
 					if (!val.hasOwnProperty(i)) {
@@ -1468,7 +1468,7 @@ var h5internal = {
 					if (!$.isArray(obj)) {
 						throwFwError(ERR_CODE_DESERIALIZE_VALUE);
 					}
-					for ( var i = 0; i < obj.length; i++) {
+					for (var i = 0; i < obj.length; i++) {
 						switch (codeToType(obj[i].substring(0, 1))) {
 						case 'undefElem':
 							delete obj[i];
@@ -1476,7 +1476,7 @@ var h5internal = {
 						case 'objElem':
 							var extendObj = func(typeToCode('object') + obj[i].substring(1));
 							var tempObj = [];
-							for ( var i = 0, l = obj.length - 1; i < l; i++) {
+							for (var i = 0, l = obj.length - 1; i < l; i++) {
 								tempObj[i] = obj[i];
 							}
 							obj = tempObj;
@@ -1589,7 +1589,7 @@ var h5internal = {
 			names.unshift();
 		}
 		var ret = rootObj || window;
-		for ( var i = 0, len = names.length; i < len; i++) {
+		for (var i = 0, len = names.length; i < len; i++) {
 			ret = ret[names[i]];
 			if (ret == null) { // nullまたはundefinedだったら辿らない
 				break;
@@ -1978,7 +1978,7 @@ var h5internal = {
 		var argArray = h5.u.obj.argsToArray(args);
 		var result = [];
 
-		for ( var i = 0, len = argArray.length; i < len; i++) {
+		for (var i = 0, len = argArray.length; i < len; i++) {
 			result.push($.type(argArray[i]));
 		}
 
@@ -2247,7 +2247,7 @@ var h5internal = {
 					throwFwError(ERR_CODE_LOG_TARGETS_INVALID);
 				}
 				targets = wrapInArray(targets);
-				for ( var i = 0, len = targets.length; i < len; i++) {
+				for (var i = 0, len = targets.length; i < len; i++) {
 					if (!(targets[i] == null || (isString(targets[i]) && $.trim(targets[i]).length))) {
 						throwFwError(ERR_CODE_LOG_TARGETS_INVALID);
 					}
@@ -2269,7 +2269,7 @@ var h5internal = {
 					var defaultTargets = _dOut.targets;
 					if (defaultTargets != null) {
 						defaultTargets = wrapInArray(defaultTargets);
-						for ( var i = 0, len = defaultTargets.length; i < len; i++) {
+						for (var i = 0, len = defaultTargets.length; i < len; i++) {
 							var targetName = defaultTargets[i];
 							if ($.inArray(targetName, targetNames) === -1) {
 								compiledTargets.push(_dOut.compiledTargets[i]);
@@ -2282,28 +2282,30 @@ var h5internal = {
 			out.compiledTargets = compiledTargets;
 		}
 
-		compiledLogSettings = $.extend(true, {}, h5.settings.log ? h5.settings.log : {
+		var settings = $.extend(true, {}, h5.settings.log ? h5.settings.log : {
 			defaultOut: defaultOut
 		});
-		var logTarget = compiledLogSettings.target;
+		var logTarget = settings.target;
 		if (!logTarget) {
 			logTarget = {};
-			compiledLogSettings.target = logTarget;
+			settings.target = logTarget;
 		}
 		compileLogTarget(logTarget);
-		var dOut = compiledLogSettings.defaultOut;
+		var dOut = settings.defaultOut;
 		if (!dOut) {
 			dOut = defaultOut;
-			compiledLogSettings.defaultOut = dOut;
+			settings.defaultOut = dOut;
 		}
 		compileOutput(logTarget, dOut);
-		var outs = compiledLogSettings.out;
+		var outs = settings.out;
 		if (outs) {
 			outs = wrapInArray(outs);
-			for ( var i = 0, len = outs.length; i < len; i++) {
+			for (var i = 0, len = outs.length; i < len; i++) {
 				compileOutput(logTarget, outs[i], dOut);
 			}
 		}
+		// ここまでの処理でエラーが起きなかったら設定を適用する
+		compiledLogSettings = settings;
 	};
 
 	/**
@@ -2560,7 +2562,7 @@ var h5internal = {
 			var targetOut = null;
 			if (outs) {
 				outs = wrapInArray(outs);
-				for ( var i = 0, len = outs.length; i < len; i++) {
+				for (var i = 0, len = outs.length; i < len; i++) {
 					var out = outs[i];
 					if (!out.compiledCategory.test(this.category)) {
 						continue;
@@ -2587,7 +2589,7 @@ var h5internal = {
 				return;
 			}
 
-			for ( var i = 0, len = logTarget.length; i < len; i++) {
+			for (var i = 0, len = logTarget.length; i < len; i++) {
 				logTarget[i].log(logObj);
 			}
 		},
@@ -3508,7 +3510,7 @@ var h5internal = {
 			// progressの引数は、配列でも可変長でも、配列を含む可変長でも渡すことができる
 			// 再帰で処理する
 			var callbacks = argsToArray(arguments);
-			for ( var i = 0, l = callbacks.length; i < l; i++) {
+			for (var i = 0, l = callbacks.length; i < l; i++) {
 				var elem = callbacks[i];
 				if ($.isArray(elem)) {
 					dfd.progress.apply(this, elem);
@@ -3539,7 +3541,7 @@ var h5internal = {
 			var args = argsToArray(arguments);
 			// progressコールバックが登録されていたら全て実行する
 			if (progressCallbacks.length > 0) {
-				for ( var i = 0, callbackLen = progressCallbacks.length; i < callbackLen; i++) {
+				for (var i = 0, callbackLen = progressCallbacks.length; i < callbackLen; i++) {
 					var params = args;
 					if (params !== arguments) {
 						params = wrapInArray(params);
@@ -3574,7 +3576,7 @@ var h5internal = {
 			return false;
 		}
 		arg = wrapInArray(arg);
-		for ( var i = 0, l = arg.length; i < l; i++) {
+		for (var i = 0, l = arg.length; i < l; i++) {
 			if ($.isFunction(arg[i])) {
 				return true;
 			}
@@ -3681,7 +3683,7 @@ var h5internal = {
 		}
 
 		// failコールバックを登録する可能性のある関数を上書き
-		for ( var i = 0, l = CFH_HOOK_METHODS.length; i < l; i++) {
+		for (var i = 0, l = CFH_HOOK_METHODS.length; i < l; i++) {
 			var prop = CFH_HOOK_METHODS[i];
 			if (promise[prop]) {
 				// cfhの管理をするための関数でオーバーライド
@@ -3706,7 +3708,7 @@ var h5internal = {
 				// コールバックの登録
 				var fns = argsToArray(arguments);
 
-				for ( var i = 0, l = PIPE_CREATE_METHODS.length; i < l; i++) {
+				for (var i = 0, l = PIPE_CREATE_METHODS.length; i < l; i++) {
 					var that = this;
 					(function(fn, method, action) {
 						if (!$.isFunction(fn)) {
@@ -3875,16 +3877,12 @@ var h5internal = {
 		var dfd = deferred();
 		// 何回ごとにループを抜けるか。デフォルトは20回
 		var st = $.type(suspendOnTimes) === 'number' ? suspendOnTimes : 20;
-		var userReject = false;
 		var index = 0;
 		var len = array.length;
-		var execute,loopControl = null;
+		var execute, loopControl = null;
 		var each = function() {
 			if (index === len) {
 				dfd.resolve(array);
-				return;
-			} else if (userReject) {
-				dfd.reject(array);
 				return;
 			}
 			var ret = callback.call(array, index, array[index], loopControl);
@@ -3893,8 +3891,7 @@ var h5internal = {
 				ret.done(function() {
 					execute();
 				}).fail(function() {
-					userReject = true;
-					execute();
+					dfd.reject(array);
 				});
 			} else {
 				execute();
@@ -3997,7 +3994,7 @@ var h5internal = {
 
 		/* del begin */
 		// 引数にpromise・deferredオブジェクト以外があった場合はログを出力します。
-		for ( var i = 0; i < len; i++) {
+		for (var i = 0; i < len; i++) {
 			// DeferredもPromiseも、promiseメソッドを持つので、
 			// promiseメソッドがあるかどうかでDeferred/Promiseの両方を判定しています。
 			if (!args[i] || !(args[i].promise && $.isFunction(args[i].promise))) {
@@ -4040,7 +4037,7 @@ var h5internal = {
 			// progressの引数になる配列。
 			// pValuesにはあらかじめundefinedを入れておく($.whenと同じ。progressフィルタ内のarguments.lengthは常にargs.lengthと同じ)
 			var pValues = [];
-			for ( var i = 0; i < len; i++) {
+			for (var i = 0; i < len; i++) {
 				pValues[i] = undefined;
 			}
 			function progressFunc(index) {
@@ -4052,7 +4049,7 @@ var h5internal = {
 					dfd.notifyWith(whenPromise, pValues);
 				};
 			}
-			for ( var i = 0; i < len; i++) {
+			for (var i = 0; i < len; i++) {
 				var p = args[i];
 				// progressはjQuery1.6で作られたdeferred/promiseだとないので、あるかどうかチェックして呼び出す
 				if (p && $.isFunction(p.promise) && p.progress) {
@@ -4164,7 +4161,7 @@ var h5internal = {
 	 * @param {Deferred} dfd
 	 */
 	function delegateCallbackProperties(settings, dfd) {
-		for ( var i = 0, l = CALLBACK_REGISTER_DELEGATE_METHODS.length; i < l; i++) {
+		for (var i = 0, l = CALLBACK_REGISTER_DELEGATE_METHODS.length; i < l; i++) {
 			var prop = CALLBACK_REGISTER_DELEGATE_METHODS[i];
 			if (settings[prop]) {
 				dfd[PROP_TO_METHOD_MAP[prop]](settings[prop]);
@@ -4613,7 +4610,7 @@ var h5internal = {
 			return ret;
 		}
 		aspects = wrapInArray(aspects);
-		for ( var i = aspects.length - 1; -1 < i; i--) {
+		for (var i = aspects.length - 1; -1 < i; i--) {
 			var aspect = aspects[i];
 			if (aspect.target && !aspect.compiledTarget.test(targetName)) {
 				continue;
@@ -4626,7 +4623,7 @@ var h5internal = {
 				ret.push(interceptors);
 				continue;
 			}
-			for ( var j = interceptors.length - 1; -1 < j; j--) {
+			for (var j = interceptors.length - 1; -1 < j; j--) {
 				ret = ret.concat(interceptors[j]);
 			}
 		}
@@ -4660,7 +4657,7 @@ var h5internal = {
 		};
 
 		var f = base;
-		for ( var i = 0, l = aspects.length; i < l; i++) {
+		for (var i = 0, l = aspects.length; i < l; i++) {
 			f = weave(f, funcName, aspects[i]);
 		}
 		return f;
@@ -4748,7 +4745,7 @@ var h5internal = {
 	 */
 	function getGlobalSelectorTarget(selector, doc) {
 		var specialObj = ['window', 'document', 'navigator'];
-		for ( var i = 0, len = specialObj.length; i < len; i++) {
+		for (var i = 0, len = specialObj.length; i < len; i++) {
 			var s = specialObj[i];
 			if (selector === s || startsWith(selector, s + '.')) {
 				//特殊オブジェクトそのものを指定された場合またはwindow. などドット区切りで続いている場合
@@ -4806,17 +4803,23 @@ var h5internal = {
 	}
 
 	/**
-	 * コントローラのプロパティが子コントローラかどうかを返します。
+	 * コントローラのプロパティが自分自身の子コントローラであるかどうかを返します。
 	 *
 	 * @param {Object} controller コントローラ
-	 * @param {String} プロパティ名
-	 * @returns {Boolean} コントローラのプロパティが子コントローラかどうか(true=子コントローラである)
+	 * @param {String} prop プロパティ名
+	 * @returns {Boolean} コントローラのプロパティが第1引数のコントローラの子コントローラかどうか(true=子コントローラである)
 	 */
 	function isChildController(controller, prop) {
 		var target = controller[prop];
+		// プロパティがrootControllerまたはparentControllerの場合はfalse
+		// __controllerContextがない(コントローラインスタンスではないまたはdispose済みコントローラインスタンス)の場合はfalse
+		// 子コントローラでない(isRootがtrue)の場合はfalse
+		// parentControllerを見て、自分の子供ならtrueを返す。
+		// ただし、parentController未設定(コントローラ化処理の途中)の場合はtrueを返す。
 		return endsWith(prop, SUFFIX_CONTROLLER) && prop !== 'rootController'
-				&& prop !== 'parentController' && !$.isFunction(target)
-				&& (target && !target.__controllerContext.isRoot);
+				&& prop !== 'parentController' && target && target.__controllerContext
+				&& !target.__controllerContext.isRoot
+				&& (!target.parentController || target.parentController === controller);
 	}
 
 	/**
@@ -4932,7 +4935,7 @@ var h5internal = {
 			useBindObj(bindObj, bindRequested);
 			return;
 		}
-		for ( var i = 0, l = bindObj.length; i < l; i++) {
+		for (var i = 0, l = bindObj.length; i < l; i++) {
 			useBindObj(bindObj[i], bindRequested);
 		}
 	}
@@ -5986,6 +5989,21 @@ var h5internal = {
 		execute(controller);
 		return promises;
 	}
+	/**
+	 * オブジェクトのhasOwnPropertyがtrueのプロパティ全てにnullを代入します。
+	 * <p>
+	 * ネストしたオブジェクトへのnull代入は行いません
+	 * </p>
+	 *
+	 * @param {Object} obj
+	 */
+	function nullify(obj) {
+		for ( var prop in obj) {
+			if (obj.hasOwnProperty(prop)) {
+				obj[prop] = null;
+			}
+		}
+	}
 
 	/**
 	 * コントローラのリソース解放処理を行います。
@@ -5994,23 +6012,23 @@ var h5internal = {
 	 */
 	function disposeController(controller) {
 		var targets = [];
-		var dispose = function(parentController) {
+		function dispose(parentController) {
 			targets.push(parentController);
 			if (parentController.view.__view) {
 				parentController.view.clear();
 			}
 			for ( var prop in parentController) {
-				if (parentController.hasOwnProperty(prop)) {
-					if (isChildController(parentController, prop)) {
-						var c = parentController[prop];
-						if ($.inArray(c, targets) === -1) {
-							dispose(c);
-						}
+				if (parentController.hasOwnProperty(prop)
+						&& isChildController(parentController, prop)) {
+					var c = parentController[prop];
+					if ($.inArray(c, targets) === -1) {
+						dispose(c);
 					}
-					parentController[prop] = null;
 				}
 			}
-		};
+			// 子コントローラのdispose処理が終わってからプロパティにnullを代入する
+			nullify(parentController);
+		}
 		dispose(controller);
 	}
 
@@ -6100,13 +6118,13 @@ var h5internal = {
 				// readyDfdまでrejectしたら終了
 				if (propertyIndex < propertyArray.length - 1) {
 					// ルートコントローラまで辿ったら、末裔のコントローラに対して次のdfdをrejectさせる
-					for ( var i = 0, l = descendantControllers.length; i < l; i++) {
+					for (var i = 0, l = descendantControllers.length; i < l; i++) {
 						rejectControllerDfdLoop(descendantControllers[i], propertyIndex + 1);
 					}
 				}
 			}
 		}
-		for ( var i = 0, l = descendantControllers.length; i < l; i++) {
+		for (var i = 0, l = descendantControllers.length; i < l; i++) {
 			rejectControllerDfdLoop(descendantControllers[i], 0);
 		}
 	}
@@ -6121,7 +6139,7 @@ var h5internal = {
 	 */
 	function findCommentBindingTarget(rootNode, id) {
 		var childNodes = rootNode.childNodes;
-		for ( var i = 0, len = childNodes.length; i < len; i++) {
+		for (var i = 0, len = childNodes.length; i < len; i++) {
 			var n = childNodes[i];
 			if (n.nodeType === 1) {
 				//Magic number: 1はNode.ELEMENT_NODE
@@ -6432,14 +6450,14 @@ var h5internal = {
 
 			target = [];
 			var childNodes = $dummyRoot[0].childNodes;
-			for ( var i = 0, len = childNodes.length; i < len; i++) {
+			for (var i = 0, len = childNodes.length; i < len; i++) {
 				target.push(childNodes[i]);
 			}
 
 			//ダミールートから要素を外し、インラインテンプレートの直後に要素を挿入
 			$dummyRoot.empty();
 			var fragment = document.createDocumentFragment();
-			for ( var i = 0, len = target.length; i < len; i++) {
+			for (var i = 0, len = target.length; i < len; i++) {
 				fragment.appendChild(target[i]);
 			}
 
@@ -6450,159 +6468,205 @@ var h5internal = {
 		return this.__view.bind(target, context);
 	}
 
-	$.extend(View.prototype, {
-		/**
-		 * パラメータで置換された、指定されたテンプレートIDのテンプレートを取得します。
-		 *
-		 * @param {String} templateId テンプレートID
-		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
-		 * @returns {String} テンプレート文字列
-		 * @function
-		 * @name get
-		 * @memberOf Controller.view
-		 * @see View.get
-		 */
-		get: function(templateId, param) {
-			return getView(templateId, this.__controller).get(templateId, param);
-		},
+	$
+			.extend(
+					View.prototype,
+					{
+						/**
+						 * パラメータで置換された、指定されたテンプレートIDのテンプレートを取得します。
+						 *
+						 * @param {String} templateId テンプレートID
+						 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
+						 * @returns {String} テンプレート文字列
+						 * @function
+						 * @name get
+						 * @memberOf Controller.view
+						 * @see View.get
+						 */
+						get: function(templateId, param) {
+							return getView(templateId, this.__controller).get(templateId, param);
+						},
 
-		/**
-		 * 要素を指定されたIDのテンプレートで書き換えます。
-		 *
-		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
-		 * @param {String} templateId テンプレートID
-		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
-		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
-		 * @function
-		 * @name update
-		 * @memberOf Controller.view
-		 * @see View.update
-		 */
-		update: function(element, templateId, param) {
-			var target = getTarget(element, this.__controller.rootElement, true);
-			return getView(templateId, this.__controller).update(target, templateId, param);
-		},
+						/**
+						 * 要素を指定されたIDのテンプレートで書き換えます。
+						 *
+						 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素,
+						 *            jQueryオブジェクト)
+						 * @param {String} templateId テンプレートID
+						 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
+						 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
+						 * @function
+						 * @name update
+						 * @memberOf Controller.view
+						 * @see View.update
+						 */
+						update: function(element, templateId, param) {
+							var target = getTarget(element, this.__controller.rootElement, true);
+							return getView(templateId, this.__controller).update(target,
+									templateId, param);
+						},
 
-		/**
-		 * 要素の末尾に指定されたIDのテンプレートを挿入します。
-		 *
-		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
-		 * @param {String} templateId テンプレートID
-		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
-		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
-		 * @function
-		 * @name append
-		 * @memberOf Controller.view
-		 * @see View.append
-		 */
-		append: function(element, templateId, param) {
-			var target = getTarget(element, this.__controller.rootElement, true);
-			return getView(templateId, this.__controller).append(target, templateId, param);
-		},
+						/**
+						 * 要素の末尾に指定されたIDのテンプレートを挿入します。
+						 *
+						 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素,
+						 *            jQueryオブジェクト)
+						 * @param {String} templateId テンプレートID
+						 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
+						 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
+						 * @function
+						 * @name append
+						 * @memberOf Controller.view
+						 * @see View.append
+						 */
+						append: function(element, templateId, param) {
+							var target = getTarget(element, this.__controller.rootElement, true);
+							return getView(templateId, this.__controller).append(target,
+									templateId, param);
+						},
 
-		/**
-		 * 要素の先頭に指定されたIDのテンプレートを挿入します。
-		 *
-		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
-		 * @param {String} templateId テンプレートID
-		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
-		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
-		 * @function
-		 * @name prepend
-		 * @memberOf Controller.view
-		 * @see View.prepend
-		 */
-		prepend: function(element, templateId, param) {
-			var target = getTarget(element, this.__controller.rootElement, true);
-			return getView(templateId, this.__controller).prepend(target, templateId, param);
-		},
+						/**
+						 * 要素の先頭に指定されたIDのテンプレートを挿入します。
+						 *
+						 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素,
+						 *            jQueryオブジェクト)
+						 * @param {String} templateId テンプレートID
+						 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
+						 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
+						 * @function
+						 * @name prepend
+						 * @memberOf Controller.view
+						 * @see View.prepend
+						 */
+						prepend: function(element, templateId, param) {
+							var target = getTarget(element, this.__controller.rootElement, true);
+							return getView(templateId, this.__controller).prepend(target,
+									templateId, param);
+						},
 
-		/**
-		 * 指定されたパスのテンプレートファイルを非同期で読み込みキャッシュします。
-		 *
-		 * @param {String|String[]} resourcePaths テンプレートファイル(.ejs)のパス (配列で複数指定可能)
-		 * @returns {Promise} Promiseオブジェクト
-		 * @function
-		 * @name load
-		 * @memberOf Controller.view
-		 * @see View.load
-		 */
-		load: function(resourcePaths) {
-			return this.__view.load(resourcePaths);
-		},
+						/**
+						 * 指定されたパスのテンプレートファイルを非同期で読み込みキャッシュします。
+						 *
+						 * @param {String|String[]} resourcePaths テンプレートファイル(.ejs)のパス (配列で複数指定可能)
+						 * @returns {Promise} Promiseオブジェクト
+						 * @function
+						 * @name load
+						 * @memberOf Controller.view
+						 * @see View.load
+						 */
+						load: function(resourcePaths) {
+							return this.__view.load(resourcePaths);
+						},
 
-		/**
-		 * Viewインスタンスに、指定されたIDとテンプレート文字列からテンプレートを1件登録します。
-		 *
-		 * @param {String} templateId テンプレートID
-		 * @param {String} templateString テンプレート文字列
-		 * @function
-		 * @name register
-		 * @memberOf Controller.view
-		 * @see View.register
-		 */
-		register: function(templateId, templateString) {
-			this.__view.register(templateId, templateString);
-		},
+						/**
+						 * Viewインスタンスに、指定されたIDとテンプレート文字列からテンプレートを1件登録します。
+						 *
+						 * @param {String} templateId テンプレートID
+						 * @param {String} templateString テンプレート文字列
+						 * @function
+						 * @name register
+						 * @memberOf Controller.view
+						 * @see View.register
+						 */
+						register: function(templateId, templateString) {
+							this.__view.register(templateId, templateString);
+						},
 
-		/**
-		 * テンプレート文字列が、コンパイルできるかどうかを返します。
-		 *
-		 * @param {String} templateString テンプレート文字列
-		 * @returns {Boolean} 渡されたテンプレート文字列がコンパイル可能かどうか。
-		 * @function
-		 * @name isValid
-		 * @memberOf Controller.view
-		 * @see View.isValid
-		 */
-		isValid: function(templateString) {
-			return this.__view.isValid(templateString);
-		},
+						/**
+						 * テンプレート文字列が、コンパイルできるかどうかを返します。
+						 *
+						 * @param {String} templateString テンプレート文字列
+						 * @returns {Boolean} 渡されたテンプレート文字列がコンパイル可能かどうか。
+						 * @function
+						 * @name isValid
+						 * @memberOf Controller.view
+						 * @see View.isValid
+						 */
+						isValid: function(templateString) {
+							return this.__view.isValid(templateString);
+						},
 
-		/**
-		 * 指定されたテンプレートIDのテンプレートが存在するか判定します。
-		 *
-		 * @param {String} templateId テンプレートID
-		 * @returns {Boolean} 判定結果(存在する: true / 存在しない: false)
-		 * @function
-		 * @name isAvailable
-		 * @memberOf Controller.view
-		 * @see View.isAvailable
-		 */
-		isAvailable: function(templateId) {
-			return getView(templateId, this.__controller).isAvailable(templateId);
-		},
+						/**
+						 * 指定されたテンプレートIDのテンプレートが存在するか判定します。
+						 *
+						 * @param {String} templateId テンプレートID
+						 * @returns {Boolean} 判定結果(存在する: true / 存在しない: false)
+						 * @function
+						 * @name isAvailable
+						 * @memberOf Controller.view
+						 * @see View.isAvailable
+						 */
+						isAvailable: function(templateId) {
+							return getView(templateId, this.__controller).isAvailable(templateId);
+						},
 
-		/**
-		 * 引数に指定されたテンプレートIDをもつテンプレートをキャッシュから削除します。 <br />
-		 * 引数を指定しない場合はキャッシュされている全てのテンプレートを削除します。
-		 *
-		 * @param {String|String[]} [templateId] テンプレートID
-		 * @function
-		 * @name clear
-		 * @memberOf Controller.view
-		 * @see View.clear
-		 */
-		clear: function(templateIds) {
-			this.__view.clear(templateIds);
-		},
+						/**
+						 * Viewインスタンスに登録されている、利用可能なテンプレートのIDの配列を返します。
+						 * <p>
+						 * 引数isRecursiveにtrueが渡された場合は、親コントローラを再帰的に探索し、
+						 * h5.core.viewで利用可能なIDも含めてこのコントローラviewで利用可能なテンプレートID全てを返します。
+						 * </p>
+						 *
+						 * @memberOf View
+						 * @name getAvailableTemplates
+						 * @function
+						 * @param {Boolean} isRecursive 再帰を
+						 * @returns {Array[String]} テンプレートIDの配列
+						 */
+						getAvailableTemplates: function(isRecursive) {
+							var ids = [];
+							for ( var id in this.__view.__cachedTemplates) {
+								ids.push(id);
+							}
+							if (!isRecursive) {
+								// 再帰探索を行わない場合は終了
+								return ids;
+							}
+							// 親コントローラがあるなら親コントローラのview、無いならh5.core.viewの利用可能IDを取得
+							// 親コントローラのviewからは再帰で取得する
+							var parentIds = this.__controller.parentController ? this.__controller.parentController.view
+									.getAvailableTemplates(true)
+									: h5.core.view.getAvailableTemplates(true);
+							// 親コントローラの利用可能IDとマージ
+							for (var i = 0, l = parentIds.length; i < l; i++) {
+								if ($.inArray(parentIds[i], ids) === -1) {
+									ids.push(parentIds[i]);
+								}
+							}
+							return ids;
+						},
 
-		/**
-		 * データバインドを開始します。
-		 *
-		 * @since 1.1.0
-		 * @param {String|Element|Element[]|jQuery} element コメントビュー疑似セレクタ、またはDOM要素(セレクタ文字列, DOM要素,
-		 *            DOM要素の配列, jQueryオブジェクト)。コメントビューを指定する場合は、「h5view#xxx」（xxxはid）と記述してください
-		 *            （id属性がxxxになっているh5viewタグを指定する、ような記法になっています）。
-		 *            DOM要素の配列を指定する場合、全ての要素ノードの親ノードが同じでなければいけません。
-		 * @param {Object} context データコンテキストオブジェクト
-		 * @function
-		 * @name bind
-		 * @memberOf Controller.view
-		 * @see View.bind
-		 */
-		bind: View_bind
-	});
+						/**
+						 * 引数に指定されたテンプレートIDをもつテンプレートをキャッシュから削除します。 <br />
+						 * 引数を指定しない場合はキャッシュされている全てのテンプレートを削除します。
+						 *
+						 * @param {String|String[]} [templateId] テンプレートID
+						 * @function
+						 * @name clear
+						 * @memberOf Controller.view
+						 * @see View.clear
+						 */
+						clear: function(templateIds) {
+							this.__view.clear(templateIds);
+						},
+
+						/**
+						 * データバインドを開始します。
+						 *
+						 * @since 1.1.0
+						 * @param {String|Element|Element[]|jQuery} element
+						 *            コメントビュー疑似セレクタ、またはDOM要素(セレクタ文字列, DOM要素, DOM要素の配列,
+						 *            jQueryオブジェクト)。コメントビューを指定する場合は、「h5view#xxx」（xxxはid）と記述してください
+						 *            （id属性がxxxになっているh5viewタグを指定する、ような記法になっています）。
+						 *            DOM要素の配列を指定する場合、全ての要素ノードの親ノードが同じでなければいけません。
+						 * @param {Object} context データコンテキストオブジェクト
+						 * @function
+						 * @name bind
+						 * @memberOf Controller.view
+						 * @see View.bind
+						 */
+						bind: View_bind
+					});
 
 	/**
 	 * コントローラのコンストラクタ
@@ -7035,7 +7099,7 @@ var h5internal = {
 			var seekRoot = $(rootElement)[0];
 			var controllers = this.controllers;
 			var ret = [];
-			for ( var i = 0, len = controllers.length; i < len; i++) {
+			for (var i = 0, len = controllers.length; i < len; i++) {
 				var controller = controllers[i];
 
 				if (names && $.inArray(controller.__name, names) === -1) {
@@ -7711,7 +7775,7 @@ var h5internal = {
 	function formatDescriptorError(code, msgSrc, msgParam, detail) {
 		var msg = h5.u.str.format.apply(null, [msgSrc].concat(msgParam)) + ' 詳細：';
 
-		for ( var i = 0, len = detail.length; i < len; i++) {
+		for (var i = 0, len = detail.length; i < len; i++) {
 			if (i !== 0) {
 				msg += ', ';
 			}
@@ -8000,7 +8064,7 @@ var h5internal = {
 	 * schemaオブジェクトのtype指定の文字列を、パースした結果を返す。 正しくパースできなかった場合は空オブジェクトを返す。
 	 *
 	 * @private
-	 * @param {String} type
+	 * @param {String} type type指定文字列。文字列以外が渡された場合は空オブジェクトを返す
 	 * @returns {Object} typeをパースした結果オブジェクト。
 	 *          elmType:タイプから配列部分を除いた文字列。dataModel:データモデル名。dimension:配列の深さ(配列指定でない場合は0)
 	 */
@@ -8008,7 +8072,8 @@ var h5internal = {
 		// マッチ結果から、データモデル指定の場合と配列の場合をチェックする
 		// "string[]"のとき、matched = ["string[]", "string", undefined, "[]", "[]"]
 		// "@DataModel"のとき、matched = ["@DataModel", "@DataModel", "DataModel", "", undefined]
-		var matched = type.match(/^(string|number|integer|boolean|any|enum|@(.+?))((\[\]){0,1})$/);
+		var matched = type && isString(type) ? type
+				.match(/^(string|number|integer|boolean|any|enum|@(.+?))((\[\]){0,1})$/) : null;
 		return matched ? {
 			elmType: matched[1],
 			dataModel: matched[2],
@@ -8030,7 +8095,7 @@ var h5internal = {
 			if (!map[p]) {
 				return false;
 			}
-			for ( var i = 0, l = map[p].length; i < l; i++) {
+			for (var i = 0, l = map[p].length; i < l; i++) {
 				if ($.inArray(map[p][i], ancestors) > -1
 						|| checkCircular(map[p][i], ancestors.concat([p]))) {
 					return true;
@@ -8118,7 +8183,7 @@ var h5internal = {
 	function unbox(v) {
 		if ($.isArray(v)) {
 			var ary = v.slice(0);
-			for ( var i = 0, l = ary.length; i < l; i++) {
+			for (var i = 0, l = ary.length; i < l; i++) {
 				// aryalueOfメソッドのあるオブジェクトならその値を入れる
 				ary[i] = ary[i] && typeof ary[i] === 'object' ? ary[i] && ary[i].valueOf
 						&& ary[i].valueOf() : ary[i];
@@ -8164,7 +8229,7 @@ var h5internal = {
 	function isEnumValue(v, enumValue) {
 		if (isStrictNaN(v)) {
 			// NaN の時は、NaN===NaNにならない(inArrayでも判定できない)ので、enumValueの中身を見て判定する
-			for ( var i = 0, l = enumValue.length; i < l; i++) {
+			for (var i = 0, l = enumValue.length; i < l; i++) {
 				if (isStrictNaN(enumValue[i])) {
 					return true;
 				}
@@ -8181,10 +8246,17 @@ var h5internal = {
 	 * @param {Object} descriptor オブジェクト
 	 * @param {Object} DataManagerオブジェクト
 	 * @param {Boolean} stopOnErro エラーが発生した時に、即座にreturnするかどうか
-	 * @returns {Boolean} descriptorのチェック結果。
 	 */
 	function validateDescriptor(descriptor, manager, stopOnError) {
 		var errorReason = [];
+
+		function pushErrorReason(/* var_args */) {
+			errorReason.push(createItemDescErrorReason.call(this, arguments));
+			if (stopOnError) {
+				// エラーを投げてチェック処理を終了する
+				throw null;
+			}
+		}
 
 		// try-catchで囲うことで、必ずERR_CODE_INVALID_DESCRIPTORエラーを投げられるようにしている。
 		// (stopOnErrorがfalseで、予期しない箇所でエラーが出たとしてもERR_CODE_INVALID_DESCRIPTORエラーを投げる。)
@@ -8192,17 +8264,14 @@ var h5internal = {
 			// descriptorがオブジェクトかどうか
 			if (!$.isPlainObject(descriptor)) {
 				// descriptorがオブジェクトじゃなかったら、これ以上チェックしようがないので、stopOnErrorの値に関わらずreturnする
-				errorReason.push(createItemDescErrorReason(DESC_ERR_DETAIL_NOT_OBJECT));
+				pushErrorReason(DESC_ERR_DETAIL_NOT_OBJECT);
 				throw null;
 			}
 
 			// nameのチェック
 			if (!isValidNamespaceIdentifier(descriptor.name)) {
 				// 識別子として不適切な文字列が指定されていたらエラー
-				errorReason.push(createItemDescErrorReason(DESC_ERR_DETAIL_INVALID_NAME));
-				if (stopOnError) {
-					throw null;
-				}
+				pushErrorReason(DESC_ERR_DETAIL_INVALID_NAME);
 			}
 
 			// baseのチェック
@@ -8212,20 +8281,13 @@ var h5internal = {
 				// nullまたはundefinedならチェックしない
 				if (!isString(base) || base.indexOf('@') !== 0) {
 					// @で始まる文字列（base.indexOf('@')が0）でないならエラー
-					errorReason.push(createItemDescErrorReason(DESC_ERR_DETAIL_INVALID_BASE));
-					if (stopOnError) {
-						throw null;
-					}
+					pushErrorReason(DESC_ERR_DETAIL_INVALID_BASE);
 				} else {
 					var baseName = base.substring(1);
 					var baseModel = manager.models[baseName];
 					if (!baseModel) {
 						// 指定されたモデルが存在しないならエラー
-						errorReason.push(createItemDescErrorReason(DESC_ERR_DETAIL_NO_EXIST_BASE,
-								baseName));
-						if (stopOnError) {
-							throw null;
-						}
+						pushErrorReason(DESC_ERR_DETAIL_NO_EXIST_BASE, baseName);
 					} else {
 						baseSchema = manager.models[baseName].schema;
 					}
@@ -8236,20 +8298,15 @@ var h5internal = {
 			// baseSchemaがないのに、schemaが指定されていなかったらエラー
 			var schema = descriptor.schema;
 			if (!baseSchema && schema == null) {
-				errorReason.push(createItemDescErrorReason(DESC_ERR_DETAIL_NO_SCHEMA));
-				if (stopOnError) {
-					throw null;
-				}
+				pushErrorReason(DESC_ERR_DETAIL_NO_SCHEMA);
 			}
 
 			// schemaが指定されていて、オブジェクトでないならエラー
 			if (!baseSchema && !$.isPlainObject(schema)) {
-				errorReason.push(createItemDescErrorReason(DESC_ERR_DETAIL_SCHEMA_IS_NOT_OBJECT));
-				// schemaがオブジェクトでなかったら、schemaのチェックのしようがないので、stopOnErrorの値に関わらずreturnする
+				pushErrorReason(DESC_ERR_DETAIL_SCHEMA_IS_NOT_OBJECT);
+				// schemaがオブジェクトでなかったら、schemaのチェックのしようがないので、stopOnErrorの値に関わらずエラーを投げる
 				throw null;
 			}
-
-			return true;
 		} catch (e) {
 			throwFwError(ERR_CODE_INVALID_DESCRIPTOR, null, errorReason);
 		}
@@ -8264,7 +8321,6 @@ var h5internal = {
 	 *            データモデルのスキーマかどうか。データモデルのスキーマならidチェックが必要で、type指定に@データモデル指定が可能。
 	 * @param {Object} [manager] DataManagerオブジェクト。データモデルのスキーマチェック時には必須。
 	 * @param {Boolean} [stopOnError] エラーが発生した時に、即座にreturnするかどうか。(trueなら即座にreturn)
-	 * @returns {Boolean} チェック結果。
 	 */
 	function validateSchema(schema, isDataModelSchema, manager, stopOnError) {
 		if (typeof schema !== 'object') {
@@ -8273,6 +8329,14 @@ var h5internal = {
 		}
 
 		var errorReason = [];
+
+		function pushErrorReason(/* var_args */) {
+			errorReason.push(createItemDescErrorReason.call(this, arguments));
+			if (stopOnError) {
+				// エラーを投げてチェック処理を終了する
+				throw null;
+			}
+		}
 
 		// try-catchで囲うことで、必ずERR_CODE_INVALID_SCHEMAエラーを投げられるようにしている。
 		// (stopOnErrorがfalseで、予期しない箇所でエラーが出たとしてもERR_CODE_INVALID_SCHEMAエラーを投げる。)
@@ -8283,20 +8347,13 @@ var h5internal = {
 				for ( var p in schema) {
 					if (schema[p] && schema[p].id === true) {
 						if (hasId) {
-							errorReason
-									.push(createItemDescErrorReason(SCHEMA_ERR_DETAIL_DUPLICATED_ID));
-							if (stopOnError) {
-								throw null;
-							}
+							pushErrorReason(SCHEMA_ERR_DETAIL_DUPLICATED_ID);
 						}
 						hasId = true;
 					}
 				}
 				if (!hasId) {
-					errorReason.push(createItemDescErrorReason(SCHEMA_ERR_DETAIL_NO_ID));
-					if (stopOnError) {
-						throw null;
-					}
+					pushErrorReason(SCHEMA_ERR_DETAIL_NO_ID);
 				}
 			}
 
@@ -8304,393 +8361,331 @@ var h5internal = {
 			// key: プロパティ名, value: そのプロパティのdepend.onをwrapInArrayしたもの
 			var dependencyMap = {};
 
-			// schemaのチェック
+			/**
+			 * dependのチェック
+			 * <ul>
+			 * <li>defaultValueは指定されていないか
+			 * <li>onが指定されているか
+			 * <li>onに指定されているプロパティがschema内に存在するか
+			 * <li>calcが指定されているか
+			 * </ul>
+			 *
+			 * @param depend
+			 */
+			function checkDepend(depend) {
+				if (depend == null) {
+					return;
+				}
+				// id指定されているならエラー
+				if (isId) {
+					pushErrorReason(SCHEMA_ERR_DETAIL_ID_DEPEND, schemaProp);
+				}
+
+				// defaultValueが指定されているならエラー
+				if (propObj.hasOwnProperty('defaultValue')) {
+					pushErrorReason(SCHEMA_ERR_DETAIL_DEFAULTVALUE_DEPEND, schemaProp);
+				}
+
+				// dependが指定されているなら、onが指定されていること
+				if (depend.on == null) {
+					pushErrorReason(SCHEMA_ERR_DETAIL_DEPEND_ON, schemaProp);
+				} else {
+					var onArray = wrapInArray(depend.on);
+					for (var i = 0, l = onArray.length; i < l; i++) {
+						if (!schema.hasOwnProperty(onArray[i])) {
+							pushErrorReason(SCHEMA_ERR_DETAIL_DEPEND_ON, schemaProp);
+							break;
+						}
+					}
+				}
+
+				// dependが指定されているなら、calcが指定されていること
+				if (typeof depend.calc !== 'function') {
+					pushErrorReason(SCHEMA_ERR_DETAIL_DEPEND_CALC, schemaProp);
+				}
+
+				// 後の循環参照チェックのため、depend.onを覚えておく
+				dependencyMap[schemaProp] = wrapInArray(depend.on);
+			}
+
+			/**
+			 * typeのチェック
+			 * <ul>
+			 * <li>typeに指定されている文字列は正しいか
+			 * <li>defaultValueとの矛盾はないか
+			 * <li>constraintにそのtypeで使えない指定がないか
+			 * <li>enumの時は、enumValueが指定されているか
+			 * </ul>
+			 *
+			 * @param type
+			 */
+			function checkType(type) {
+				if (isId && type == null) {
+					// id項目で、typeが指定されていない場合は、type:stringにしてチェックする
+					type = 'string';
+				}
+				var typeObj = {};
+				if (type == null) {
+					return;
+				}
+				if (!isString(type)) {
+					pushErrorReason(SCHEMA_ERR_DETAIL_INVALID_TYPE, schemaProp);
+					return;
+				}
+				if (isId && type !== 'string' && type !== 'integer') {
+					// id指定されているプロパティで、string,integer以外だった場合はエラー
+					pushErrorReason(SCHEMA_ERR_ID_TYPE, schemaProp);
+				}
+
+				// "string", "number[]", "@DataModel"... などの文字列をパースしてオブジェクトを生成する
+				// 正しくパースできなかった場合は空オブジェクトが返ってくる
+				typeObj = getTypeObjFromString(type);
+
+				if (!typeObj.elmType) {
+					// パースできない文字列が指定されていたらエラー
+					pushErrorReason(SCHEMA_ERR_DETAIL_TYPE, schemaProp, type);
+				} else {
+					// データモデルの場合
+					if (typeObj.dataModel) {
+						if (!isDataModelSchema) {
+							// データモデルをタイプに指定できるのはデータモデルのスキーマだけなのでエラー
+							pushErrorReason(SCHEMA_ERR_DETAIL_TYPE, schemaProp, typeObj.dataModel);
+						}
+						if (!manager.models[typeObj.dataModel]) {
+							pushErrorReason(SCHEMA_ERR_DETAIL_TYPE_DATAMODEL, schemaProp,
+									typeObj.dataModel);
+						}
+					}
+
+					// enumの場合
+					if (typeObj.elmType === 'enum') {
+						// enumValueが無ければエラー
+						if (propObj.enumValue == null) {
+							pushErrorReason(SCHEMA_ERR_DETAIL_TYPE_ENUM_NO_ENUMVALUE, schemaProp);
+						}
+					}
+				}
+			}
+
+			/**
+			 * constraintのチェック
+			 * <ul>
+			 * <li>プロパティのチェック
+			 * <li>値のチェック
+			 * <li>タイプと矛盾していないかのチェック
+			 * </ul>
+			 *
+			 * @param constraint
+			 * @param typeObj
+			 */
+			function checkConstraint(constraint, typeObj) {
+				if (constraint == null) {
+					return;
+				}
+
+				// constraintのチェック
+				if (!$.isPlainObject(constraint)) {
+					// constraintがオブジェクトではない場合
+					pushErrorReason(SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT, schemaProp);
+					return;
+				}
+				for ( var p in constraint) {
+					// constraintのプロパティの値とtype指定との整合チェック
+					var val = constraint[p];
+					if (val == null) {
+						continue;
+					}
+					switch (p) {
+					case 'notNull':
+						if (val !== true && val !== false) {
+							// notNullにtrueまたはfalse以外が指定されていたらエラー
+							pushErrorReason(SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_NOTNULL_NOTEMPTY,
+									schemaProp, p);
+						} else if (isId && !val) {
+							// id項目にnotNull:falseが指定されていたらエラー
+							pushErrorReason(SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT_ID, schemaProp,
+									p, val);
+						}
+						break;
+					case 'min':
+					case 'max':
+						switch (typeObj.elmType) {
+						case 'integer':
+							if (isString(val) || !isIntegerValue(val) || isStrictNaN(val)) {
+								// 整数値以外、NaNが指定されていたらエラー
+								pushErrorReason(SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_MIN_MAX,
+										schemaProp, p);
+							}
+							break;
+						case 'number':
+							if (isString(val) || isString(val) || !isNumberValue(val)
+									|| val === Infinity || val === -Infinity || isStrictNaN(val)) {
+								// 整数値以外、NaNが指定されていたらエラー
+								pushErrorReason(SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_MIN_MAX,
+										schemaProp, p);
+							}
+							break;
+						default:
+							// typeの指定とconstraintに不整合があったらエラー
+							pushErrorReason(SCHEMA_ERR_DETAIL_TYPE_CONSTRAINT, schemaProp, p,
+									typeObj.elmType);
+						}
+						break;
+					case 'minLength':
+					case 'maxLength':
+						switch (typeObj.elmType) {
+						case 'string':
+							if (isString(val) || !isIntegerValue(val) || isStrictNaN(val)
+									|| val < 0) {
+								// typeの指定とconstraintに不整合があったらエラー
+								pushErrorReason(
+										SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_MINLENGTH_MAXLENGTH,
+										schemaProp, p);
+							} else if (isId && p === 'maxLength' && val === 0) {
+								// id項目にmaxLength: 0 が指定されていたらエラー
+								pushErrorReason(SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT_ID,
+										schemaProp, p, val);
+							}
+							break;
+						default:
+							// type:'string'以外の項目にmaxLength,minLengthが指定されていればエラー
+							pushErrorReason(SCHEMA_ERR_DETAIL_TYPE_CONSTRAINT, schemaProp, p,
+									typeObj.elmType);
+						}
+						break;
+					case 'notEmpty':
+						switch (typeObj.elmType) {
+						case 'string':
+							if (val !== true && val !== false) {
+								// notEmptyにtrue,false以外の指定がされていたらエラー
+								pushErrorReason(
+										SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_NOTNULL_NOTEMPTY,
+										schemaProp, p);
+							} else if (isId && !val) {
+								// id項目にnotEmpty: false が指定されていたらエラー
+								pushErrorReason(SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT_ID,
+										schemaProp, p, val);
+							}
+							break;
+						default:
+							// type:'string'以外の項目にnotEmptyが指定されていたらエラー
+							pushErrorReason(SCHEMA_ERR_DETAIL_TYPE_CONSTRAINT, schemaProp, p,
+									typeObj.elmType);
+						}
+						break;
+					case 'pattern':
+						switch (typeObj.elmType) {
+						case 'string':
+							if ($.type(val) !== 'regexp') {
+								// patternにRegExpオブジェクト以外のものが指定されていたらエラー
+								pushErrorReason(SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_PATTERN,
+										schemaProp, p);
+							}
+							break;
+						default:
+							// type:'string'以外の項目にpatterが指定されていたらエラー
+							pushErrorReason(SCHEMA_ERR_DETAIL_TYPE_CONSTRAINT, schemaProp, p,
+									typeObj.elmType);
+						}
+						break;
+					}
+				}
+
+				// constraintの中身に矛盾がないかどうかチェック
+				if (constraint.notEmpty && constraint.maxLength === 0) {
+					// notNullなのにmanLengthが0
+					pushErrorReason(SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT, schemaProp, 'notEmpty',
+							'maxLength');
+				}
+				if (constraint.min != null && constraint.max != null
+						&& constraint.min > constraint.max) {
+					// min > max
+					pushErrorReason(SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT, schemaProp, 'min', 'max');
+				}
+				if (constraint.minLength != null && constraint.maxLength != null
+						&& constraint.minLength > constraint.maxLength) {
+					// minLength > maxLength
+					pushErrorReason(SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT, schemaProp, 'minLength',
+							'maxLength');
+				}
+			}
+			/**
+			 * enumValueのチェック
+			 * <ul>
+			 * <li>typeがenumであること
+			 * <li>正しい配列が指定されていること
+			 * </ul>
+			 *
+			 * @param constraint
+			 * @param typeObj
+			 */
+			function checkEnumValue(enumValue, typeObj) {
+				if (enumValue == null) {
+					return;
+				}
+				if (typeObj.elmType !== 'enum') {
+					// type指定がenumでないならエラー
+					pushErrorReason(SCHEMA_ERR_DETAIL_ENUMVALUE_TYPE, schemaProp);
+				}
+				if (!$.isArray(enumValue) || enumValue.length === 0
+						|| $.inArray(null, enumValue) > -1 || $.inArray(undefined, enumValue) > -1) {
+					// 配列でない、または空配列、null,undefinedを含む配列ならエラー
+					pushErrorReason(SCHEMA_ERR_DETAIL_INVALID_ENUMVALUE, schemaProp);
+				}
+			}
+			/**
+			 * defaultValueのチェック
+			 * <ul>
+			 * <li>id:trueの項目ではないこと
+			 * </ul>
+			 * <p>
+			 * defaultValueの中身は見ない。typeやconstraintの条件を満たしているかのチェックはここでは行わない。
+			 * また、depend指定されている項目にdefaultValueが指定されている場合はdependのチェック時にエラーにしている。
+			 * </p>
+			 */
+			function checkDefaultValue(propObj) {
+				if (isId && propObj.hasOwnProperty('defaultValue')) {
+					// id項目にdefaultValueが設定されていたらエラー
+					pushErrorReason(SCHEMA_ERR_DETAIL_DEFAULTVALUE_ID, schemaProp);
+
+				}
+			}
+
+			// schemaのそれぞれのプロパティをチェックする
 			for ( var schemaProp in schema) {
 				// null(またはundefined)がプロパティオブジェクトに指定されていたら、空オブジェクトと同等に扱い、エラーにしない。
 				var propObj = schema[schemaProp] == null ? {} : schema[schemaProp];
-				// idの時は特別にチェック(idにはdependが指定できない、typeが指定できない等)する項目があるのでそのフラグ
-				// ObservableItemの時は関係ない。
+				// idの時は特別にチェック(idにはdependが指定できない、typeが指定できない等)する項目があるのでそのフラグを立てる。
+				// ObservableItemの時はidは関係ないのでfalse
 				var isId = isDataModelSchema && !!propObj.id;
 
 				// プロパティ名が適切なものかどうかチェック
 				if (!isValidNamespaceIdentifier(schemaProp)) {
-					errorReason.push(createItemDescErrorReason(
-							SCHEMA_ERR_DETAIL_INVALID_PROPERTY_NAME, schemaProp));
-					if (stopOnError) {
-						throw null;
-					}
+					pushErrorReason(SCHEMA_ERR_DETAIL_INVALID_PROPERTY_NAME, schemaProp);
 				}
 
-				// -- dependのチェック --
-				// defaultValueが指定されていたらエラー
-				// onに指定されているプロパティがschema内に存在すること
-				var depend = propObj.depend;
-				if (depend != null) {
-					// id指定されているならエラー
-					if (isId) {
-						errorReason.push(createItemDescErrorReason(SCHEMA_ERR_DETAIL_ID_DEPEND,
-								schemaProp));
-						if (stopOnError) {
-							throw null;
-						}
-					}
+				// dependのチェック
+				checkDepend(propObj.depend);
 
-					// defaultValueが指定されているならエラー
-					if (propObj.hasOwnProperty('defaultValue')) {
-						errorReason.push(createItemDescErrorReason(
-								SCHEMA_ERR_DETAIL_DEFAULTVALUE_DEPEND, schemaProp));
-						if (stopOnError) {
-							throw null;
-						}
-					}
+				// typeのチェック
+				checkType(propObj.type);
 
-					// dependが指定されているなら、onが指定されていること
-					if (depend.on == null) {
-						errorReason.push(createItemDescErrorReason(SCHEMA_ERR_DETAIL_DEPEND_ON,
-								schemaProp));
-						if (stopOnError) {
-							throw null;
-						}
-					} else {
-						var onArray = wrapInArray(depend.on);
-						for ( var i = 0, l = onArray.length; i < l; i++) {
-							if (!schema.hasOwnProperty(onArray[i])) {
-								errorReason.push(createItemDescErrorReason(
-										SCHEMA_ERR_DETAIL_DEPEND_ON, schemaProp));
-								if (stopOnError) {
-									throw null;
-								}
-								break;
-							}
-						}
-					}
-
-					// dependが指定されているなら、calcが指定されていること
-					if (typeof depend.calc !== 'function') {
-						errorReason.push(createItemDescErrorReason(SCHEMA_ERR_DETAIL_DEPEND_CALC,
-								schemaProp));
-						if (stopOnError) {
-							throw null;
-						}
-					}
-
-					// 後の循環参照チェックのため、depend.onを覚えておく
-					dependencyMap[schemaProp] = wrapInArray(depend.on);
-				}
-
-				// -- typeのチェック --
-				// typeに指定されている文字列は正しいか
-				// defaultValueとの矛盾はないか
-				// constraintにそのtypeで使えない指定がないか
-				// enumの時は、enumValueが指定されているか
-				var type = propObj.type;
-				if (isId && type == null) {
-					// id項目で、typeが指定されていない場合は、type:stringにする
-					type = 'string';
-				}
+				// typeObjの作成
 				var typeObj = {};
-				if (type != null) {
-					if (!isString(type)) {
-						errorReason.push(createItemDescErrorReason(SCHEMA_ERR_DETAIL_INVALID_TYPE,
-								schemaProp));
-						if (stopOnError) {
-							throw null;
-						}
-					} else {
-						if (isId && type !== 'string' && type !== 'integer') {
-							// id指定されているプロパティで、string,integer以外だった場合はエラー
-							errorReason.push(createItemDescErrorReason(SCHEMA_ERR_ID_TYPE,
-									schemaProp));
-							if (stopOnError) {
-								throw null;
-							}
-						}
-
-						// "string", "number[]", "@DataModel"... などの文字列をパースしてオブジェクトを生成する
-						// 正しくパースできなかった場合は空オブジェクトが返ってくる
-						typeObj = getTypeObjFromString(type);
-
-						if (!typeObj.elmType) {
-							// パースできない文字列が指定されていたらエラー
-							errorReason.push(createItemDescErrorReason(SCHEMA_ERR_DETAIL_TYPE,
-									schemaProp, type));
-							if (stopOnError) {
-								throw null;
-							}
-						} else {
-							// データモデルの場合
-							if (typeObj.dataModel) {
-								if (!isDataModelSchema) {
-									// データモデルをタイプに指定できるのはデータモデルのスキーマだけなのでエラー
-									errorReason.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_TYPE, schemaProp, typeObj.dataModel));
-									if (stopOnError) {
-										throw null;
-									}
-								}
-								if (!manager.models[typeObj.dataModel]) {
-									errorReason.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_TYPE_DATAMODEL, schemaProp,
-											typeObj.dataModel));
-									if (stopOnError) {
-										throw null;
-									}
-								}
-							}
-
-							// enumの場合
-							if (typeObj.elmType === 'enum') {
-								// enumValueが無ければエラー
-								if (propObj.enumValue == null) {
-									errorReason.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_TYPE_ENUM_NO_ENUMVALUE, schemaProp));
-									if (stopOnError) {
-										throw null;
-									}
-								}
-							}
-						}
-					}
+				// id項目で、typeが指定されていない場合は、type:stringにしてチェックする
+				var type = isId && type == null ? 'string' : propObj.type;
+				if (isString(type)) {
+					typeObj = getTypeObjFromString(type);
 				}
 
 				// constraintのチェック
-				// プロパティのチェック
-				// 値のチェック
-				// タイプと矛盾していないかのチェック
-				var constraintObj = propObj.constraint;
-				if (constraintObj != null) {
-					if (!$.isPlainObject(constraintObj)) {
-						// constraintがオブジェクトではない場合
-						errorReason.push(createItemDescErrorReason(
-								SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT, schemaProp));
-						if (stopOnError) {
-							throw null;
-						}
-					} else {
-						for ( var p in constraintObj) {
-							// constraintのプロパティの値とtype指定との整合チェック
-							var val = constraintObj[p];
-							if (val == null) {
-								continue;
-							}
-							switch (p) {
-							case 'notNull':
-								if (val !== true && val !== false) {
-									// notNullにtrueまたはfalse以外が指定されていたらエラー
-									errorReason.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_NOTNULL_NOTEMPTY,
-											schemaProp, p));
-									if (stopOnError) {
-										throw null;
-									}
-								} else if (isId && !val) {
-									// id項目にnotNull:falseが指定されていたらエラー
-									errorReason.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT_ID, schemaProp,
-											p, val));
-									if (stopOnError) {
-										throw null;
-									}
-								}
-								break;
-							case 'min':
-							case 'max':
-								switch (typeObj.elmType) {
-								case 'integer':
-									if (isString(val) || !isIntegerValue(val) || isStrictNaN(val)) {
-										// 整数値以外、NaNが指定されていたらエラー
-										errorReason.push(createItemDescErrorReason(
-												SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_MIN_MAX,
-												schemaProp, p));
-										if (stopOnError) {
-											throw null;
-										}
-									}
-									break;
-								case 'number':
-									if (isString(val) || isString(val) || !isNumberValue(val)
-											|| val === Infinity || val === -Infinity
-											|| isStrictNaN(val)) {
-										// 整数値以外、NaNが指定されていたらエラー
-										errorReason.push(createItemDescErrorReason(
-												SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_MIN_MAX,
-												schemaProp, p));
-										if (stopOnError) {
-											throw null;
-										}
-									}
-									break;
-								default:
-									// typeの指定とconstraintに不整合があったらエラー
-									errorReason.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_TYPE_CONSTRAINT, schemaProp, p,
-											typeObj.elmType));
-									if (stopOnError) {
-										throw null;
-									}
-								}
-								break;
-							case 'minLength':
-							case 'maxLength':
-								switch (typeObj.elmType) {
-								case 'string':
-									if (isString(val) || !isIntegerValue(val) || isStrictNaN(val)
-											|| val < 0) {
-										// typeの指定とconstraintに不整合があったらエラー
-										errorReason
-												.push(createItemDescErrorReason(
-														SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_MINLENGTH_MAXLENGTH,
-														schemaProp, p));
-										if (stopOnError) {
-											throw null;
-										}
-									} else if (isId && p === 'maxLength' && val === 0) {
-										// id項目にmaxLength: 0 が指定されていたらエラー
-										errorReason.push(createItemDescErrorReason(
-												SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT_ID,
-												schemaProp, p, val));
-										if (stopOnError) {
-											throw null;
-										}
-									}
-									break;
-								default:
-									// type:'string'以外の項目にmaxLength,minLengthが指定されていればエラー
-									errorReason.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_TYPE_CONSTRAINT, schemaProp, p,
-											typeObj.elmType));
-									if (stopOnError) {
-										throw null;
-									}
-								}
-								break;
-							case 'notEmpty':
-								switch (typeObj.elmType) {
-								case 'string':
-									if (val !== true && val !== false) {
-										// notEmptyにtrue,false以外の指定がされていたらエラー
-										errorReason
-												.push(createItemDescErrorReason(
-														SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_NOTNULL_NOTEMPTY,
-														schemaProp, p));
-										if (stopOnError) {
-											throw null;
-										}
-									} else if (isId && !val) {
-										// id項目にnotEmpty: false が指定されていたらエラー
-										errorReason.push(createItemDescErrorReason(
-												SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT_ID,
-												schemaProp, p, val));
-										if (stopOnError) {
-											throw null;
-										}
-									}
-									break;
-								default:
-									// type:'string'以外の項目にnotEmptyが指定されていたらエラー
-									errorReason.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_TYPE_CONSTRAINT, schemaProp, p,
-											typeObj.elmType));
-									if (stopOnError) {
-										throw null;
-									}
-								}
-								break;
-							case 'pattern':
-								switch (typeObj.elmType) {
-								case 'string':
-									if ($.type(val) !== 'regexp') {
-										// patternにRegExpオブジェクト以外のものが指定されていたらエラー
-										errorReason.push(createItemDescErrorReason(
-												SCHEMA_ERR_DETAIL_INVALID_CONSTRAINT_PATTERN,
-												schemaProp, p));
-										if (stopOnError) {
-											throw null;
-										}
-									}
-									break;
-								default:
-									// type:'string'以外の項目にpatterが指定されていたらエラー
-									errorReason.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_TYPE_CONSTRAINT, schemaProp, p,
-											typeObj.elmType));
-									if (stopOnError) {
-										throw null;
-									}
-								}
-								break;
-							}
-						}
-
-						// constraintの中身に矛盾がないかどうかチェック
-						if (constraintObj.notEmpty && constraintObj.maxLength === 0) {
-							// notNullなのにmanLengthが0
-							errorReason.push(createItemDescErrorReason(
-									SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT, schemaProp, 'notEmpty',
-									'maxLength'));
-							if (stopOnError) {
-								throw null;
-							}
-						}
-						if (constraintObj.min != null && constraintObj.max != null
-								&& constraintObj.min > constraintObj.max) {
-							// min > max
-							errorReason
-									.push(createItemDescErrorReason(
-											SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT, schemaProp,
-											'min', 'max'));
-							if (stopOnError) {
-								throw null;
-							}
-						}
-						if (constraintObj.minLength != null && constraintObj.maxLength != null
-								&& constraintObj.minLength > constraintObj.maxLength) {
-							// minLength > maxLength
-							errorReason.push(createItemDescErrorReason(
-									SCHEMA_ERR_DETAIL_CONSTRAINT_CONFLICT, schemaProp, 'minLength',
-									'maxLength'));
-							if (stopOnError) {
-								throw null;
-							}
-						}
-					}
-				}
+				checkConstraint(propObj.constraint, typeObj);
 
 				// enumValueのチェック
-				var enumValue = propObj.enumValue;
-				if (enumValue != null) {
-					if (typeObj.elmType !== 'enum') {
-						// type指定がenumでないならエラー
-						errorReason.push(createItemDescErrorReason(
-								SCHEMA_ERR_DETAIL_ENUMVALUE_TYPE, schemaProp));
-						if (stopOnError) {
-							throw null;
-						}
-					}
-					if (!$.isArray(enumValue) || enumValue.length === 0
-							|| $.inArray(null, enumValue) > -1
-							|| $.inArray(undefined, enumValue) > -1) {
-						// 配列でない、または空配列、null,undefinedを含む配列ならエラー
-						errorReason.push(createItemDescErrorReason(
-								SCHEMA_ERR_DETAIL_INVALID_ENUMVALUE, schemaProp));
-						if (stopOnError) {
-							throw null;
-						}
-					}
-				}
+				checkEnumValue(propObj.enumValue, typeObj);
 
 				// defaultValueのチェック
-				// defaultValueがtypeやconstraintの条件を満たしているかのチェックはここでは行わない
-				// id:trueの項目にdefaultValueが指定されていればここでエラーにする
-				// depend指定されている項目にdefaultValueが指定されている場合はエラー(dependのチェック時にエラーにしている)
-				if (isId && propObj.hasOwnProperty('defaultValue')) {
-					// id項目にdefaultValueが設定されていたらエラー
-					errorReason.push(createItemDescErrorReason(SCHEMA_ERR_DETAIL_DEFAULTVALUE_ID,
-							schemaProp));
-					if (stopOnError) {
-						throw null;
-					}
-				}
+				checkDefaultValue(propObj);
 			}
 
 			// depend.onの循環参照チェック
@@ -8699,11 +8694,7 @@ var h5internal = {
 			// （これ以前のチェックに引っかかっていたら、循環参照のチェックはしない）
 			for ( var prop in dependencyMap) {
 				if (checkDependCircularRef(prop, dependencyMap)) {
-					errorReason.push(createItemDescErrorReason(
-							SCHEMA_ERR_DETAIL_DEPEND_CIRCULAR_REF, prop));
-					if (stopOnError) {
-						throw null;
-					}
+					pushErrorReason(SCHEMA_ERR_DETAIL_DEPEND_CIRCULAR_REF, prop);
 				}
 			}
 		} catch (e) {
@@ -8742,11 +8733,7 @@ var h5internal = {
 				}
 				var defaultValue = propObj.defaultValue;
 				if (checkFuncs[p](defaultValue).length) {
-					errorReason.push(createItemDescErrorReason(
-							SCHEMA_ERR_DETAIL_INVALIDATE_DEFAULTVALUE, p, defaultValue));
-					if (stopOnError) {
-						throw null;
-					}
+					pushErrorReason(SCHEMA_ERR_DETAIL_INVALIDATE_DEFAULTVALUE, p, defaultValue);
 				}
 			}
 			return true;
@@ -8987,7 +8974,7 @@ var h5internal = {
 			function _checkValue(v, d) {
 				if (!d) {
 					// チェック関数を順番に適用して、falseが返ってきたらチェック終了してfalseを返す
-					for ( var i = 0, l = funcs.length; i < l; i++) {
+					for (var i = 0, l = funcs.length; i < l; i++) {
 						var result = funcs[i](v, isStrict);
 						if (result.length) {
 							errorReason = errorReason.concat(result);
@@ -9007,7 +8994,7 @@ var h5internal = {
 					});
 					return false;
 				}
-				for ( var i = 0, l = v.length; i < l; i++) {
+				for (var i = 0, l = v.length; i < l; i++) {
 					// 配列の各要素について、次元を一つ減らして再帰的にチェックする
 					if (!_checkValue(v[i], d - 1)) {
 						return false;
@@ -9032,7 +9019,7 @@ var h5internal = {
 	 * @private
 	 * @param {DataItem|ObservableItem} item
 	 * @param {Object} schema スキーマ
-	 * @param {Object} schemaInfo  チェック済みスキーマ
+	 * @param {Object} schemaInfo チェック済みスキーマ
 	 * @param {Object} userInitialValue 初期値としてsetする値が格納されたオブジェクト
 	 */
 	function initItem(item, schema, schemaInfo, userInitialValue) {
@@ -9167,7 +9154,7 @@ var h5internal = {
 		 */
 		function isReady(dependProp) {
 			var deps = wrapInArray(schema[dependProp].depend.on);
-			for ( var i = 0, len = deps.length; i < len; i++) {
+			for (var i = 0, len = deps.length; i < len; i++) {
 				if ($.inArray(deps[i], item._realProperty) === -1
 						&& $.inArray(deps[i], targets) !== -1) {
 					// 依存先が実プロパティでなく、未計算のプロパティであればfalseを返す
@@ -9181,14 +9168,14 @@ var h5internal = {
 		 * changedPropsで指定されたプロパティに依存するプロパティをtargetArrayに追加する
 		 */
 		function addDependencies(targetArray, srcProps) {
-			for ( var i = 0, len = srcProps.length; i < len; i++) {
+			for (var i = 0, len = srcProps.length; i < len; i++) {
 				var depends = dependsMap[srcProps[i]];
 
 				if (!depends) {
 					continue;
 				}
 
-				for ( var j = 0, jlen = depends.length; j < jlen; j++) {
+				for (var j = 0, jlen = depends.length; j < jlen; j++) {
 					var dprop = depends[j];
 					if ($.inArray(dprop, targetArray) === -1) {
 						targetArray.push(dprop);
@@ -9212,7 +9199,7 @@ var h5internal = {
 			var restTargets = [];
 
 			//各依存プロパティについて、計算可能（依存するすべてのプロパティが計算済み）なら計算する
-			for ( var i = 0, len = targets.length; i < len; i++) {
+			for (var i = 0, len = targets.length; i < len; i++) {
 				var dp = targets[i];
 
 				if (isReady(dp)) {
@@ -9357,7 +9344,7 @@ var h5internal = {
 			if (newValue != null && type && type.match(/number|integer/)
 					&& typeof newValue !== 'number') {
 				if ($.isArray(newValue) || h5.core.data.isObservableArray(newValue)) {
-					for ( var i = 0, l = newValue.length; i < l; i++) {
+					for (var i = 0, l = newValue.length; i < l; i++) {
 						// スパースな配列の場合、undefinedが入っている可能性があるので、!= で比較
 						// parseFloatできる値(isNumberValueに渡してtrueになる値)ならparseFloatする
 						if (newValue[i] != null && isNumberValue(newValue[i])) {
@@ -9405,7 +9392,7 @@ var h5internal = {
 		var changedPropNameArray = [];
 
 		//値の変更が起こる全てのプロパティについて整合性チェックが通ったら、実際に値を代入する
-		for ( var i = 0, len = readyProps.length; i < len; i++) {
+		for (var i = 0, len = readyProps.length; i < len; i++) {
 			var readyProp = readyProps[i];
 
 			//TODO 判定文改良
@@ -9474,7 +9461,7 @@ var h5internal = {
 
 		var modelLogs = getModelUpdateLogObj(model);
 
-		for ( var i = 0, len = items.length; i < len; i++) {
+		for (var i = 0, len = items.length; i < len; i++) {
 			var item = items[i];
 			var itemId = item._values[model._idKey];
 
@@ -9569,7 +9556,7 @@ var h5internal = {
 				var dependency = schema[prop] ? schema[prop].depend : null;
 				if (dependency) {
 					var dependOn = wrapInArray(dependency.on);
-					for ( var i = 0, len = dependOn.length; i < len; i++) {
+					for (var i = 0, len = dependOn.length; i < len; i++) {
 						var dependSrcPropName = dependOn[i];
 
 						if (!dependencyMap[dependSrcPropName]) {
@@ -9659,7 +9646,7 @@ var h5internal = {
 		var namesInDescriptors = [];
 		// 依存関係のチェック
 		// 要素がオブジェクトであり、name、schemaプロパティを持っていない場合はcatch節で、ディスクリプタのエラーを投げる
-		for ( var i = 0; i < l; i++) {
+		for (var i = 0; i < l; i++) {
 
 			// 既に同名のモデルがあるかどうかチェックし、それらは新規登録しない
 			var name = descriptor[i].name;
@@ -9708,10 +9695,10 @@ var h5internal = {
 			var registed = false;
 
 			// descriptorでループさせて、依存関係が解決された居たらデータモデルを登録
-			for ( var i = 0; i < l; i++) {
+			for (var i = 0; i < l; i++) {
 				if (!dependMap[i].registed) {
 					var depends = dependMap[i].depends;
-					for ( var j = 0, len = depends.length; j < len; j++) {
+					for (var j = 0, len = depends.length; j < len; j++) {
 						if (!this.models[depends[j]]) {
 							noExistModels[depends[j]] = true;
 							break;
@@ -9745,7 +9732,7 @@ var h5internal = {
 			}
 		}
 		var retAry = [];
-		for ( var i = 0; i < l; i++) {
+		for (var i = 0; i < l; i++) {
 			retAry.push(retObj[i]);
 		}
 		return retAry;
@@ -10074,7 +10061,7 @@ var h5internal = {
 			return false;
 		}
 
-		for ( var i = 0, count = l.length; i < count; i++) {
+		for (var i = 0, count = l.length; i < count; i++) {
 			if (l[i] === listener) {
 				return true;
 			}
@@ -10089,6 +10076,10 @@ var h5internal = {
 	 * 第一引数にイベント名、第二引数にイベントリスナを渡し、イベントリスナを登録します。指定したイベントが起こった時にイベントリスナが実行されます。
 	 * </p>
 	 * <p>
+	 * イベントリスナは、関数または<a
+	 * href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-EventListener">EventListener</a>
+	 * インタフェースを実装するオブジェクト(handleEventプロパティに関数を持つオブジェクト)で指定できます。
+	 * <p>
 	 * 指定したイベントに、指定したイベントリスナが既に登録されていた場合は何もしません。
 	 * </p>
 	 * <p>
@@ -10098,14 +10089,17 @@ var h5internal = {
 	 * @since 1.1.0
 	 * @memberOf EventDispatcher
 	 * @param {String} type イベント名
-	 * @param {Function} listener イベントリスナ
+	 * @param {Function|Object} listener イベントリスナまたはhandleEventを持つイベントリスナオブジェクト
 	 */
 	EventDispatcher.prototype.addEventListener = function(type, listener) {
 		// 引数チェック
-		if (arguments.length !== 2 || !isString(type) || !$.isFunction(listener)) {
+		// typeは文字列で、第2引数まで指定されていることをチェックする
+		// listenerが関数またはイベントリスナオブジェクトかどうかは、実行時に判定し、関数でもイベントリスナオブジェクトでもない場合は実行しない
+		if (arguments.length !== 2 || !isString(type)) {
 			throwFwError(ERR_CODE_INVALID_ARGS_ADDEVENTLISTENER);
 		}
-		if (this.hasEventListener(type, listener)) {
+		if (listener == null || this.hasEventListener(type, listener)) {
+			// nullまたはundefinedが指定されている、または既に登録済みのイベントリスナなら何もしない
 			return;
 		}
 
@@ -10141,7 +10135,7 @@ var h5internal = {
 
 		var l = this.__listeners[type];
 
-		for ( var i = 0, count = l.length; i < count; i++) {
+		for (var i = 0, count = l.length; i < count; i++) {
 			if (l[i] === listener) {
 				l.splice(i, 1);
 				return;
@@ -10189,8 +10183,14 @@ var h5internal = {
 		};
 
 		// リスナーを実行。stopImmediatePropagationが呼ばれていたらそこでループを終了する。
-		for ( var i = 0, count = l.length; i < count && !isImmediatePropagationStopped; i++) {
-			l[i].call(event.target, event);
+		for (var i = 0, count = l.length; i < count && !isImmediatePropagationStopped; i++) {
+			if ($.isFunction(l[i])) {
+				l[i].call(event.target, event);
+			} else if (l[i].handleEvent) {
+				// イベントリスナオブジェクトの場合はhandleEventを呼ぶ
+				// handleEvent内のコンテキストはイベントリスナオブジェクトなので、callは使わずにそのまま呼び出す
+				l[i].handleEvent(event);
+			}
 		}
 
 		return isDefaultPrevented;
@@ -10408,7 +10408,7 @@ var h5internal = {
 			this._oldValueLogs = null;
 
 			function getFirstCRLog(itemLogs, lastPos) {
-				for ( var i = 0; i < lastPos; i++) {
+				for (var i = 0; i < lastPos; i++) {
 					var type = itemLogs[i].type;
 					if ((type === UPDATE_LOG_TYPE_CREATE || type === UPDATE_LOG_TYPE_REMOVE)) {
 						return itemLogs[i];
@@ -10433,7 +10433,7 @@ var h5internal = {
 					var changeEventStack = [];
 
 					//新しい変更が後ろに入っているので、降順で履歴をチェックする
-					for ( var i = itemLogs.length - 1; i >= 0; i--) {
+					for (var i = itemLogs.length - 1; i >= 0; i--) {
 						var log = itemLogs[i]; //あるitemについてのログ
 						var logType = log.type; //当該ログの種類
 
@@ -10510,7 +10510,7 @@ var h5internal = {
 					if (isChangeOnly && changeEventStack.length > 0) {
 						var mergedProps = {};
 						//changeEventStackはより「古い」イベントが「後ろ」に入っている。
-						for ( var i = changeEventStack.length - 1; i >= 0; i--) {
+						for (var i = changeEventStack.length - 1; i >= 0; i--) {
 							for ( var p in changeEventStack[i].props) {
 								if (!mergedProps[p]) {
 									// oldValueのセット
@@ -10886,7 +10886,7 @@ var h5internal = {
 			var items = wrapInArray(objOrArray);
 			var ret = [];
 			var idKey = this._idKey;
-			for ( var i = 0, len = items.length; i < len; i++) {
+			for (var i = 0, len = items.length; i < len; i++) {
 				var valueObj = items[i];
 				var itemId = valueObj[idKey];
 
@@ -10972,7 +10972,7 @@ var h5internal = {
 					throwFwError(ERR_CODE_INVALID_CREATE_ARGS);
 				}
 				if (asCreate) {
-					for ( var i = 0, len = items.length; i < len; i++) {
+					for (var i = 0, len = items.length; i < len; i++) {
 						var valueObj = items[i];
 						var itemId = valueObj[idKey];
 						//idが空文字、null、undefined、はid指定エラー
@@ -10982,12 +10982,12 @@ var h5internal = {
 
 						// validateする
 						// 新規作成時のチェックなら初期値をセットしてからチェックを実行
-						obj = this._schemaInfo._createInitialValueObj(valueObj);
+						var obj = this._schemaInfo._createInitialValueObj(valueObj);
 						validateValueObj(this.schema, this._schemaInfo._validateItemValue, obj,
 								this);
 					}
 				} else {
-					for ( var i = 0, l = items.length; i < l; i++) {
+					for (var i = 0, l = items.length; i < l; i++) {
 						var valueObj = items[i];
 						validateValueObj(this.schema, this._schemaInfo._validateItemValue,
 								valueObj, this);
@@ -11017,7 +11017,7 @@ var h5internal = {
 		get: function(idOrArray) {
 			if ($.isArray(idOrArray) || h5.core.data.isObservableArray(idOrArray)) {
 				var ret = [];
-				for ( var i = 0, len = idOrArray.length; i < len; i++) {
+				for (var i = 0, len = idOrArray.length; i < len; i++) {
 					ret.push(this._findById(idOrArray[i]));
 				}
 				return ret;
@@ -11059,7 +11059,7 @@ var h5internal = {
 			var actualRemovedItems = [];
 			var ret = [];
 
-			for ( var i = 0, len = ids.length; i < len; i++) {
+			for (var i = 0, len = ids.length; i < len; i++) {
 				if (!this.has(ids[i])) {
 					//指定されたアイテムが存在しない場合はnull
 					ret.push(null);
@@ -11255,7 +11255,7 @@ var h5internal = {
 			var arrayProps = schemaInfo._aryProps;
 
 			// ObservableArrayのイベントリスナの設定を行う
-			for ( var i = 0, l = arrayProps.length; i < l; i++) {
+			for (var i = 0, l = arrayProps.length; i < l; i++) {
 				setObservableArrayListeners(this, arrayProps[i], this.get(arrayProps[i]), model);
 			}
 		}
@@ -11395,7 +11395,7 @@ var h5internal = {
 		itemSetter(obsItem, actualInitialValue, null, true);
 
 		// ObservableArrayのアイテムについてリスナの設定
-		for ( var i = 0, l = obsItem._aryProps.length; i < l; i++) {
+		for (var i = 0, l = obsItem._aryProps.length; i < l; i++) {
 			setObservableArrayListeners(obsItem, obsItem._aryProps[i], obsItem
 					.get(obsItem._aryProps[i]));
 		}
@@ -11484,7 +11484,7 @@ var h5internal = {
 			var target = isObservableArray(ary) ? ary._src : ary;
 
 			// 中身の比較
-			for ( var i = 0; i < len; i++) {
+			for (var i = 0; i < len; i++) {
 				var myVal = this[i];
 				var targetVal = target[i];
 
@@ -11568,7 +11568,7 @@ var h5internal = {
 		 */
 		concat: function() {
 			var args = h5.u.obj.argsToArray(arguments);
-			for ( var i = 0, len = args.length; i < len; i++) {
+			for (var i = 0, len = args.length; i < len; i++) {
 				if (isObservableArray(args[i])) {
 					args[i] = args[i].toArray();
 				}
@@ -11598,7 +11598,7 @@ var h5internal = {
 	var destructiveMethods = ['sort', 'reverse', 'pop', 'shift', 'unshift', 'push', 'splice',
 			'copyFrom', 'set'];
 
-	for ( var i = 0, len = arrayMethods.length; i < len; i++) {
+	for (var i = 0, len = arrayMethods.length; i < len; i++) {
 		var arrayMethod = arrayMethods[i];
 		ObservableArray.prototype[arrayMethod] = (function(method) {
 			var func = obsFuncs[method] ? obsFuncs[method] : Array.prototype[method];
@@ -11862,7 +11862,7 @@ var h5internal = {
 		}
 
 		var ret = [];
-		for ( var i = 0, len = pseudoArray.length; i < len; i++) {
+		for (var i = 0, len = pseudoArray.length; i < len; i++) {
 			ret.push(pseudoArray[i]);
 		}
 		return ret;
@@ -11893,7 +11893,7 @@ var h5internal = {
 
 		//ルートノードを含めない場合は、子要素をそれぞれルートにして処理
 		var childNodes = rootNode.childNodes;
-		for ( var i = 0, len = childNodes.length; i < len; i++) {
+		for (var i = 0, len = childNodes.length; i < len; i++) {
 			queryQualifiedElementsInner(ret, childNodes[i], attrArray, value);
 		}
 		return ret;
@@ -11904,7 +11904,7 @@ var h5internal = {
 			return;
 		}
 
-		for ( var i = 0, len = attrs.length; i < len; i++) {
+		for (var i = 0, len = attrs.length; i < len; i++) {
 			var attrValue = rootNode.getAttribute(attrs[i]);
 			if (value === undefined) {
 				if (attrValue !== null) {
@@ -11924,7 +11924,7 @@ var h5internal = {
 
 		if (rootNode.childNodes.length > 0) {
 			var childNodes = rootNode.childNodes;
-			for ( var i = 0, len = childNodes.length; i < len; i++) {
+			for (var i = 0, len = childNodes.length; i < len; i++) {
 				queryQualifiedElementsInner(ret, childNodes[i], attrs, value);
 			}
 		}
@@ -11941,7 +11941,7 @@ var h5internal = {
 
 		var bindElements = [];
 
-		for ( var i = 0, len = rootNodes.length; i < len; i++) {
+		for (var i = 0, len = rootNodes.length; i < len; i++) {
 			var rootNode = rootNodes[i];
 
 			//ルート要素がエレメントでない場合は何もしない
@@ -11959,10 +11959,10 @@ var h5internal = {
 			}
 
 			var candidateBindElems = queryQualifiedElements(rootNode, DATA_H5_BIND, undefined, true);
-			for ( var j = 0, cndBindElemsLen = candidateBindElems.length; j < cndBindElemsLen; j++) {
+			for (var j = 0, cndBindElemsLen = candidateBindElems.length; j < cndBindElemsLen; j++) {
 				var isInCurrentContext = true;
 
-				for ( var node = candidateBindElems[j]; node != null; node = node.parentNode) {
+				for (var node = candidateBindElems[j]; node != null; node = node.parentNode) {
 					if (node === rootNode) {
 						break;
 					}
@@ -11989,7 +11989,7 @@ var h5internal = {
 	function $getChildContexts(rootNodes, dataContextAttr, isMultiRoot) {
 		var childContexts = [];
 
-		for ( var i = 0, len = rootNodes.length; i < len; i++) {
+		for (var i = 0, len = rootNodes.length; i < len; i++) {
 			var rootNode = rootNodes[i];
 
 			//ルート要素がエレメントでない場合は別のコンテキストである可能性はない
@@ -12015,7 +12015,7 @@ var h5internal = {
 
 			var candidateContextElems = queryQualifiedElements(rootNode, dataContextAttr,
 					undefined, false);
-			for ( var j = 0, cndCtxElemsLen = candidateContextElems.length; j < cndCtxElemsLen; j++) {
+			for (var j = 0, cndCtxElemsLen = candidateContextElems.length; j < cndCtxElemsLen; j++) {
 				// jQuery1.10.1で、ポップアップウィンドウ先の要素をセレクタで取得すると、jQuery内部(setDocument箇所)でエラーになる
 				// jQuery1.10.1でのエラー回避のためjQueryを使わないで親ノードを取得している
 				var contextElem = $(candidateContextElems[j])[0];
@@ -12043,7 +12043,7 @@ var h5internal = {
 	}
 
 	function addViewUid(rootNodes, viewUid) {
-		for ( var i = 0, len = rootNodes.length; i < len; i++) {
+		for (var i = 0, len = rootNodes.length; i < len; i++) {
 			var n = rootNodes[i];
 			if (n.nodeType === NODE_TYPE_ELEMENT) {
 				setElemAttribute(n, DATA_H5_DYN_VID, viewUid);
@@ -12110,11 +12110,11 @@ var h5internal = {
 			return context[idx];
 		};
 
-		for ( var i = 0, len = context.length; i < len; i++) {
+		for (var i = 0, len = context.length; i < len; i++) {
 			var loopNodes = [];
 
 			//1要素分のノードのクローンを作成
-			for ( var j = 0, childLen = srcRootChildNodes.length; j < childLen; j++) {
+			for (var j = 0, childLen = srcRootChildNodes.length; j < childLen; j++) {
 				var clonedInnerNode = cloneNodeDeeply(srcRootChildNodes[j]); //deep copy
 
 				loopNodes.push(clonedInnerNode);
@@ -12241,7 +12241,7 @@ var h5internal = {
 		var targetDetail = [];
 		var prop = [];
 
-		for ( var i = 0, len = splitDescs.length; i < len; i++) {
+		for (var i = 0, len = splitDescs.length; i < len; i++) {
 			var desc = splitDescs[i];
 			if (desc.indexOf(BIND_DESC_TARGET_SEPARATOR) === -1) {
 				var trimmed = $.trim(desc);
@@ -12295,7 +12295,7 @@ var h5internal = {
 		var $element = $(element);
 
 		//targetsとpropsのlengthは必ず同じ
-		for ( var i = 0, len = targets.length; i < len; i++) {
+		for (var i = 0, len = targets.length; i < len; i++) {
 			var target = targets[i];
 			var detail = details[i];
 			var prop = props[i];
@@ -12376,7 +12376,7 @@ var h5internal = {
 	 * 指定されたノードをDOMツリーから削除し、同時にアンバインドします。
 	 */
 	function removeDomNodes(binding, parent, nodesToRemove) {
-		for ( var i = 0, len = nodesToRemove.length; i < len; i++) {
+		for (var i = 0, len = nodesToRemove.length; i < len; i++) {
 			var n = nodesToRemove[i];
 			parent.removeChild(n);
 			binding._removeBinding(n);
@@ -12387,7 +12387,7 @@ var h5internal = {
 		var childNodes = parentNode.childNodes;
 		var ret = [];
 
-		for ( var i = 0, len = childNodes.length; i < len; i++) {
+		for (var i = 0, len = childNodes.length; i < len; i++) {
 			ret.push(cloneNodeDeeply(childNodes[i]));
 		}
 
@@ -12401,11 +12401,11 @@ var h5internal = {
 		var fragment = srcCtxRootNode.ownerDocument.createDocumentFragment();
 
 		var newLoopNodes = [];
-		for ( var i = 0, argsLen = methodArgs.length; i < argsLen; i++) {
+		for (var i = 0, argsLen = methodArgs.length; i < argsLen; i++) {
 			var newChildNodes = cloneChildNodes(srcCtxRootNode);
 			newLoopNodes[i] = newChildNodes;
 
-			for ( var j = 0, newChildNodesLen = newChildNodes.length; j < newChildNodesLen; j++) {
+			for (var j = 0, newChildNodesLen = newChildNodes.length; j < newChildNodesLen; j++) {
 				fragment.appendChild(newChildNodes[j]);
 			}
 
@@ -12426,9 +12426,9 @@ var h5internal = {
 		}
 
 		//配列要素をリバースしたのと同等になるようにノードを再挿入する
-		for ( var i = 0, len = loopNodes.length; i < len; i++) {
+		for (var i = 0, len = loopNodes.length; i < len; i++) {
 			var nodesPerIndex = loopNodes[i];
-			for ( var j = nodesPerIndex.length - 1; j >= 0; j--) {
+			for (var j = nodesPerIndex.length - 1; j >= 0; j--) {
 				parent.insertBefore(nodesPerIndex[j], parent.firstChild);
 			}
 		}
@@ -12500,10 +12500,10 @@ var h5internal = {
 		var spliceArgs = [startPos, 0];
 
 		//新たに挿入される要素に対応するノードを生成
-		for ( var i = 2, len = methodArgsLen; i < len; i++) {
+		for (var i = 2, len = methodArgsLen; i < len; i++) {
 			var newChildNodes = cloneChildNodes(srcCtxRootNode);
 
-			for ( var j = 0, newChildNodesLen = newChildNodes.length; j < newChildNodesLen; j++) {
+			for (var j = 0, newChildNodesLen = newChildNodes.length; j < newChildNodesLen; j++) {
 				fragment.appendChild(newChildNodes[j]);
 			}
 
@@ -12524,7 +12524,7 @@ var h5internal = {
 	 */
 	function refreshLoopContext(binding, srcArray, loopRootNode, loopNodes, srcCtxNode) {
 		//現在のビューのすべての要素を外す
-		for ( var i = 0, len = loopNodes.length; i < len; i++) {
+		for (var i = 0, len = loopNodes.length; i < len; i++) {
 			removeDomNodes(binding, loopRootNode, loopNodes[i]);
 		}
 
@@ -12536,11 +12536,11 @@ var h5internal = {
 		var fragment = loopRootNode.ownerDocument.createDocumentFragment();
 
 		var newLoopNodes = [];
-		for ( var i = 0, srcLen = srcArray.length; i < srcLen; i++) {
+		for (var i = 0, srcLen = srcArray.length; i < srcLen; i++) {
 			var newChildNodes = cloneChildNodes(srcCtxNode);
 			newLoopNodes[i] = newChildNodes;
 
-			for ( var j = 0, newChildNodesLen = newChildNodes.length; j < newChildNodesLen; j++) {
+			for (var j = 0, newChildNodesLen = newChildNodes.length; j < newChildNodesLen; j++) {
 				fragment.appendChild(newChildNodes[j]);
 			}
 
@@ -12680,7 +12680,7 @@ var h5internal = {
 
 		//this._targetsは常に配列
 		//初期状態のビューに、コンテキストごとに固有のIDを振っておく
-		for ( var i = 0, targetsLen = this._targets.length; i < targetsLen; i++) {
+		for (var i = 0, targetsLen = this._targets.length; i < targetsLen; i++) {
 			var originalNode = this._targets[i];
 
 			if (originalNode.nodeType === NODE_TYPE_ELEMENT) {
@@ -12690,14 +12690,14 @@ var h5internal = {
 				//data-context, data-loop-contextを持つ要素にIDを付与して、オリジナルの要素を探せるようにする
 				var originalContextElems = queryQualifiedElements(originalNode, [DATA_H5_CONTEXT,
 						DATA_H5_LOOP_CONTEXT], undefined, true);
-				for ( var j = 0, orgCtxElemsLen = originalContextElems.length; j < orgCtxElemsLen; j++) {
+				for (var j = 0, orgCtxElemsLen = originalContextElems.length; j < orgCtxElemsLen; j++) {
 					setElemAttribute(originalContextElems[j], DATA_H5_DYN_CTX, contextUid++);
 				}
 
 				//data-h5-bindでclassバインドしている場合、オリジナルのclassNameを保存しておく（記述されている場合のみ）
 				var originalBindElems = queryQualifiedElements(originalNode, DATA_H5_BIND,
 						undefined, true);
-				for ( var j = 0, orgBindElemsLen = originalBindElems.length; j < orgBindElemsLen; j++) {
+				for (var j = 0, orgBindElemsLen = originalBindElems.length; j < orgBindElemsLen; j++) {
 					var originalBindElem = originalBindElems[j];
 					if (hasClassBinding(getElemAttribute(originalBindElem, DATA_H5_BIND))
 							&& originalBindElem.className != '') {
@@ -12778,7 +12778,7 @@ var h5internal = {
 		 */
 		unbind: function() {
 			//全てのバインディングを解除
-			for ( var i = 0, len = this._targets.length; i < len; i++) {
+			for (var i = 0, len = this._targets.length; i < len; i++) {
 				var target = this._targets[i];
 
 				if (target.nodeType === NODE_TYPE_ELEMENT) {
@@ -12789,12 +12789,12 @@ var h5internal = {
 					removeElemAttribute(target, DATA_H5_DYN_BIND_ROOT);
 
 					var cnElems = queryQualifiedElements(target, DATA_H5_DYN_CN, undefined, true);
-					for ( var j = 0, cnLen = cnElems.length; j < cnLen; j++) {
+					for (var j = 0, cnLen = cnElems.length; j < cnLen; j++) {
 						removeElemAttribute(cnElems[j], DATA_H5_DYN_CN);
 					}
 
 					var cxElems = queryQualifiedElements(target, DATA_H5_DYN_CTX, undefined, true);
-					for ( var j = 0, cxLen = cxElems.length; j < cxLen; j++) {
+					for (var j = 0, cxLen = cxElems.length; j < cxLen; j++) {
 						removeElemAttribute(cxElems[j], DATA_H5_DYN_CTX);
 					}
 				}
@@ -12954,7 +12954,7 @@ var h5internal = {
 		 * @param ctxId
 		 */
 		_getSrcCtxNode: function(ctxId) {
-			for ( var i = 0, len = this._srces.length; i < len; i++) {
+			for (var i = 0, len = this._srces.length; i < len; i++) {
 				var src = this._srces[i];
 
 				//ルート要素にdata-dyn-ctxがついているかチェック
@@ -13127,7 +13127,7 @@ var h5internal = {
 
 			//子孫要素のバインディングエントリを削除
 			var vidElems = queryQualifiedElements(rootElem, DATA_H5_DYN_VID);
-			for ( var i = 0, len = vidElems.length; i < len; i++) {
+			for (var i = 0, len = vidElems.length; i < len; i++) {
 				var vidElem = vidElems[i];
 				this._removeBindingEntry(getElemAttribute(vidElem, DATA_H5_DYN_VID));
 				removeElemAttribute(vidElem, DATA_H5_DYN_VID);
@@ -13384,7 +13384,7 @@ var h5internal = {
 			if (!isOnlyUrls) {
 				delete this.cache[url];
 			}
-			for ( var i = 0, len = this.cacheUrls.length; i < len; i++) {
+			for (var i = 0, len = this.cacheUrls.length; i < len; i++) {
 				if (this.cacheUrls[i] === url) {
 					this.cacheUrls.splice(i, 1);
 					break;
@@ -13546,7 +13546,7 @@ var h5internal = {
 			}
 
 			// キャッシュにあればそれを結果に格納し、なければajaxで取得する。
-			for ( var i = 0; i < resourcePaths.length; i++) {
+			for (var i = 0; i < resourcePaths.length; i++) {
 				var path = resourcePaths[i];
 				var absolutePath = toAbsoluteUrl(path);
 
@@ -13576,7 +13576,7 @@ var h5internal = {
 				var args = h5.u.obj.argsToArray(arguments);
 
 				// loadされたものを、キャッシュから持ってきたものとマージする
-				for ( var i = 0, l = args.length; i < l; i++) {
+				for (var i = 0, l = args.length; i < l; i++) {
 					$.extend(ret, args[i].ret);
 					datas.push(args[i].data);
 				}
@@ -13661,7 +13661,7 @@ var h5internal = {
 				if (paths.length === 0) {
 					throwFwError(ERR_CODE_INVALID_FILE_PATH);
 				}
-				for ( var i = 0, len = paths.length; i < len; i++) {
+				for (var i = 0, len = paths.length; i < len; i++) {
 					if (!isString(paths[i])) {
 						throwFwError(ERR_CODE_INVALID_FILE_PATH);
 					} else if (!$.trim(paths[i])) {
@@ -13910,7 +13910,7 @@ var h5internal = {
 				throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
 			}
 
-			for ( var i = 0, len = templateIdsArray.length; i < len; i++) {
+			for (var i = 0, len = templateIdsArray.length; i < len; i++) {
 				var id = templateIdsArray[i];
 				if (!isString(id) || !$.trim(id)) {
 					throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
@@ -13922,7 +13922,7 @@ var h5internal = {
 				/* del end */
 			}
 
-			for ( var i = 0, len = templateIdsArray.length; i < len; i++) {
+			for (var i = 0, len = templateIdsArray.length; i < len; i++) {
 				delete this.__cachedTemplates[templateIdsArray[i]];
 			}
 		},
@@ -14150,7 +14150,6 @@ var h5internal = {
 	// Cache
 	//
 	// =========================================================================
-
 	var h5ua = h5.env.ua;
 	var isJQueryObject = h5.u.obj.isJQueryObject;
 	var argsToArray = h5.u.obj.argsToArray;
@@ -14301,7 +14300,7 @@ var h5internal = {
 			propCamel = propCamel.charAt(0).toUpperCase() + propCamel.slice(1);
 
 			// ベンダープレフィックスありでサポートしているか判定
-			for ( var i = 0; i < len; i++) {
+			for (var i = 0; i < len; i++) {
 				if (prefixes[i] + propCamel in div.style) {
 					return true;
 				}
@@ -14359,9 +14358,9 @@ var h5internal = {
 		var radius = size * 0.8 / 2;
 		var eachRadian = 360 / line * Math.PI / 180;
 
-		for ( var j = 1; j <= line; j++) {
+		for (var j = 1; j <= line; j++) {
 			var rad = eachRadian * j;
-			var cosRad = Math.cos(rad),sinRad = Math.sin(rad);
+			var cosRad = Math.cos(rad), sinRad = Math.sin(rad);
 			positions.push({
 				from: {
 					x: centerPos + radius / 2 * cosRad,
@@ -14636,7 +14635,7 @@ var h5internal = {
 		var lineColor = this.style.throbberLine.color;
 		var lineWidth = this.style.throbberLine.width;
 
-		for ( var i = 0, len = positions.length; i < len; i++) {
+		for (var i = 0, len = positions.length; i < len; i++) {
 			var pos = positions[i];
 			var from = pos.from;
 			var to = pos.to;
@@ -14681,7 +14680,7 @@ var h5internal = {
 			var highlightPos = this.highlightPos;
 			var lines = this.group.childNodes;
 
-			for ( var i = 0, len = lines.length; i < len; i++) {
+			for (var i = 0, len = lines.length; i < len; i++) {
 				var child = lines[i];
 
 				if (child.nodeName === 'textbox') {
@@ -14803,7 +14802,7 @@ var h5internal = {
 
 			canvas.width = canvas.width;
 
-			for ( var i = 0, len = positions.length; i < len; i++) {
+			for (var i = 0, len = positions.length; i < len; i++) {
 				ctx.beginPath();
 				ctx.strokeStyle = lineColor;
 				ctx.lineWidth = lineWidth;
@@ -14896,6 +14895,10 @@ var h5internal = {
 		if (!$t.length) {
 			return;
 		}
+		// スクリーンロックで表示するか判定
+		var isScreenlock = isScreenlockTarget($t);
+		// スクリーンロックで表示する場合はターゲットはbodyにする
+		$t = isScreenlock ? $('body') : $t;
 		// documentの取得
 		var doc = getDocumentOf($t[0]);
 
@@ -14931,9 +14934,9 @@ var h5internal = {
 		// スタイル情報
 		this._styles = $.extend(true, {}, defaultStyle, readThrobberStyle(settings.theme));
 		// スクリーンロックで表示するか
-		this._isScreenLock = isScreenlockTarget($t);
+		this._isScreenLock = isScreenlock;
 		// 表示対象であるDOM要素を保持するjQueryオブジェクト
-		this._$target = this._isScreenLock ? $('body') : $t;
+		this._$target = $t;
 		// 表示対象のDOM要素 (旧バージョン互換用)
 		this._target = this._$target.length === 1 ? this._$target[0] : this._$target.toArray();
 		// scroll/touchmoveイベントハンドラで使用するタイマーID
@@ -14973,7 +14976,7 @@ var h5internal = {
 		// http://www.ninxit.com/blog/2008/04/07/ie6-https-iframe/
 		var srcVal = 'https' === document.location.protocol ? 'return:false' : 'about:blank';
 
-		for ( var i = 0, len = this._$target.length; i < len; i++) {
+		for (var i = 0, len = this._$target.length; i < len; i++) {
 			this._$content = this._$content.add($(doc.createElement('div')).append(contentElem)
 					.addClass(CLASS_INDICATOR_ROOT).addClass(settings.theme).addClass(
 							CLASS_INDICATOR_CONTENT).hide());
@@ -15052,7 +15055,7 @@ var h5internal = {
 				$window.bind('resize', that._resizeHandler);
 			};
 
-			for ( var i = 0, len = this._$target.length; i < len; i++) {
+			for (var i = 0, len = this._$target.length; i < len; i++) {
 				var _$target = this._$target.eq(i);
 				var _$content = this._$content.eq(i);
 				var _$skin = this._$skin.eq(i);
@@ -15112,12 +15115,12 @@ var h5internal = {
 				return;
 			}
 
-			for ( var i = 0, len = this._$target.length; i < len; i++) {
+			for (var i = 0, len = this._$target.length; i < len; i++) {
 				var _$target = this._$target.eq(i);
 				var _$overlay = this._$overlay.eq(i);
 				var _$skin = this._$skin.eq(i);
 
-				var w,h;
+				var w, h;
 
 				//オーバーレイはターゲット要素全体の大きさ(スクロールサイズ)にする
 				if (this._isScreenLock) {
@@ -15143,7 +15146,7 @@ var h5internal = {
 		 * @private
 		 */
 		_reposition: function() {
-			for ( var i = 0, len = this._$target.length; i < len; i++) {
+			for (var i = 0, len = this._$target.length; i < len; i++) {
 				var _$target = this._$target.eq(i);
 				var _$content = this._$content.eq(i);
 
@@ -15232,7 +15235,7 @@ var h5internal = {
 
 			if (!isCSS3AnimationsSupported || useTransformTimerAnimation) {
 				// CSS3Animationをサポートしないブラウザまたはchromeの場合、タイマーでスロバーのアニメーションを動かしているため、スロバーのhide()でタイマーを停止させる。
-				for ( var i = 0, len = this._throbbers.length; i < len; i++) {
+				for (var i = 0, len = this._throbbers.length; i < len; i++) {
 					this._throbbers[i].hide();
 				}
 			}
@@ -15264,7 +15267,7 @@ var h5internal = {
 				return this;
 			}
 
-			for ( var i = 0, len = this._throbbers.length; i < len; i++) {
+			for (var i = 0, len = this._throbbers.length; i < len; i++) {
 				this._throbbers[i].setPercent(percent);
 			}
 
@@ -15465,9 +15468,9 @@ var h5internal = {
 	 * @memberOf h5.ui
 	 */
 	var isInView = function(element, container) {
-		var viewTop,viewBottom,viewLeft,viewRight;
+		var viewTop, viewBottom, viewLeft, viewRight;
 		var $element = $(element);
-		var height,width;
+		var height, width;
 
 		// containerの位置を取得。borderの内側の位置で判定する。
 		if (container === undefined) {
@@ -15722,7 +15725,7 @@ var h5internal = {
 	function equalsControllerName(controllerInstances, controllerDefObj) {
 		var ret = false;
 
-		for ( var i = 0, len = controllerInstances.length; i < len; i++) {
+		for (var i = 0, len = controllerInstances.length; i < len; i++) {
 			var ci = controllerInstances[i];
 			if (ci && ci.__name === controllerDefObj.__name) {
 				ret = true;
@@ -15740,11 +15743,11 @@ var h5internal = {
 	 * @param {Boolean} flag (true: ハンドラを有効化する / false: ハンドラを無効化する)
 	 */
 	function changeListenerState(id, flag) {
-		for (prop in controllerInstanceMap) {
+		for (var prop in controllerInstanceMap) {
 			var controllers = controllerInstanceMap[prop];
 			var pageControllerEnabled = id === prop;
 
-			for ( var i = 0, len = controllers.length; i < len; i++) {
+			for (var i = 0, len = controllers.length; i < len; i++) {
 				var controller = controllers[i];
 
 				if (pageControllerEnabled) {
@@ -15753,11 +15756,11 @@ var h5internal = {
 			}
 		}
 
-		for (prop in dynamicControllerInstanceMap) {
+		for (var prop in dynamicControllerInstanceMap) {
 			var dynamicControllers = dynamicControllerInstanceMap[prop];
 			var dynamicControllerEnabled = id === prop;
 
-			for ( var i = 0, len = dynamicControllers.length; i < len; i++) {
+			for (var i = 0, len = dynamicControllers.length; i < len; i++) {
 				var dynamicController = dynamicControllers[i];
 
 				if (dynamicControllerEnabled) {
@@ -15790,7 +15793,7 @@ var h5internal = {
 		var bAry = b.split('.');
 
 		var aAryLen = aAry.length;
-		for ( var i = 0; i < aAryLen; i++) {
+		for (var i = 0; i < aAryLen; i++) {
 			if (bAry[i] == null) {
 				// bAryが先にnullになった=aAryの方が桁数(バージョン文字列の.の数)が多い場合、
 				// '.0'が末尾にならないようにしてあるので、桁数の多い方がバージョンが大きい
@@ -15933,7 +15936,7 @@ var h5internal = {
 			var dynamicControllers = dynamicControllerInstanceMap[id];
 
 			if (controllers) {
-				for ( var i = 0, len = controllers.length; i < len; i++) {
+				for (var i = 0, len = controllers.length; i < len; i++) {
 					controllers[i].dispose();
 				}
 
@@ -15941,7 +15944,7 @@ var h5internal = {
 			}
 
 			if (dynamicControllers) {
-				for ( var i = 0, len = dynamicControllers.length; i < len; i++) {
+				for (var i = 0, len = dynamicControllers.length; i < len; i++) {
 					dynamicControllers[i].dispose();
 				}
 
@@ -15996,7 +15999,7 @@ var h5internal = {
 			var conAr = controllerInstanceMap[$target[0].id];
 
 			if (conAr) {
-				for ( var i = 0, len = conAr.length; i < len; i++) {
+				for (var i = 0, len = conAr.length; i < len; i++) {
 					var controllerInstance = conAr[i];
 					// isReady=falseであるときコントローラのイベントハンドラは無効であり、
 					// JQMマネージャが管理する静的コントローラがイベントを受け取れない状態なので、h5controllerready後にh5jqmpageshowをトリガするようにする
@@ -16134,7 +16137,7 @@ var h5internal = {
 
 			var ci = controllerInstanceMap[id];
 
-			for ( var i = 0, len = controllerDefs.length; i < len; i++) {
+			for (var i = 0, len = controllerDefs.length; i < len; i++) {
 				var defObj = controllerDefs[i];
 
 				if (equalsControllerName(ci, defObj)) {
@@ -16162,11 +16165,11 @@ var h5internal = {
 			var linkTags = head.getElementsByTagName('link');
 			var linkLen = linkTags.length;
 
-			for ( var i = 0, srcLen = src.length; i < srcLen; i++) {
+			for (var i = 0, srcLen = src.length; i < srcLen; i++) {
 				var path = $.mobile.path.parseUrl(src[i]).filename;
 				var isLoaded = false;
 
-				for ( var j = 0; j < linkLen; j++) {
+				for (var j = 0; j < linkLen; j++) {
 					var loadedPath = $.mobile.path.parseUrl(linkTags[j].href).filename;
 
 					if (loadedPath === path) {
@@ -16858,7 +16861,7 @@ var h5internal = {
 	 * トランザクションエラー時に実行する共通処理
 	 */
 	function transactionErrorCallback(tasks, e) {
-		for ( var i = tasks.length - 1; i >= 0; i--) {
+		for (var i = tasks.length - 1; i >= 0; i--) {
 			var result = tasks[i];
 			var msgParam = getTransactionErrorMsg(e);
 			result.deferred.reject(createRejectReason(ERR_CODE_TRANSACTION_PROCESSING_FAILURE, [
@@ -16870,7 +16873,7 @@ var h5internal = {
 	 * トランザクション完了時に実行する共通処理
 	 */
 	function transactionSuccessCallback(tasks) {
-		for ( var i = tasks.length - 1; i >= 0; i--) {
+		for (var i = tasks.length - 1; i >= 0; i--) {
 			var result = tasks[i];
 			result.deferred.resolve(result.result);
 		}
@@ -17121,7 +17124,7 @@ var h5internal = {
 				var p = getDeferred().resolve().promise();
 				var ret = [];
 
-				for ( var i = 0, iLen = statements.length; i < iLen; i++) {
+				for (var i = 0, iLen = statements.length; i < iLen; i++) {
 					(function(statement, parameter) {
 						fwLogger.debug(wrapInArray(statement), wrapInArray(parameter));
 
@@ -17153,7 +17156,7 @@ var h5internal = {
 
 				// トランザクション内で_buildStatementAndParameters()を実行すると、
 				// SQL構文エラーがクライアントに返せないため、ここでステートメントとパラメータを生成する
-				for ( var j = 0, jLen = queue.length; j < jLen; j++) {
+				for (var j = 0, jLen = queue.length; j < jLen; j++) {
 					queue[j]._buildStatementAndParameters();
 				}
 
@@ -17442,7 +17445,7 @@ var h5internal = {
 				return;
 			}
 
-			for ( var i = 0, len = values.length; i < len; i++) {
+			for (var i = 0, len = values.length; i < len; i++) {
 				var valueObj = values[i];
 
 				if (valueObj == null) {
@@ -18166,7 +18169,7 @@ var h5internal = {
 		each: function(callback) {
 			var storage = this._storage;
 
-			for ( var i = 0, len = storage.length; i < len; i++) {
+			for (var i = 0, len = storage.length; i < len; i++) {
 				var k = storage.key(i);
 				callback(i, k, this.getItem(k));
 			}
