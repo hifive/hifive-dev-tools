@@ -208,7 +208,7 @@
 					paddingLeft: 0,
 					margin: 0,
 					color: 'gray',
-					whiteSpace: 'nowrap',
+					whiteSpace: 'nowrap'
 				}
 			},
 			{
@@ -350,13 +350,13 @@
 			{
 				selector: '.h5devtool .eventHandler .fixedController',
 				rule: {
-					height: '24px',
+					height: '24px'
 				}
 			},
 			{
 				selector: '.h5devtool .eventHandler',
 				rule: {
-					paddingBottom: '24px', // .fixedControllsの高さ
+					paddingBottom: '24px' // .fixedControllsの高さ
 				}
 			},
 			{
@@ -384,13 +384,13 @@
 			{
 				selector: '.h5devtool .method .fixedController',
 				rule: {
-					height: '24px',
+					height: '24px'
 				}
 			},
 			{
 				selector: '.h5devtool .method',
 				rule: {
-					paddingBottom: '24px', // .fixedControllsの高さ
+					paddingBottom: '24px' // .fixedControllsの高さ
 				}
 			},
 			{
@@ -2367,7 +2367,7 @@
 						// getAvailableTemplatesはhifivemain Issue#297 で拡張されたメソッド
 						// https://github.com/hifive/hifivemain/issues/297)
 						availableTemplates: controller.view.getAvailableTemplates(true),
-						registedTemplates: controller.view.getAvailableTemplates(),
+						registedTemplates: controller.view.getAvailableTemplates()
 					});
 		},
 		_updateEventHandlerView: function(obj) {
