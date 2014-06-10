@@ -2358,16 +2358,42 @@
 			for (var i = 0, l = childControllerProperties.length; i < l; i++) {
 				childControllerNames.push(controller[childControllerProperties[i]].__name);
 			}
+			// このコントローラビューに登録されているテンプレートの列挙
+			var registedTemplates = [];
+			for ( var p in controller.view.__view.__cachedTemplates) {
+				if ($.inArray(p, registedTemplates) === -1) {
+					registedTemplates.push(p);
+				}
+			}
+			// コントローラで有効なすべてのテンプレート
+			var availableTemplates = [];
+			var ctrl = controller;
+			var v = ctrl.view.__view;
+			while (true) {
+				var templates = v.__cachedTemplates;
+				for ( var p in templates) {
+					if ($.inArray(p, availableTemplates) === -1) {
+						availableTemplates.push(p);
+					}
+				}
+				if (v === h5.core.view) {
+					break;
+				}
+				if (ctrl.parentController) {
+					ctrl = ctrl.parentController;
+					v = ctrl.view.__view;
+				} else {
+					v = h5.core.view;
+				}
+			}
 
 			view.update(this.$find('.instance-detail .tab-content .otherInfo'),
 					'controller-otherInfo', {
 						controller: controller,
 						childControllerNames: childControllerNames,
 						_formatDOM: formatDOM,
-						// getAvailableTemplatesはhifivemain Issue#297 で拡張されたメソッド
-						// https://github.com/hifive/hifivemain/issues/297)
-						availableTemplates: controller.view.getAvailableTemplates(true),
-						registedTemplates: controller.view.getAvailableTemplates()
+						availableTemplates: availableTemplates,
+						registedTemplates: registedTemplates
 					});
 		},
 		_updateEventHandlerView: function(obj) {
