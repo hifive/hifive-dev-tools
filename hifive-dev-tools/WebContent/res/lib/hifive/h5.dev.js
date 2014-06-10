@@ -14,9 +14,9 @@
  * limitations under the License.
  *
  * hifive
- *   version Nightly_2014-04-23_17-01-10-704
- *   gitCommitId : c3328601f5118af5befd3fbbabe7464b34add764
- *   build at 2014/04/23 17:01:12.180 (+0900)
+ *   version 1.1.11
+ *   gitCommitId : ac66d024ac5f7945cb77818674fc23e923aa9b23
+ *   build at 2014/06/09 14:31:56.844 (+0900)
  *   (util,controller,modelWithBinding,view,ui,api.geo,api.sqldb,api.storage)
  */
 (function($){
@@ -31,7 +31,7 @@
 
 	//h5存在チェック
 	if (window.h5) {
-		if (window.h5.env && (window.h5.env.version === 'Nightly_2014-04-23_17-01-10-704')) {
+		if (window.h5.env && (window.h5.env.version === '1.1.11')) {
 			// 既にロード済みのhifiveと同じバージョンをロードしようとした場合は何もしない
 			return;
 		}
@@ -55,7 +55,7 @@
 	};
 
 	h5.env = {
-		version: 'Nightly_2014-04-23_17-01-10-704'
+		version: '1.1.11'
 	};
 
 	// =========================================================================
@@ -92,10 +92,30 @@ var errorCodeToMessageMap = {};
 
 /**
  * { (エラーコード)： (フォーマッタ関数) } マップ
+ *
+ * @private
  */
 var errorCodeToCustomFormatterMap = {};
 
-/** Node.DOCUMENT_NODE。IE8-ではNodeがないので自前で定数を作っている */
+/**
+ * undefinedかどうかの判定で、typeofで判定する
+ *
+ * @private
+ */
+var TYPE_OF_UNDEFINED = 'undefined';
+
+/**
+ * Node.ELEMENT_NODE。IE8-ではNodeがないので自前で定数を作っている
+ *
+ * @private
+ */
+var NODE_TYPE_ELEMENT = 1;
+
+/**
+ * Node.DOCUMENT_NODE。IE8-ではNodeがないので自前で定数を作っている
+ *
+ * @private
+ */
 var NODE_TYPE_DOCUMENT = 9;
 
 //=============================
@@ -161,7 +181,7 @@ window.com = {
  * @param mapObj {Object} { (エラーコード): (フォーマット文字列) }という構造のオブジェクト
  */
 function addFwErrorCodeMap(mapObj) {
-	for (var code in mapObj) {
+	for ( var code in mapObj) {
 		if (mapObj.hasOwnProperty(code)) {
 			errorCodeToMessageMap[code] = mapObj[code];
 		}
@@ -214,7 +234,7 @@ function wrapInArray(value) {
 	if (value == null) {
 		return value;
 	}
-	return $.isArray(value) ? value : [value];
+	return isArray(value) ? value : [value];
 }
 
 /**
@@ -344,6 +364,7 @@ function registerCallbacksSilently(promise, method, args) {
  * <p>
  * deferred.pipe()がjQuery1.8から非推奨となったため1.8以上の場合then()を、1.7以下の場合はpipe()を実行します。
  *
+ * @private
  * @param {Promise} promise Promiseオブジェクト
  * @param {Function} doneFilter doneコールバック
  * @param {Function} failFilter failコールバック
@@ -357,15 +378,181 @@ function thenCompat(promise, doneFilter, failFilter, progressFilter) {
 }
 
 /**
- * エレメントからドキュメントを取得。
+ * ノードからドキュメントを取得。
  * <p>
- * エレメント自体がdocumentノードならエレメントをそのまま返す。そうでなければエレメントのownerDocumentを返す。
+ * 引数がdocumentノードなら引数をそのまま、ノードならownerDocument、windowオブジェクトならそのdocumentを返します。nodeがいずれにも該当しない場合はnullを返します。
  * </p>
  *
- * @param {DOM} elm
+ * @private
+ * @param {DOM} node
+ * @returns {Document} documentオブジェクト
  */
-function getDocumentOf(elm) {
-	return elm.nodeType === NODE_TYPE_DOCUMENT ? elm : elm.ownerDocument;
+function getDocumentOf(node) {
+	if (typeof node.nodeType === TYPE_OF_UNDEFINED) {
+		// ノードではない
+		if (node.document && node.document.nodeType === NODE_TYPE_DOCUMENT
+				&& getWindowOfDocument(node.document) === node) {
+			// nodeがdocumentを持ち、documentから得られるwindowオブジェクトがnode自身ならnodeをwindowオブジェクトと判定する
+			return node.document;
+		}
+		return null;
+	}
+	if (node.nodeType === NODE_TYPE_DOCUMENT) {
+		// nodeがdocumentの場合
+		return node;
+	}
+	// nodeがdocument以外(documentツリー属するノード)の場合はそのownerDocumentを返す
+	return node.ownerDocument;
+}
+
+/**
+ * documentオブジェクトからwindowオブジェクトを取得
+ *
+ * @private
+ * @param {Document} doc
+ * @returns {Window} windowオブジェクト
+ */
+function getWindowOfDocument(doc) {
+	// IE8-だと、windowとwindow.document.parentWindowで、同じwindowを指すが、"==="で比較するとfalseになる (#339)
+	// イベントハンドラをバインドするターゲットがwindowである時は、window.document.parentWindowではなく
+	// windowにバインドして、イベントハンドラのthis(コントローライベントハンドラの第２引数)をwindowにするため、
+	// window.document === doc の場合はparentWindowではなくwindowを返すようにしている
+
+	// IE8-ではdocument.parentWindow、それ以外はdoc.defaultViewでwindowオブジェクトを取得
+	return window.document === doc ? window : doc.defaultView || doc.parentWindow;
+}
+
+/**
+ * ノードからwindowオブジェクトを取得
+ *
+ * @private
+ * @param {DOM} node
+ * @returns {Window} windowオブジェクト
+ */
+function getWindowOf(node) {
+	return getWindowOfDocument(getDocumentOf(node));
+}
+
+/**
+ * 引数が配列かどうか判定
+ * <p>
+ * Array.isArrayがあるブラウザの場合はisArray===Array.isArrayです
+ * </p>
+ *
+ * @private
+ * @param {Any} obj
+ * @returns {Boolean}
+ */
+var isArray = Array.isArray || (function() {
+	// プロパティアクセスを減らすため、toStringをキャッシュ
+	var toStringObj = Object.prototype.toString;
+	return function(obj) {
+		return toStringObj.call(obj) === '[object Array]';
+	};
+})();
+
+/**
+ * 引数が配列かどうか判定
+ *
+ * @private
+ * @param {Any} obj
+ * @returns {Boolean}
+ */
+var isFunction = (function() {
+	// Android3以下、iOS4以下は正規表現をtypeofで判定すると"function"を返す
+	// それらのブラウザでは、toStringを使って判定する
+	if (typeof new RegExp() === 'function') {
+		var toStringObj = Object.prototype.toString;
+		return function(obj) {
+			return toStringObj.call(obj) === '[object Function]';
+		};
+	}
+	// 正規表現のtypeofが"function"にならないブラウザなら、typeofがfunctionなら関数と判定する
+	return function(obj) {
+		return typeof obj === 'function';
+	};
+})();
+
+/**
+ * 複数のプロミスが完了するのを待機する
+ * <p>
+ * whenとは仕様が異なり、新しくdeferredは作らない。
+ * </p>
+ *
+ * @private
+ * @param {Promise[]} promises
+ * @param {Function} doneCallback doneコールバック。引数は渡されません。
+ * @param {Function} failCallback failコールバック
+ * @param {Boolean} cfhIfFail 渡されたpromiseのいずれかが失敗した時にcFHを呼ぶかどうか。
+ *            cFHを呼ぶときのthisは失敗したpromiseオブジェクト、引数は失敗したpromiseのfailに渡される引数
+ */
+function waitForPromises(promises, doneCallback, failCallback, cfhIfFail) {
+	// 高速化のため、長さ1または0の場合はforを使わずにチェックする
+	var length = promises.length;
+	var isPromise = h5.async.isPromise;
+	if (length === 1) {
+		var promise = promises[0];
+		if (isPromise(promise)) {
+			// 長さ1で、それがプロミスなら、そのプロミスにdoneとfailを引っかける
+			promise.done(doneCallback);
+			if (failCallback) {
+				promise.fail(failCallback);
+			} else if (cfhIfFail && h5.settings.commonFailHandler) {
+				// failCallbackが無くて、cfhIfFail===trueかつcommonFailHandlerがある場合はcfhをfailハンドラにしておく
+				promise.fail(h5.settings.commonFailHandler);
+			}
+			return;
+		}
+		// 長さ1で中身がプロミスでない場合は長さ0として処理する
+		length = 0;
+	}
+	if (length === 0) {
+		doneCallback();
+		return;
+	}
+
+	// promisesの中のプロミスオブジェクトの数(プロミスでないものは無視)
+	// 引数に渡されたpromisesのうち、プロミスオブジェクトと判定したものを列挙
+	var monitorningPromises = [];
+	for (var i = 0, l = promises.length; i < l; i++) {
+		var promise = promises[i];
+		if (isPromise(promise)) {
+			monitorningPromises.push(promise);
+		}
+	}
+
+	var promisesLength = monitorningPromises.length;
+	if (promisesLength === 0) {
+		// プロミスが一つもなかった場合は即doneCallbackを実行
+		doneCallback && doneCallback();
+		return;
+	}
+
+	var resolveCount = 0;
+	var rejected = false;
+	/** いずれかのpromiseが成功するたびに全て終わったかチェック */
+	function check() {
+		if (!rejected && ++resolveCount === promisesLength) {
+			// 全てのpromiseが成功したので、doneCallbackを実行
+			doneCallback && doneCallback();
+		}
+	}
+	/** いずれかのpromiseが失敗した時に呼ばれるコールバック */
+	function fail(/* var_args */) {
+		rejected = true;
+		if (failCallback) {
+			failCallback.apply(this, arguments);
+			return;
+		}
+		if (cfhIfFail && h5.settings.commonFailHandler) {
+			// failCallbackが渡されていなくてcfhIfFailがtrueでcommonFailHandlerが設定されていればcFHを呼ぶ
+			h5.settings.commonFailHandler.call(this, arguments);
+		}
+	}
+
+	for (var i = 0; i < promisesLength; i++) {
+		monitorningPromises[i].done(check).fail(fail);
+	}
 }
 
 //TODO あるオブジェクト下に名前空間を作ってexposeするようなメソッドを作る
@@ -714,7 +901,7 @@ var h5internal = {
 		var parentObj = window;
 		for (var i = 0; i < len; i++) {
 			var name = nsArray[i];
-			if (parentObj[name] === undefined) {
+			if (typeof parentObj[name] === TYPE_OF_UNDEFINED) {
 				parentObj[name] = {};
 			}
 			parentObj = parentObj[name];
@@ -870,9 +1057,9 @@ var h5internal = {
 						promises.push(scriptLoad(url));
 					});
 
-					h5.async.when(promises).done(function() {
+					waitForPromises(promises, function() {
 						retDf.resolve();
-					}).fail(retDfFailCallback);
+					}, retDfFailCallback);
 				} else {
 					// 必ず非同期として処理されるようsetTimeout()を処理して強制的に非同期にする
 					var seq = thenCompat(getDeferred().resolve(), asyncFunc);
@@ -1169,7 +1356,7 @@ var h5internal = {
 	 * @memberOf h5.u.obj
 	 */
 	function serialize(value) {
-		if ($.isFunction(value)) {
+		if (isFunction(value)) {
 			throwFwError(ERR_CODE_SERIALIZE_FUNCTION);
 		}
 		// 循環参照チェック用配列
@@ -1465,7 +1652,7 @@ var h5internal = {
 					} catch (e) {
 						throwFwError(ERR_CODE_DESERIALIZE_VALUE);
 					}
-					if (!$.isArray(obj)) {
+					if (!isArray(obj)) {
 						throwFwError(ERR_CODE_DESERIALIZE_VALUE);
 					}
 					for (var i = 0; i < obj.length; i++) {
@@ -1585,12 +1772,14 @@ var h5internal = {
 		}
 
 		var names = namespace.split('.');
-		if (!rootObj && names[0] === 'window') {
-			names.unshift();
+		var idx = 0;
+		if (names[0] === 'window' && (!rootObj || rootObj === window)) {
+			// rootObjが未指定またはwindowオブジェクトの場合、namespaceの最初のwindow.は無視する
+			idx = 1;
 		}
 		var ret = rootObj || window;
-		for (var i = 0, len = names.length; i < len; i++) {
-			ret = ret[names[i]];
+		for (var len = names.length; idx < len; idx++) {
+			ret = ret[names[idx]];
 			if (ret == null) { // nullまたはundefinedだったら辿らない
 				break;
 			}
@@ -1657,7 +1846,7 @@ var h5internal = {
 			if (!post) {
 				return ret;
 			}
-			if (ret && $.isFunction(ret.promise) && !isJQueryObject(ret)) {
+			if (ret && isFunction(ret.promise) && !isJQueryObject(ret)) {
 				var that = this;
 
 				registerCallbacksSilently(ret, 'always', function() {
@@ -1705,6 +1894,430 @@ var h5internal = {
 		isJQueryObject: isJQueryObject,
 		argsToArray: argsToArray,
 		getByPath: getByPath
+	});
+})();
+
+
+/* ------ h5.mixin ------ */
+(function() {
+	// =========================================================================
+	//
+	// Constants
+	//
+	// =========================================================================
+
+	// =============================
+	// Production
+	// =============================
+
+	// -------------------------------
+	// エラーコード
+	// -------------------------------
+	/** addEventListenerに不正な引数が渡された */
+	var ERR_CODE_INVALID_ARGS_ADDEVENTLISTENER = 16000;
+
+	// =============================
+	// Development Only
+	// =============================
+
+	/* del begin */
+	var errMsgMap = {};
+	errMsgMap[ERR_CODE_INVALID_ARGS_ADDEVENTLISTENER] = 'addEventListenerには、イベント名(文字列)、イベントリスナ(関数)を渡す必要があります。';
+
+	// メッセージの登録
+	addFwErrorCodeMap(errMsgMap);
+	/* del end */
+
+	// =========================================================================
+	//
+	// Cache
+	//
+	// =========================================================================
+	// =========================================================================
+	//
+	// Privates
+	//
+	// =========================================================================
+	// =============================
+	// Variables
+	// =============================
+	// =============================
+	// Functions
+	// =============================
+	/**
+	 * 受け取ったオブジェクトをイベントオブジェクトにする
+	 *
+	 * @private
+	 * @param {Object} event 任意のオブジェクト
+	 * @param {Object} target event.targetになるオブジェクト
+	 * @returns {Object} イベントオブジェクト
+	 */
+	function setEventProperties(event, target) {
+		// ターゲットの追加
+		if (!event.target) {
+			event.target = target;
+		}
+		// タイムスタンプの追加
+		if (!event.timeStamp) {
+			event.timeStamp = new Date().getTime();
+		}
+
+		// isDefaultPreventedがないなら、isDefaultPrevented()とpreventDefault()を追加
+		if (!event.isDefaultPrevented) {
+			var _isDefaultPrevented = false;
+			event.isDefaultPrevented = function() {
+				return _isDefaultPrevented;
+			};
+			event.preventDefault = function() {
+				_isDefaultPrevented = true;
+			};
+		}
+
+		// isImmediatePropagationStoppedがないなら、isImmediatePropagationStopped()とstopImmediatePropagation()を追加
+		if (!event.isImmediatePropagationStopped) {
+			var _isImmediatePropagationStopped = false;
+			event.isImmediatePropagationStopped = function() {
+				return _isImmediatePropagationStopped;
+			};
+			event.stopImmediatePropagation = function() {
+				_isImmediatePropagationStopped = true;
+			};
+		}
+	}
+
+	// =========================================================================
+	//
+	// Body
+	//
+	// =========================================================================
+	/**
+	 * Mixinのコンストラクタ
+	 * <p>
+	 * このクラスは自分でnewすることはありません。
+	 * h5.mixin.createMixin(moduleObject)を呼ぶと渡されたモジュールオブジェクトについてのMixinインスタンスを返します。
+	 * </p>
+	 * <p>
+	 * 作製したインスタンスの<a href="Mixin.html#mix">mix()</a>を呼ぶと、モジュールオブジェクトとmixの引数に渡されたオブジェクトをミックスインしたオブジェクトを返します。
+	 * </p>
+	 *
+	 * <pre><code>
+	 * // set,getメソッドを持つモジュールオブジェクトのmixinを作成する例
+	 * var mixin = h5.mixin.createMixin({
+	 * 	set: function(p, v) {
+	 * 		this[p] = v;
+	 * 	},
+	 * 	get: function(p) {
+	 * 		return this[p];
+	 * 	}
+	 * });
+	 * var target = {
+	 * 	hoge: 'abc'
+	 * };
+	 * mixin.mix(target);
+	 * mixin.get('hoge'); // 'abc'が返る
+	 * </code></pre>
+	 *
+	 * <p>
+	 * <a href="h5.mixin.html">h5.mixin</a>以下にこのクラスを実装したインスタンスを配置しています。
+	 * </p>
+	 *
+	 * @class Mixin
+	 */
+	/**
+	 * @private
+	 * @param moduleObject mixinする元となるモジュールオブジェクト
+	 */
+	function Mixin(moduleObject) {
+		// moduleObjectのプロパティキャッシュを作成
+		var props = {};
+		for ( var p in moduleObject) {
+			var v = moduleObject[p];
+			// hasOwnPropertyがtrueでなければコピーしない
+			// 関数、null、文字列リテラル、数値リテラル、真偽値リテラルのいずれかの場合のみコピー
+			if (moduleObject.hasOwnProperty(p)
+					&& (isFunction(v) || v === null || typeof v === 'string'
+							|| typeof v === 'number' || typeof v === 'boolean')) {
+				props[p] = v;
+			}
+		}
+
+		// mix, hasInterfaceはMixinのprototypeに持たせていて、それぞれインスタンスが持つ_mix, _hasInterfaceを呼んでいる
+		// _mix, _hasInterfaceはmoduleObjectのプロパティキャッシュを参照したいため、Mixinインスタンスごとに定義している
+		this._mix = function(target) {
+			for ( var p in props) {
+				// targetがもともと持っていたプロパティがあっても上書き
+				target[p] = props[p];
+			}
+		};
+
+		this._hasInterface = function(object) {
+			for ( var p in props) {
+				// プライベートなものはチェックしない
+				if (h5.u.str.startsWith(p, '_')) {
+					continue;
+				}
+				// hasOwnPropertyがtrueかどうかは判定せず、プロトタイプチェーン上にあってもよい
+				// undefinedでなければそのプロパティを持っていると判定する
+				if (typeof object[p] === TYPE_OF_UNDEFINED) {
+					return false;
+				}
+			}
+			return true;
+		};
+	}
+
+	$.extend(Mixin.prototype, {
+		/**
+		 * 引数に渡されたオブジェクトと、モジュールオブジェクトとのミックスインを作成します。
+		 * <p>
+		 * 関数、null、文字列リテラル、数値リテラル、真偽値リテラルのいずれかの値を持つプロパティについてのみミックスインを行います。
+		 * </p>
+		 *
+		 * @memberOf Mixin
+		 * @prop {Object} target
+		 */
+		mix: function(target) {
+			return this._mix(target);
+		},
+		/**
+		 * 引数に渡されたオブジェクトが、モジュールオブジェクトを実装しているかどうか判定します。
+		 * <p>
+		 * 関数、null、文字列リテラル、数値リテラル、真偽値リテラルのいずれかの値を持つモジュールオブジェクトのプロパティを、
+		 * 引数に渡されたobjectが全て持っているならtrue、そうでないならfalseを返します。
+		 * </p>
+		 * <p>
+		 * ただしモジュールオブジェクトで定義されたプライベートメンバ("_"始まり)のプロパティについてはチェックしません。
+		 * </p>
+		 *
+		 * @memberOf Mixin
+		 * @prop {Object} object
+		 * @returns {Boolean}
+		 */
+		hasInterface: function(object) {
+			return this._hasInterface(object);
+		}
+	});
+
+	function createMixin(moduleObject) {
+		return new Mixin(moduleObject);
+	}
+
+	//-------------------------------------------
+	//EventDispatcher
+	//-------------------------------------------
+	/**
+	 * イベントディスパッチャ
+	 * <p>
+	 * イベントリスナを管理するクラスです。このクラスはnewできません。
+	 * </p>
+	 * <p>
+	 * このモジュールをミックスインしたオブジェクトを作成したい場合は、<a
+	 * href="h5.mixin.html#eventDispatcher">h5.mixin.eventDispatcher</a>の<a
+	 * href="Mixin.html#mix">mix()</a>メソッドを使用してください。
+	 * </p>
+	 * <p>
+	 * 以下のクラスがイベントディスパッチャのメソッドを持ちます。
+	 * <ul>
+	 * <li><a href="ObservableArray.html">ObservableArray</a>
+	 * <li><a href="ObservableItem.html">ObservableItem</a>
+	 * <li><a href="DataModelManager.html">DataModelManager</a>
+	 * <li><a href="DataModel.html">DataModel</a>
+	 * <li><a href="DataItem.html">DataItem</a>
+	 * </ul>
+	 * </p>
+	 *
+	 * @mixin
+	 * @name EventDispatcher
+	 */
+	var eventDispatcherModule = {
+		/**
+		 * イベントリスナが登録されているかどうかを返します
+		 * <p>
+		 * 第一引数にイベント名、第二引数にイベントリスナを渡し、指定したイベントに指定したイベントリスナが登録済みかどうかを返します。
+		 * </p>
+		 *
+		 * @since 1.1.0
+		 * @memberOf EventDispatcher
+		 * @param {String} type イベント名
+		 * @param {Function} listener イベントリスナ
+		 * @returns {Boolean} 第一引数のイベント名に第二引数のイベントリスナが登録されているかどうか
+		 */
+		hasEventListener: function(type, listener) {
+			if (!this._eventListeners) {
+				return false;
+			}
+			var l = this._eventListeners[type];
+			if (!l || !this._eventListeners.hasOwnProperty(type)) {
+				return false;
+			}
+
+			for (var i = 0, count = l.length; i < count; i++) {
+				if (l[i] === listener) {
+					return true;
+				}
+			}
+			return false;
+		},
+
+		/**
+		 * イベントリスナを登録します。
+		 * <p>
+		 * 第一引数にイベント名、第二引数にイベントリスナを渡し、イベントリスナを登録します。指定したイベントが起こった時にイベントリスナが実行されます。
+		 * </p>
+		 * <p>
+		 * イベントリスナは、関数または<a
+		 * href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-EventListener">EventListener</a>
+		 * インタフェースを実装するオブジェクト(handleEventプロパティに関数を持つオブジェクト)で指定できます。
+		 * <p>
+		 * 指定したイベントに、指定したイベントリスナが既に登録されていた場合は何もしません。
+		 * </p>
+		 * <p>
+		 * 同一のイベントに対して複数回addEventListener()を呼び、複数のイベントリスナを登録した場合は、イベント発火時に登録した順番に実行されます。
+		 * </p>
+		 * <p>
+		 * 第３引数以降が指定されていても無視されます。
+		 * </p>
+		 *
+		 * @since 1.1.0
+		 * @memberOf EventDispatcher
+		 * @param {String} type イベント名
+		 * @param {Function|Object} listener イベントリスナまたはhandleEventを持つイベントリスナオブジェクト
+		 */
+		addEventListener: function(type, listener) {
+			// 引数チェック
+			// typeは文字列で、第2引数まで指定されていることをチェックする
+			// listenerが関数またはイベントリスナオブジェクトかどうかは、実行時に判定し、関数でもイベントリスナオブジェクトでもない場合は実行しない
+			if (arguments.length < 2 || !isString(type)) {
+				throwFwError(ERR_CODE_INVALID_ARGS_ADDEVENTLISTENER);
+			}
+			if (listener == null || this.hasEventListener(type, listener)) {
+				// nullまたはundefinedが指定されている、または既に登録済みのイベントリスナなら何もしない
+				return;
+			}
+
+			if (!this._eventListeners) {
+				this._eventListeners = {};
+			}
+
+			if (!(this._eventListeners.hasOwnProperty(type))) {
+				this._eventListeners[type] = [];
+			}
+
+			this._eventListeners[type].push(listener);
+		},
+
+		/**
+		 * イベントリスナを削除します。
+		 * <p>
+		 * 第一引数にイベント名、第二引数にイベントリスナを渡し、指定したイベントから指定したイベントリスナを削除します。
+		 * </p>
+		 * <p>
+		 * 指定したイベント名に指定したイベントリスナが登録されていない場合は何もしません。
+		 * </p>
+		 *
+		 * @since 1.1.0
+		 * @memberOf EventDispatcher
+		 * @param {String} type イベント名
+		 * @param {Function} listener イベントリスナ
+		 */
+		removeEventListener: function(type, listener) {
+			if (!this.hasEventListener(type, listener)) {
+				return;
+			}
+
+			var l = this._eventListeners[type];
+
+			for (var i = 0, count = l.length; i < count; i++) {
+				if (l[i] === listener) {
+					l.splice(i, 1);
+					return;
+				}
+			}
+		},
+
+		/**
+		 * イベントをディスパッチします
+		 * <p>
+		 * イベントオブジェクトを引数に取り、そのevent.typeに登録されているイベントリスナを実行します。
+		 * イベントオブジェクトにpreventDefault()関数を追加してイベントリスナの引数に渡して呼び出します。
+		 * </p>
+		 * <p>
+		 * 戻り値は『イベントリスナ内でpreventDefault()が呼ばれたかどうか』を返します。
+		 * </p>
+		 *
+		 * @since 1.1.0
+		 * @memberOf EventDispatcher
+		 * @param {Object} event イベントオブジェクト
+		 * @returns {Boolean} イベントリスナ内でpreventDefault()が呼ばれたかどうか。
+		 */
+		dispatchEvent: function(event) {
+			if (!this._eventListeners) {
+				return;
+			}
+			var l = this._eventListeners[event.type];
+			if (!l) {
+				return;
+			}
+			// リスナをslice(0)して、dispatchEventを呼んだ瞬間にどのリスナが呼ばれるか確定させる
+			// (あるイベントのイベントリスナの中でadd/removeEventListenerされても、そのイベントが実行するイベントリスナには影響ない)
+			l = l.slice(0);
+
+			setEventProperties(event, this);
+
+			// リスナーを実行。stopImmediatePropagationが呼ばれていたらそこでループを終了する。
+			for (var i = 0, count = l.length; i < count && !event.isImmediatePropagationStopped(); i++) {
+				if (isFunction(l[i])) {
+					l[i].call(event.target, event);
+				} else if (l[i].handleEvent) {
+					// イベントリスナオブジェクトの場合はhandleEventを呼ぶ
+					// handleEvent内のコンテキストはイベントリスナオブジェクトなので、callは使わずにそのまま呼び出す
+					l[i].handleEvent(event);
+				}
+			}
+
+			return event.isDefaultPrevented();
+		}
+	};
+
+	// =============================
+	// Expose to window
+	// =============================
+
+	/**
+	 * @namespace h5.mixin
+	 */
+	h5.u.obj.expose('h5.mixin', {
+		/**
+		 * Mixinクラスを引数に渡されたモジュールオブジェクトから作成します。
+		 * <p>
+		 * 作成したMixinクラスはモジュールオブジェクトとのmixinを行うクラスになります。 Mixinクラスについては<a href="Mixin.html">こちら</a>をご覧ください。
+		 * </p>
+		 *
+		 * @since 1.1.10
+		 * @memberOf h5.mixin
+		 * @param {Object} moduleObject モジュールオブジェクト。mixinの元となるオブジェクト
+		 * @returns {Mixin} モジュールオブジェクトをもとに生成したMixinオブジェクト
+		 */
+		createMixin: createMixin,
+
+		/**
+		 * EventDispatcherのMixin
+		 * <p>
+		 * EventDispatcherのMixinです。このクラスが持つmix()メソッドを呼ぶと、オブジェクトにEventDispatcherの機能が追加されます。
+		 * </p>
+		 * <p>
+		 * Mixinクラスについては<a href="Mixin.html">こちら</a>をご覧ください。
+		 * </p>
+		 * <p>
+		 * EventDispatcherクラスについては<a href="EventDispatcher.html">こちら</a>をご覧ください。
+		 * </p>
+		 *
+		 * @since 1.1.10
+		 * @memberOf h5.mixin
+		 * @type {Mixin}
+		 * @name eventDispatcher
+		 */
+		eventDispatcher: createMixin(eventDispatcherModule)
 	});
 })();
 
@@ -1935,7 +2548,7 @@ var h5internal = {
 		var COUNT = 3;
 		var result = {};
 
-		if ($.isArray(recentTraces)) {
+		if (isArray(recentTraces)) {
 			var recent = recentTraces.slice(0, COUNT).join(' <- ');
 
 			if (recentTraces.slice(COUNT).length > 0) {
@@ -2242,7 +2855,7 @@ var h5internal = {
 			if (!isDefault || targets != null) {
 				var targetNames = [];
 				// targetsの指定は文字列または配列またはnull,undefinedのみ
-				if (!(targets == null || $.isArray(targets) || (isString(targets) && $
+				if (!(targets == null || isArray(targets) || (isString(targets) && $
 						.trim(targets).length))) {
 					throwFwError(ERR_CODE_LOG_TARGETS_INVALID);
 				}
@@ -2914,7 +3527,22 @@ var h5internal = {
 			retryCount: 0,
 			retryInterval: 500,
 			retryFilter: defaultAjaxRetryFilter
-		}
+		},
+
+		/**
+		 * コントローラがh5trackstartイベントにバインドするときに、バインド対象のターゲットに設定するCSSプロパティ"touch-action"の値
+		 * <p>
+		 * デフォルトは"none"で、h5trackstartイベントがバインドされた要素はタッチ操作でスクロールされないようになります。
+		 * </p>
+		 * <p>
+		 * nullを設定した場合はtouch-actionへの値の設定は行いません。
+		 * </p>
+		 *
+		 * @since 1.1.10
+		 * @memberOf h5.settings
+		 * @type String
+		 */
+		trackstartTouchAction: 'none'
 	};
 
 	// h5preinitでglobalAspectsの設定をしている関係上、別ファイルではなく、ここに置いている。
@@ -2971,7 +3599,7 @@ var h5internal = {
 		try {
 			ret = invocation.proceed();
 		} catch (e) {
-			if (h5.settings.commonFailHandler && $.isFunction(h5.settings.commonFailHandler)) {
+			if (h5.settings.commonFailHandler && isFunction(h5.settings.commonFailHandler)) {
 				h5.settings.commonFailHandler.call(null, e);
 			}
 		}
@@ -3486,6 +4114,15 @@ var h5internal = {
 	// =============================
 	// Variables
 	// =============================
+
+	// thenが新しいプロミス(deferred)を返す(jQuery1.8以降)かどうか
+	// jQuery.thenの挙動の確認
+
+	var isThenReturnsNewPromise = (function() {
+		var tempDfd = $.Deferred();
+		return tempDfd !== tempDfd.then();
+	})();
+
 	// =============================
 	// Functions
 	// =============================
@@ -3512,9 +4149,9 @@ var h5internal = {
 			var callbacks = argsToArray(arguments);
 			for (var i = 0, l = callbacks.length; i < l; i++) {
 				var elem = callbacks[i];
-				if ($.isArray(elem)) {
+				if (isArray(elem)) {
 					dfd.progress.apply(this, elem);
-				} else if ($.isFunction(elem)) {
+				} else if (isFunction(elem)) {
 					if (notified) {
 						// 既にnorify/notifyWithが呼ばれていた場合、jQuery1.7以降の仕様と同じにするためにコールバックの登録と同時に実行する必要がある
 						var params = lastNotifyParam;
@@ -3547,7 +4184,7 @@ var h5internal = {
 						params = wrapInArray(params);
 					}
 					// 関数を実行。関数以外は無視。
-					$.isFunction(progressCallbacks[i]) && progressCallbacks[i].apply(this, params);
+					isFunction(progressCallbacks[i]) && progressCallbacks[i].apply(this, params);
 				}
 			}
 			return dfd;
@@ -3577,7 +4214,7 @@ var h5internal = {
 		}
 		arg = wrapInArray(arg);
 		for (var i = 0, l = arg.length; i < l; i++) {
-			if ($.isFunction(arg[i])) {
+			if (isFunction(arg[i])) {
 				return true;
 			}
 		}
@@ -3589,9 +4226,10 @@ var h5internal = {
 	 * 既にフック済みのもの(prev)があればprevが持っているものに差し替える
 	 *
 	 * @private
-	 * @param {Deferred|Promise} promise
-	 * @param {Deferred} rootDfd
+	 * @param {Deferred|Promise} promise DeferredまたはPromise
+	 * @param {Deferred} rootDfd 元のDeferred
 	 *            既にフック済みのDeferredオブジェクト。第一引数がPromiseで、元のdeferredでフック済みならそっちのメソッドに差し替える
+	 * @returns CFH機能を追加したDeferredまたはPromise
 	 */
 	function toCFHAware(promise, rootDfd) {
 		// すでにtoCFHAware済みなら何もしないでpromiseを返す
@@ -3601,11 +4239,6 @@ var h5internal = {
 
 		// progressを持っているか
 		var hasNativeProgress = !!promise.progress;
-
-		// thenが新しいプロミス(deferred)を返す(jQuery1.8以降)かどうか
-		// jQuery.thenの挙動の確認
-		var tempDfd = $.Deferred();
-		var thenReturnsNewPromise = tempDfd !== tempDfd.then();
 
 		// 引数がDeferredオブジェクト(!=プロミスオブジェクト)の場合、
 		// progress/notify/notifyWithがないなら追加。
@@ -3637,7 +4270,8 @@ var h5internal = {
 		 * @private
 		 * @memberOf Deferred
 		 * @param {String} method メソッド名
-		 * @param {Array|Any} メソッドに渡す引数。Arrayで複数渡せる。引数1つならそのまま渡せる。
+		 * @param {Array|Any} args メソッドに渡す引数。Arrayで複数渡せる。引数1つならそのまま渡せる。
+		 * @returns メソッドの戻り値
 		 */
 		promise._h5UnwrappedCall = rootDfd ? rootDfd._h5UnwrappedCall : function(method, args) {
 			args = wrapInArray(args);
@@ -3691,6 +4325,7 @@ var h5internal = {
 			}
 		}
 
+
 		// pipeは戻り値が呼び出したpromise(またはdeferred)と違うので、
 		// そのdeferred/promiseが持つメソッドの上書きをして返す関数にする。
 		// jQuery1.6以下にない第3引数でのprogressコールバックの登録にも対応する。
@@ -3711,14 +4346,16 @@ var h5internal = {
 				for (var i = 0, l = PIPE_CREATE_METHODS.length; i < l; i++) {
 					var that = this;
 					(function(fn, method, action) {
-						if (!$.isFunction(fn)) {
-							// 引数が関数で無かったら何もしない
-							return;
-						}
-						// コールバックを登録
-						that[method](function(/* var_args */) {
+						var isFunc = isFunction(fn);
+						// 登録するコールバック
+						function callback(/* var_args */) {
+							if (!isFunc) {
+								// 関数で無かった場合は、渡された引数を次のコールバックにそのまま渡す
+								newDeferred[action + 'With'](this, arguments);
+								return;
+							}
 							var ret = fn.apply(this, arguments);
-							if (ret && $.isFunction(ret.promise)) {
+							if (ret && isFunction(ret.promise)) {
 								toCFHAware(ret);
 								// コールバックが返したプロミスについてコールバックを登録する
 								ret.done(newDeferred.resolve);
@@ -3726,12 +4363,21 @@ var h5internal = {
 								ret._h5UnwrappedCall('fail', newDeferred.reject);
 								// jQuery1.6以下でh5を使わずに生成されたプロミスならprogressはないので、
 								// progressメソッドがあるかチェックしてからprogressハンドラを登録
-								$.isFunction(ret.progress) && ret.progress(newDeferred.notify);
+								isFunction(ret.progress) && ret.progress(newDeferred.notify);
 							} else {
-								// 戻り値を次のコールバックに渡す
+								// 戻り値はプロミスでなかった場合、戻り値を次のコールバックに渡す
 								newDeferred[action + 'With'](this, [ret]);
 							}
-						});
+						}
+
+						// コールバックを登録
+						// fnが関数でないかつmethodがfailの場合は、CFHの動作を阻害しないようにfailハンドラを登録するため、
+						// _h5UnwrappedCallを使う
+						if (!isFunc && method === 'fail') {
+							that._h5UnwrappedCall(method, callback);
+						} else {
+							that[method](callback);
+						}
 					})(fns[i], PIPE_CREATE_METHODS[i], PIPE_CREATE_ACTIONS[i]);
 				}
 				return newDeferred.promise();
@@ -3745,16 +4391,10 @@ var h5internal = {
 		// rootDfdがあればrootDfd.thenを持たせてあるので何もしない
 		if (promise.then && !rootDfd) {
 			var then = promise.then;
-			promise.then = function(/* var_args */) {
-				// jQuery1.7以前は、thenを呼んだ時のthisが返ってくる(deferredから呼んだ場合はdeferredオブジェクトが返る)。
-				// jQuery1.8以降は、thenが別のdeferredに基づくpromiseを生成して返ってくる(pipeと同じ)。
-
-				if (thenReturnsNewPromise) {
-					// 1.8以降の場合 thenはpipeと同じ挙動。
-					return hookMethods.pipe.apply(this, arguments);
-				}
-
+			// 1.8以降の場合 thenはpipeと同じで、別のdeferredに基づくpromiseを生成して返す(then===pipe)
+			promise.then = isThenReturnsNewPromise ? promise.pipe : function(/* var_args */) {
 				// 1.7以前の場合
+				// jQuery1.7以前は、thenを呼んだ時のthisが返ってくる(deferredから呼んだ場合はdeferredオブジェクトが返る)。
 				var args = arguments;
 				var ret = then.apply(this, args);
 
@@ -3765,7 +4405,6 @@ var h5internal = {
 				}
 				// そのままthis(=ret)を返す
 				return ret;
-
 			};
 			hookMethods.then = promise.then;
 		}
@@ -3871,7 +4510,7 @@ var h5internal = {
 	 * @memberOf h5.async
 	 */
 	var loop = function(array, callback, suspendOnTimes) {
-		if (!$.isArray(array)) {
+		if (!isArray(array)) {
 			throwFwError(ERR_CODE_NOT_ARRAY);
 		}
 		var dfd = deferred();
@@ -3987,7 +4626,7 @@ var h5internal = {
 	var when = function(/* var_args */) {
 		var args = argsToArray(arguments);
 
-		if (args.length === 1 && $.isArray(args[0])) {
+		if (args.length === 1 && isArray(args[0])) {
 			args = args[0];
 		}
 		var len = args.length;
@@ -3997,7 +4636,7 @@ var h5internal = {
 		for (var i = 0; i < len; i++) {
 			// DeferredもPromiseも、promiseメソッドを持つので、
 			// promiseメソッドがあるかどうかでDeferred/Promiseの両方を判定しています。
-			if (!args[i] || !(args[i].promise && $.isFunction(args[i].promise))) {
+			if (!args[i] || !(args[i].promise && isFunction(args[i].promise))) {
 				fwLogger.info(FW_LOG_H5_WHEN_INVALID_PARAMETER);
 				break;
 			}
@@ -4052,7 +4691,7 @@ var h5internal = {
 			for (var i = 0; i < len; i++) {
 				var p = args[i];
 				// progressはjQuery1.6で作られたdeferred/promiseだとないので、あるかどうかチェックして呼び出す
-				if (p && $.isFunction(p.promise) && p.progress) {
+				if (p && isFunction(p.promise) && p.progress) {
 					if (len > 1) {
 						p.progress(progressFunc(i));
 					} else {
@@ -4189,7 +4828,7 @@ var h5internal = {
 			// includeFunction=falseの場合は関数はコピーしない。
 			// includeFunction=trueの場合、
 			// 非推奨なプロパティ以外をコピー
-			if (jqXHR.hasOwnProperty(prop) && (includeFunction || !$.isFunction(jqXHR[prop]))
+			if (jqXHR.hasOwnProperty(prop) && (includeFunction || !isFunction(jqXHR[prop]))
 					&& $.inArray(prop, DEPRECATED_METHODS) === -1) {
 				// 値をコピー
 				jqXHRWrapper[prop] = jqXHR[prop];
@@ -4374,7 +5013,15 @@ var h5internal = {
 	// Production
 	// =============================
 
-	var TYPE_OF_UNDEFINED = 'undefined';
+	/**
+	 * セレクタのタイプを表す定数 イベントコンテキストの中に格納する
+	 */
+	var SELECTOR_TYPE_CONST = {
+		SELECTOR_TYPE_LOCAL: 1,
+		SELECTOR_TYPE_GLOBAL: 2,
+		SELECTOR_TYPE_OBJECT: 3
+	};
+
 	var SUFFIX_CONTROLLER = 'Controller';
 	var SUFFIX_LOGIC = 'Logic';
 	var EVENT_NAME_H5_TRACKSTART = 'h5trackstart';
@@ -4383,6 +5030,12 @@ var h5internal = {
 	var ROOT_ELEMENT_NAME = 'rootElement';
 
 	var EVENT_NAME_TRIGGER_INDICATOR = 'triggerIndicator';
+
+	/** グローバルセレクタ指定かどうかの判定に使用する正規表現 */
+	var GLOBAL_SELECTOR_REGEXP = /^\{.*\}$/;
+
+	/** イベント名がバインドリクエスト指定かどうかの判定に使用する正規表現 */
+	var BIND_REQUESTED_REGEXP = /^\[.*\]$/;
 
 	/** インラインコメントテンプレートのコメントノードの開始文字列 */
 	var COMMENT_BINDING_TARGET_MARKER = '{h5view ';
@@ -4416,12 +5069,6 @@ var h5internal = {
 	var ERR_CODE_EVENT_HANDLER_SELECTOR_THIS = 6012;
 	/** エラーコード: あるセレクタに対して重複したイベントハンドラが設定されている */
 	var ERR_CODE_SAME_EVENT_HANDLER = 6013;
-	/** エラーコード: __metaで指定されたプロパティがない */
-	var ERR_CODE_CONTROLLER_META_KEY_INVALID = 6014;
-	/** エラーコード: __metaで指定されたプロパティがnullである */
-	var ERR_CODE_CONTROLLER_META_KEY_NULL = 6015;
-	/** エラーコード: __metaで指定されたプロパティがコントローラではない */
-	var ERR_CODE_CONTROLLER_META_KEY_NOT_CONTROLLER = 6016;
 	/** エラーコード: ロジックの名前に文字列が指定されていない */
 	var ERR_CODE_INVALID_LOGIC_NAME = 6017;
 	/** エラーコード: 既にロジック化されている */
@@ -4438,6 +5085,8 @@ var h5internal = {
 	var ERR_CODE_CONTROLLER_TOO_FEW_ARGS = 6032;
 	/** エラーコード：コントローラの初期化処理がユーザーコードによって中断された(__initや__readyで返したプロミスがrejectした) */
 	var ERR_CODE_CONTROLLER_REJECTED_BY_USER = 6033;
+	/** エラーコード：コントローラのバインド対象がノードではない */
+	var ERR_CODE_BIND_NOT_NODE = 6034;
 
 	// =============================
 	// Development Only
@@ -4471,9 +5120,6 @@ var h5internal = {
 	errMsgMap[ERR_CODE_CONTROLLER_SAME_PROPERTY] = 'コントローラ"{0}"のプロパティ"{1}"はコントローラ化によって追加されるプロパティと名前が重複しています。';
 	errMsgMap[ERR_CODE_EVENT_HANDLER_SELECTOR_THIS] = 'コントローラ"{0}"でセレクタ名にthisが指定されています。コントローラをバインドした要素自身を指定したい時はrootElementを指定してください。';
 	errMsgMap[ERR_CODE_SAME_EVENT_HANDLER] = 'コントローラ"{0}"のセレクタ"{1}"に対して"{2}"というイベントハンドラが重複して設定されています。';
-	errMsgMap[ERR_CODE_CONTROLLER_META_KEY_INVALID] = 'コントローラ"{0}"には__metaで指定されたプロパティ"{1}"がありません。';
-	errMsgMap[ERR_CODE_CONTROLLER_META_KEY_NULL] = 'コントローラ"{0}"の__metaに指定されたキー"{1}"の値がnullです。コントローラを持つプロパティキー名を指定してください。';
-	errMsgMap[ERR_CODE_CONTROLLER_META_KEY_NOT_CONTROLLER] = 'コントローラ"{0}"の__metaに指定されたキー"{1}"の値はコントローラではありません。コントローラを持つプロパティキー名を指定してください。';
 	errMsgMap[ERR_CODE_INVALID_LOGIC_NAME] = 'ロジック名は必須です。ロジックの__nameにロジック名を空でない文字列で設定して下さい。';
 	errMsgMap[ERR_CODE_LOGIC_ALREADY_CREATED] = '指定されたオブジェクトは既にロジック化されています。';
 	errMsgMap[ERR_CODE_EXPOSE_NAME_REQUIRED] = 'コントローラ、もしくはロジックの __name が設定されていません。';
@@ -4482,6 +5128,7 @@ var h5internal = {
 	errMsgMap[ERR_CODE_BIND_ROOT_ONLY] = 'コントローラのbind(), unbind()はルートコントローラでのみ使用可能です。';
 	errMsgMap[ERR_CODE_CONTROLLER_TOO_FEW_ARGS] = 'h5.core.controller()メソッドは、バインドターゲットとコントローラ定義オブジェクトの2つが必須です。';
 	errMsgMap[ERR_CODE_CONTROLLER_REJECTED_BY_USER] = 'コントローラ"{0}"の初期化処理がユーザによって中断されました。';
+	errMsgMap[ERR_CODE_BIND_NOT_NODE] = 'コントローラ"{0}"のバインド対象がノードではありません。バインド対象に指定できるのはノードかdocumentオブジェクトのみです。';
 
 	addFwErrorCodeMap(errMsgMap);
 	/* del end */
@@ -4491,7 +5138,12 @@ var h5internal = {
 	// Cache
 	//
 	// =========================================================================
-	// TODO 高速化のために他で定義されている関数などを変数に入れておく場合はここに書く
+	// コントローラマネージャ。作成した時に値をセットしている。
+	var controllerManager;
+
+	// キャッシュマネージャ。作成した時に値をセットしている。
+	var definitionCacheManager;
+
 	// =========================================================================
 	//
 	// Privates
@@ -4507,19 +5159,11 @@ var h5internal = {
 	//
 	};
 	var getDeferred = h5.async.deferred;
+	var isPromise = h5.async.isPromise;
 	var startsWith = h5.u.str.startsWith;
 	var endsWith = h5.u.str.endsWith;
 	var format = h5.u.str.format;
 	var argsToArray = h5.u.obj.argsToArray;
-
-	/**
-	 * セレクタのタイプを表す定数 イベントコンテキストの中に格納する
-	 */
-	var selectorTypeConst = {
-		SELECTOR_TYPE_LOCAL: 1,
-		SELECTOR_TYPE_GLOBAL: 2,
-		SELECTOR_TYPE_OBJECT: 3
-	};
 
 	/**
 	 * マウス/タッチイベントについてh5track*イベントをトリガしたかどうかを管理するため、イベントを格納する配列
@@ -4533,20 +5177,159 @@ var h5internal = {
 	 */
 	var h5trackTriggeredFlags = [];
 
+	/**
+	 * touch-actionをサポートしているときの、そのプロパティ(touchActionまたはmsTouchAction)
+	 */
+	var touchActionProp = '';
+
+	/**
+	 * touch-action(または-ms-touch-action)プロパティがサポートされているか
+	 */
+	var isTouchActionSupported = (function() {
+		// divを作って、styleにtouchActionまたはmsTouchActionがあるか判定する
+		// いずれかがあった場合にtouchActionPropを設定して、trueを返す
+		var div = document.createElement('div');
+		if (typeof div.style.touchAction !== TYPE_OF_UNDEFINED) {
+			touchActionProp = 'touchAction';
+			return true;
+		} else if (typeof div.style.msTouchAction !== TYPE_OF_UNDEFINED) {
+			touchActionProp = 'msTouchAction';
+			return true;
+		}
+		return false;
+	})();
+
 	// =============================
 	// Functions
 	// =============================
 
+	// --------------------------------- コントローラ定義オブジェクトのvalidate関数 ---------------------------------
 	/**
-	 * documentオブジェクトからwindowオブジェクトを取得
+	 * コントローラ定義、ターゲット、初期化パラメータのチェックを行います(コントローラ名のチェック(__name)はチェック済み)
+	 * <p>
+	 * チェックを通らなかった場合はエラーを投げます
+	 * </p>
+	 *
+	 * @param {Boolean} isRoot ルートコントローラかどうか
+	 * @param {DOM|jQuery|String} targetElement
+	 * @param {Object} controllerDefObj
+	 * @param {String} controllerName
 	 */
-	function getWindowOfDocument(doc) {
-		// IE8-ではdocument.parentWindow、それ以外はdoc.defaultViewでwindowオブジェクトを取得
-		return doc.defaultView || doc.parentWindow;
+	function validateControllerDef(isRoot, targetElement, controllerDefObj, param, controllerName) {
+		// コントローラ定義オブジェクトに、コントローラが追加するプロパティと重複するプロパティがあるかどうかチェック
+		for ( var prop in controllerDefObj) {
+			if (prop in controllerPropertyMap) {
+				// コントローラが追加するプロパティと同じプロパティ名のものがあればエラー
+				throwFwError(ERR_CODE_CONTROLLER_SAME_PROPERTY, [controllerName, prop], {
+					controllerDefObj: controllerDefObj
+				});
+			}
+		}
 	}
 
 	/**
-	 * セレクタのタイプを表す定数 イベントコンテキストの中に格納する
+	 * コントローラ定義オブジェクトの子孫コントローラ定義が循環参照になっているかどうかをチェックします。
+	 *
+	 * @private
+	 * @param {Object} controllerDefObject コントローラ定義オブジェクト
+	 * @param {String} controllerName コントローラ名
+	 */
+	function validateControllerCircularRef(controllerDefObject, controllerName) {
+		function validateCircular(controllerDef, ancestors) {
+			if ($.inArray(controllerDef, ancestors) !== -1) {
+				// 循環参照エラー
+				throwFwError(ERR_CODE_CONTROLLER_CIRCULAR_REF, [controllerName], {
+					controllerDefObj: controllerDefObject
+				});
+			}
+			// 子コントローラをチェック
+			doForEachChildControllers(controllerDef, function(controller) {
+				validateCircular(controller, ancestors.concat([controllerDef]));
+			}, true);
+		}
+		validateCircular(controllerDefObject, []);
+	}
+
+	/**
+	 * コントローラ定義オブジェクトが持つロジック定義それぞれについて循環参照になっているかどうかをチェックします。
+	 *
+	 * @private
+	 * @param {Object} controllerDefObj コントローラ定義オブジェクト
+	 * @returns {Boolean} 循環参照になっているかどうか(true=循環参照)
+	 */
+	function validateLogicCircularRef(controllerDefObj, controllerName) {
+		function validateCircular(logic, ancestors) {
+			if ($.inArray(logic, ancestors) !== -1) {
+				// 循環参照エラー
+				throwFwError(ERR_CODE_LOGIC_CIRCULAR_REF, [controllerName], {
+					controllerDefObj: controllerDefObj
+				});
+			}
+			doForEachLogics(logic, function(child) {
+				validateCircular(child, ancestors.concat(logic));
+			});
+		}
+		doForEachLogics(controllerDefObj, function(logic) {
+			validateCircular(controllerDefObj, []);
+		});
+	}
+
+	/**
+	 * ターゲットエレメントの指定が正しいかどうかチェックします。正しくない場合はthrowFwError
+	 *
+	 * @private
+	 * @param {DOM|jQuery|String} targetElement
+	 * @param {Object} controllerDefObj コントローラ定義オブジェクト
+	 * @param {String} controllerName コントローラ名
+	 */
+	function validateTargetElement(targetElement, controllerDefObj, controllerName) {
+		// null,undefinedならエラー
+		if (targetElement == null) {
+			throwFwError(ERR_CODE_BIND_TARGET_REQUIRED, [controllerName], {
+				controllerDefObj: controllerDefObj
+			});
+		}
+		// 文字列でもObjectでもないならエラー
+		if (!isString(targetElement) && typeof targetElement !== 'object') {
+			throwFwError(ERR_CODE_BIND_TARGET_ILLEGAL, [controllerName], {
+				controllerDefObj: controllerDefObj
+			});
+		}
+
+		var $bindTargetElement = $(targetElement);
+		// 要素が1つでない場合はエラー
+		if ($bindTargetElement.length === 0) {
+			throwFwError(ERR_CODE_BIND_NO_TARGET, [controllerName], {
+				controllerDefObj: controllerDefObj
+			});
+		}
+		// 要素が複数ある場合はエラー
+		if ($bindTargetElement.length > 1) {
+			throwFwError(ERR_CODE_BIND_TOO_MANY_TARGET, [controllerName], {
+				controllerDefObj: controllerDefObj
+			});
+		}
+		// ノードエレメントでない場合はエラー
+		if ($bindTargetElement[0].nodeType !== NODE_TYPE_DOCUMENT
+				&& $bindTargetElement[0].nodeType !== NODE_TYPE_ELEMENT) {
+			throwFwError(ERR_CODE_BIND_NOT_NODE, [controllerName], {
+				controllerDefObj: controllerDefObj
+			});
+		}
+	}
+
+	// ----------------------------- コントローラ定義オブジェクトのチェック関数ここまで -----------------------------
+
+	/**
+	 * イベントコンテキストクラス イベントコンテキストの中に格納する
+	 *
+	 * @private
+	 * @class
+	 * @param {Controller} controller コントローラインスタンス
+	 * @param {Event} event イベントオブジェクト
+	 * @param {Array} evArg イベントハンドラに渡された引数(arguments)を配列にしたもの
+	 * @param {String} selector イベントハンドラのバインドに使用されたセレクタ
+	 * @param {Number} selectorType イベントハンドラのバインドに使用されたセレクタのタイプ(SELECTOR_TYPE_CONSTに定義されたもの)
 	 */
 	function EventContext(controller, event, evArg, selector, selectorType) {
 		this.controller = controller;
@@ -4556,12 +5339,14 @@ var h5internal = {
 		this.selectorType = selectorType;
 	}
 	// prototypeにセレクタのタイプを表す定数を追加
-	$.extend(EventContext.prototype, selectorTypeConst);
+	$.extend(EventContext.prototype, SELECTOR_TYPE_CONST);
 
 	/**
 	 * コントローラがdisposeされていないことと、executeListenersを見てリスナーを実行するかどうかを決定するインターセプタ。
 	 *
-	 * @param {Object} invocation インヴォケーション.
+	 * @private
+	 * @param {Object} invocation インヴォケーション
+	 * @returns リスナーの戻り値
 	 */
 	function executeListenersInterceptor(invocation) {
 		// disposeされていたら何もしない
@@ -4580,6 +5365,7 @@ var h5internal = {
 	/**
 	 * 指定されたオブジェクトの関数にアスペクトを織り込みます。
 	 *
+	 * @private
 	 * @param {Object} controllerDefObject オブジェクト.
 	 * @param {Object} prop プロパティ名.
 	 * @param {Boolean} isEventHandler イベントハンドラかどうか.
@@ -4597,6 +5383,7 @@ var h5internal = {
 	/**
 	 * 関数名とポイントカットを比べて、条件に合致すればインターセプタを返す.
 	 *
+	 * @private
 	 * @param {String} targetName バインドする必要のある関数名.
 	 * @param {Object} pcName ポイントカットで判別する対象名.
 	 * @returns {Function[]} AOP用関数配列.
@@ -4619,7 +5406,7 @@ var h5internal = {
 			if (aspect.pointCut && !aspect.compiledPointCut.test(pcName)) {
 				continue;
 			}
-			if (!$.isArray(interceptors)) {
+			if (!isArray(interceptors)) {
 				ret.push(interceptors);
 				continue;
 			}
@@ -4633,7 +5420,8 @@ var h5internal = {
 	/**
 	 * 基本となる関数にアスペクトを織り込んだ関数を返します。
 	 *
-	 * @param {Function} baseFunc 基本関数.
+	 * @private
+	 * @param {Function} base 基本関数.
 	 * @param {String} funcName 基本関数名.
 	 * @param {Function[]} aspects AOP用関数配列.
 	 * @returns {Function} AOP用関数を織り込んだ関数.
@@ -4666,58 +5454,47 @@ var h5internal = {
 	/**
 	 * 指定されたオブジェクトの関数にアスペクトを織り込みます。
 	 *
+	 * @private
 	 * @param {Object} logic ロジック.
 	 * @returns {Object} AOPに必要なメソッドを織り込んだロジック.
 	 */
 	function weaveLogicAspect(logic) {
 		for ( var prop in logic) {
-			if ($.isFunction(logic[prop])) {
+			if (isFunction(logic[prop])) {
 				logic[prop] = createWeavedFunction(logic[prop], prop, getInterceptors(logic.__name,
 						prop));
-			} else {
-				logic[prop] = logic[prop];
 			}
 		}
 		return logic;
 	}
 
 	/**
-	 * コントローラ定義オブジェクトのプロパティがライフサイクルイベントどうかを返します。
-	 *
-	 * @param {Object} controllerDefObject コントローラ定義オブジェクト
-	 * @param {String} prop プロパティ名
-	 * @returns {Boolean} コントローラ定義オブジェクトのプロパティがライフサイクルイベントかどうか
-	 */
-	function isLifecycleProperty(controllerDefObject, prop) {
-		// $.isFunction()による判定はいらないかも。
-		return (prop === '__ready' || prop === '__construct' || prop === '__init')
-				&& $.isFunction(controllerDefObject[prop]);
-	}
-
-	/**
 	 * セレクタがコントローラの外側の要素を指しているかどうかを返します。<br>
 	 * (外側の要素 = true)
 	 *
+	 * @private
 	 * @param {String} selector セレクタ
 	 * @returns {Boolean} コントローラの外側の要素を指しているかどうか
 	 */
 	function isGlobalSelector(selector) {
-		return !!selector.match(/^\{.*\}$/);
+		return GLOBAL_SELECTOR_REGEXP.test(selector);
 	}
 
 	/**
 	 * イベント名がjQuery.bindを使って要素にイベントをバインドするかどうかを返します。
 	 *
+	 * @private
 	 * @param {String} eventName イベント名
 	 * @returns {Boolean} jQuery.bindを使って要素にイベントをバインドするかどうか
 	 */
 	function isBindRequested(eventName) {
-		return !!eventName.match(/^\[.*\]$/);
+		return BIND_REQUESTED_REGEXP.test(eventName);
 	}
 
 	/**
 	 * セレクタから{}を外した文字列を返します。
 	 *
+	 * @private
 	 * @param {String} selector セレクタ
 	 * @returns {String} セレクタから{}を外した文字列
 	 */
@@ -4739,6 +5516,7 @@ var h5internal = {
 	 * 指定されたセレクタがwindow, window., document, document., navigator, navigator. で
 	 * 始まっていればそのオブジェクトを、そうでなければそのまま文字列を返します。
 	 *
+	 * @private
 	 * @param {String} selector セレクタ
 	 * @param {Document} doc
 	 * @returns {Object|String} パスで指定されたオブジェクト、もしくは未変換の文字列
@@ -4758,145 +5536,254 @@ var h5internal = {
 	/**
 	 * 指定されたプロパティがイベントハンドラかどうかを返します。
 	 *
+	 * @private
 	 * @param {Object} controllerDefObject コントローラ定義オブジェクト
 	 * @param {String} prop プロパティ名
 	 * @returns {Boolean} プロパティがイベントハンドラかどうか
 	 */
 	function isEventHandler(controllerDefObject, prop) {
-		return prop.indexOf(' ') !== -1 && $.isFunction(controllerDefObject[prop]);
-	}
-
-	/**
-	 * コントローラ定義オブジェクトの子孫コントローラ定義が循環参照になっているかどうかをチェックします。
-	 *
-	 * @param {Object} controllerDefObject コントローラ定義オブジェクト
-	 * @returns {Boolean} 循環参照になっているかどうか(true=循環参照)
-	 */
-	function checkControllerCircularRef(controllerDefObject) {
-		var checkCircular = function(controllerDef, ancestors) {
-			for ( var prop in controllerDef)
-				if ($.inArray(controllerDef, ancestors) >= 0 || endsWith(prop, SUFFIX_CONTROLLER)
-						&& checkCircular(controllerDef[prop], ancestors.concat([controllerDef]))) {
-					return true;
-				}
-			return false;
-		};
-		return checkCircular(controllerDefObject, []);
-	}
-
-	/**
-	 * コントローラ定義オブジェクトのロジック定義が循環参照になっているかどうかをチェックします。
-	 *
-	 * @param {Object} controllerDefObject コントローラ定義オブジェクト
-	 * @returns {Boolean} 循環参照になっているかどうか(true=循環参照)
-	 */
-	function checkLogicCircularRef(controllerDefObj) {
-		var checkCircular = function(controllerDef, ancestors) {
-			for ( var prop in controllerDef)
-				if ($.inArray(controllerDef, ancestors) >= 0 || endsWith(prop, SUFFIX_LOGIC)
-						&& checkCircular(controllerDef[prop], ancestors.concat([controllerDef]))) {
-					return true;
-				}
-			return false;
-		};
-		return checkCircular(controllerDefObj, []);
+		return prop.indexOf(' ') !== -1 && isFunction(controllerDefObject[prop]);
 	}
 
 	/**
 	 * コントローラのプロパティが自分自身の子コントローラであるかどうかを返します。
 	 *
+	 * @private
 	 * @param {Object} controller コントローラ
 	 * @param {String} prop プロパティ名
+	 * @param {Boolean} isDefObj 定義オブジェクトについての判定かどうか。定義オブジェクトならparentControllerが一致するかどうかは見ない。
 	 * @returns {Boolean} コントローラのプロパティが第1引数のコントローラの子コントローラかどうか(true=子コントローラである)
 	 */
-	function isChildController(controller, prop) {
+	function isChildController(controller, prop, isDefObj) {
 		var target = controller[prop];
 		// プロパティがrootControllerまたはparentControllerの場合はfalse
 		// __controllerContextがない(コントローラインスタンスではないまたはdispose済みコントローラインスタンス)の場合はfalse
 		// 子コントローラでない(isRootがtrue)の場合はfalse
 		// parentControllerを見て、自分の子供ならtrueを返す。
 		// ただし、parentController未設定(コントローラ化処理の途中)の場合はtrueを返す。
-		return endsWith(prop, SUFFIX_CONTROLLER) && prop !== 'rootController'
-				&& prop !== 'parentController' && target && target.__controllerContext
-				&& !target.__controllerContext.isRoot
-				&& (!target.parentController || target.parentController === controller);
+		return endsWith(prop, SUFFIX_CONTROLLER)
+				&& prop !== 'rootController'
+				&& prop !== 'parentController'
+				&& target
+				&& (isDefObj || (target.__controllerContext && !target.__controllerContext.isRoot && (!target.parentController || target.parentController === controller)));
 	}
 
 	/**
-	 * 指定されたコントローラの子孫コントローラのPromiseオブジェクトを全て取得します。
+	 * ロジックのプロパティが自分自身の子ロジックであるかどうかを返します。
 	 *
-	 * @param {Object} controller コントローラ
-	 * @param {String} propertyName プロパティ名(initPromise,readyPromise)
-	 * @param {Object} aquireFromControllerContext コントローラコンテキストのプロパティかどうか
-	 * @returns {Promise[]} Promiseオブジェクト配列
+	 * @private
+	 * @param {Object} logic ロジックまたはコントローラ(コントローラを指定した時は、そのコントローラが持つロジックかどうかを返す)
+	 * @param {String} prop プロパティ名
+	 * @returns {Boolean} ロジックのプロパティが第1引数のロジックの子ロジックかどうか(true=子ロジックである)
 	 */
-	function getDescendantControllerPromises(controller, propertyName, aquireFromControllerContext) {
-		var promises = [];
-		var targets = [];
-		var getPromisesInner = function(object) {
-			targets.push(object);
-			for ( var prop in object) {
-				if (isChildController(object, prop)) {
-					var c = object[prop];
-					var promise = aquireFromControllerContext ? c.__controllerContext[propertyName]
-							: c[propertyName];
-					if (promise) {
-						promises.push(promise);
-					}
-					if ($.inArray(c, targets) === -1) {
-						getPromisesInner(c);
-					}
+	function isChildLogic(logic, prop) {
+		// hasOwnPropertyがtrueで、"Logic"で終わっているプロパティ名のものは子ロジック。ロジック化の対象になる。
+		return logic.hasOwnProperty(prop) && endsWith(prop, SUFFIX_LOGIC)
+	}
+
+	/**
+	 * 指定されたコントローラ直下の子コントローラについて、コールバックを実行します
+	 *
+	 * <pre>
+	 * function(controller, parentController, prop) {}
+	 * </pre>
+	 *
+	 * のような関数を指定してください。falseが返されたら中断します。
+	 *
+	 * @private
+	 * @param {Object} controller
+	 * @param {Function} callback 引数に各コントローラとプロパティ名が渡されます。
+	 * @param {Boolean} isDefObj
+	 *            定義オブジェクトについての実行かどうか。定義オブジェクトなら子コントローラを探索するときにparentControllerが一致するかどうかは見ない。
+	 * @returns 中断された場合はfalseを返します
+	 */
+	function doForEachChildControllers(controller, callback, isDefObj) {
+		// 定義オブジェクトならdefinitionCacheManagerからキャッシュを取得(ない場合はnull)
+		// コントローラインスタンスなら__controllerContextからキャッシュを取得
+		var cache = isDefObj ? definitionCacheManager.get(controller.__name)
+				: (controller.__controllerContext && controller.__controllerContext.cache);
+		// キャッシュがあるなら、キャッシュを使ってループ
+		if (cache) {
+			for (var i = 0, l = cache.childControllerProperties.length; i < l; i++) {
+				var prop = cache.childControllerProperties[i];
+				if (false === callback(controller[prop], controller, prop)) {
+					return false;
 				}
 			}
-		};
+			return;
+		}
+		// キャッシュがないなら探索しながらループ
+		for ( var prop in controller) {
+			if (isChildController(controller, prop, isDefObj)) {
+				if (false === callback(controller[prop], controller, prop)) {
+					return false;
+				}
+			}
+		}
+	}
+
+	/**
+	 * 指定されたロジック直下の子ロジックについて、コールバックを実行します
+	 *
+	 * <pre>
+	 * function(logic, parentLogic, prop) {}
+	 * </pre>
+	 *
+	 * のような関数を指定してください。falseが返されたら中断します。
+	 *
+	 * @private
+	 * @param {Logic|Object} logic ロジックまたは、まだインスタンス化されていないロジック定義オブジェクト
+	 * @param {Function} callback 引数に各ロジックとプロパティ名が渡されます。
+	 * @returns 中断された場合はfalseを返します
+	 */
+	function doForEachLogics(logic, callback) {
+		// キャッシュがあるなら、キャッシュを使ってループ
+		var cache = definitionCacheManager.get(logic.__name);
+		if (cache) {
+			for (var i = 0, l = cache.logicProperties.length; i < l; i++) {
+				var prop = cache.logicProperties[i];
+				if (false === callback(logic[prop], logic, prop)) {
+					return false;
+				}
+			}
+			return;
+		}
+		// キャッシュがないなら探索しながらループ
+		for ( var prop in logic) {
+			if (isChildLogic(logic, prop)) {
+				if (false === callback(logic[prop], logic, prop)) {
+					return false;
+				}
+			}
+		}
+	}
+
+	/**
+	 * 指定されたコントローラ以下のコントローラについて、コールバックを実行します
+	 *
+	 * <pre>
+	 * function(controller, parentController, prop) {}
+	 * </pre>
+	 *
+	 * のような関数を指定してください。falseが返されたら中断します。
+	 *
+	 * @private
+	 * @param {Object} controller
+	 * @param {Function} callback 引数に各コントローラとプロパティ名が渡されます。
+	 * @param {Controller} [_parent] 第1引数controllerの親コントローラ。再帰呼び出し時に受け取る変数です。
+	 * @param {String} [_prop] _parentがcontrollerを指すプロパティ名。再帰呼び出し時に受け取る変数です。
+	 * @returns コールバックがfalseを返して中断した場合はfalseを返します
+	 */
+	function doForEachControllerGroups(controller, callback, _parent, _prop) {
+		if (callback.call(this, controller, _parent, _prop) === false) {
+			return false;
+		}
+		function callbackWrapper(c, parent, prop) {
+			if (doForEachControllerGroups(c, callback, parent, prop) === false) {
+				return false;
+			}
+		}
+		return doForEachChildControllers(controller, callbackWrapper);
+	}
+
+	/**
+	 * 指定されたコントローラ以下のコントローラについて、深さ優先でコールバックを実行します
+	 *
+	 * <pre>
+	 * function(controller, parentController, prop) {}
+	 * </pre>
+	 *
+	 * のような関数を指定してください。falseが返されたら中断します。
+	 *
+	 * @private
+	 * @param {Object} controller
+	 * @param {Function} callback 引数に各コントローラとプロパティ名が渡されます。
+	 * @param {Controller} [_parent] 第1引数controllerの親コントローラ。再帰呼び出し時に受け取る変数です。
+	 * @param {String} [_prop] _parentがcontrollerを指すプロパティ名。再帰呼び出し時に受け取る変数です。
+	 * @returns コールバックがfalseを返して中断した場合はfalseを返します
+	 */
+	function doForEachControllerGroupsDepthFirst(controller, callback, _parent, _prop) {
+		function callbackWrapper(c, parent, prop) {
+			if (doForEachControllerGroupsDepthFirst(c, callback, parent, prop) === false) {
+				return false;
+			}
+		}
+		if (doForEachChildControllers(controller, callbackWrapper) === false) {
+			return false;
+		}
+		if (callback.call(this, controller, _parent, _prop) === false) {
+			return false;
+		}
+	}
+
+	/**
+	 * 指定されたコントローラの先祖コントローラのPromiseオブジェクトを全て取得します。
+	 *
+	 * @private
+	 * @param {Object} controller コントローラ
+	 * @param {String} propertyName プロパティ名(initPromise,postInitPromise,readyPromise)
+	 * @param {Object} acquireFromControllerContext コントローラコンテキストのプロパティかどうか
+	 * @returns {Promise[]} Promiseオブジェクト配列
+	 */
+	function getAncestorControllerPromises(controller, propertyName, acquireFromControllerContext) {
+		var promises = [];
+		function getPromisesInner(object) {
+			var c = object.parentController;
+			if (!c) {
+				return;
+			}
+			var promise = acquireFromControllerContext ? c.__controllerContext[propertyName]
+					: c[propertyName];
+			if (promise) {
+				promises.push(promise);
+			}
+			getPromisesInner(c);
+		}
 		getPromisesInner(controller);
 		return promises;
 	}
 
 	/**
-	 * 子孫コントローラのイベントハンドラをバインドします。
+	 * 指定されたコントローラの子孫コントローラのPromiseオブジェクトを全て取得します。
 	 *
-	 * @param {Controller} controller コントローラ
+	 * @private
+	 * @param {Object} controller コントローラ
+	 * @param {String} propertyName プロパティ名(initPromise,postInitPromise,readyPromise)
+	 * @param {Object} aquireFromControllerContext コントローラコンテキストのプロパティかどうか
+	 * @returns {Promise[]} Promiseオブジェクト配列
 	 */
-	function bindDescendantHandlers(controller) {
-		var execute = function(controllerInstance) {
-			var meta = controllerInstance.__meta;
-			var notBindControllers = {};
-			if (meta) {
-				for ( var prop in meta) {
-					if (meta[prop].useHandlers === false) {
-						// trueより文字数が少ないため1を代入。機能的には"true"を表せば何を代入しても良い。
-						notBindControllers[prop] = 1;
-					}
-				}
+	function getDescendantControllerPromises(controller, propertyName, aquireFromControllerContext) {
+		var promises = [];
+		function getPromisesInner(c) {
+			var promise = aquireFromControllerContext ? c.__controllerContext[propertyName]
+					: c[propertyName];
+			if (promise) {
+				promises.push(promise);
 			}
-
-			for ( var prop in controllerInstance) {
-				var c = controllerInstance[prop];
-				if (!isChildController(controllerInstance, prop)) {
-					continue;
-				}
-				execute(c);
-				if (!notBindControllers[prop]) {
-					bindByBindMap(c);
-				}
-			}
-		};
-		execute(controller);
+			doForEachChildControllers(c, getPromisesInner);
+		}
+		doForEachChildControllers(controller, getPromisesInner);
+		return promises;
 	}
 
 	/**
 	 * バインドマップに基づいてイベントハンドラをバインドします。
+	 * <p>
+	 * 第2引数に親コントローラが指定されていた場合、第1引数コントローラについての親の__meta定義を参照して、 useHandlersがfalseならバインドをキャンセルします。
+	 * </p>
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 */
 	function bindByBindMap(controller) {
-		var bindMap = controller.__controllerContext.bindMap;
-		for ( var s in bindMap) {
-			for ( var e in bindMap[s]) {
-				(function(selector, eventName) {
-					bindEventHandler(controller, selector, eventName);
-				})(s, e);
+		var bindMap = controller.__controllerContext.cache.bindMap;
+		var doc = getDocumentOf(controller.rootElement);
+		for ( var p in bindMap) {
+			var bindObjects = createBindObjects(controller, bindMap[p]);
+			for (var i = 0, l = bindObjects.length; i < l; i++) {
+				// アンバインドマップにハンドラを追加
+				registerWithUnbindList(bindObjects[i], bindMap[p]);
+				bindByBindObject(bindObjects[i], bindMap[p], doc);
 			}
 		}
 	}
@@ -4904,80 +5791,95 @@ var h5internal = {
 	/**
 	 * イベントハンドラのバインドを行います。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
-	 * @param {String} selector セレクタ
-	 * @param {String} eventName イベント名
+	 * @param {Object} eventHandlerInfo バインドマップに登録されているイベントハンドラの情報
+	 * @returns {Object[]} バインドオブジェクトの配列
 	 */
-	function bindEventHandler(controller, selector, eventName) {
-		// bindMapに格納しておいたハンドラを取得
-		var func = controller.__controllerContext.bindMap[selector][eventName];
-		var event = eventName;
-		var bindRequested = isBindRequested(eventName);
-		if (bindRequested) {
-			event = trimBindEventBracket(eventName);
-		}
-		var bindObj = null;
-		switch (event) {
+	function createBindObjects(controller, eventHandlerInfo) {
+		var selector = eventHandlerInfo.selector;
+		var eventName = eventHandlerInfo.eventName;
+		// ハンドラを取得(アスペクト適用済み)
+		var func = controller[eventHandlerInfo.propertyKey];
+		// この関数の戻り値になるバインドオブジェクトの配列
+		// 結果は必ず配列になるようにする
+		var bindObjects;
+		switch (eventName) {
 		case 'mousewheel':
-			bindObj = getNormalizeMouseWheelBindObj(controller, selector, event, func);
+			bindObjects = getNormalizeMouseWheelBindObj(controller, selector, eventName, func);
 			break;
 		case EVENT_NAME_H5_TRACKSTART:
 		case EVENT_NAME_H5_TRACKMOVE:
 		case EVENT_NAME_H5_TRACKEND:
-			bindObj = getH5TrackBindObj(controller, selector, eventName, func);
+			bindObjects = getH5TrackBindObj(controller, selector, eventName, func);
 			break;
 		default:
-			bindObj = getNormalBindObj(controller, selector, event, func);
+			bindObjects = getNormalBindObj(controller, selector, eventName, func);
 			break;
 		}
+		// 配列にする
+		if (!isArray(bindObjects)) {
+			bindObjects = [bindObjects];
+		}
 
-		if (!$.isArray(bindObj)) {
-			useBindObj(bindObj, bindRequested);
-			return;
+		// イベントコンテキストを作成してからハンドラを呼び出すようにhandlerをラップする
+		// unbindListにラップしたものが登録されるように、このタイミングで行う必要がある
+		function wrapHandler(bindObj) {
+			var handler = bindObj.handler;
+			var c = bindObj.controller;
+			bindObj.handler = function(/* var args */) {
+				// listenerElementTypeが1ならjQueryオブジェクト、そうでないならDOM要素を、イベントハンドラの第2引数にする
+				// jQuery1.6.4の場合、currentTargetに正しく値が設定されていない場合があるため、
+				// currentTargetではなくthisを使用している。(issue#338)
+				var currentTargetShortcut = h5.settings.listenerElementType === 1 ? $(this) : this;
+				handler.call(c, createEventContext(bindObj, arguments), currentTargetShortcut);
+			};
 		}
-		for (var i = 0, l = bindObj.length; i < l; i++) {
-			useBindObj(bindObj[i], bindRequested);
+		for (var i = 0, l = bindObjects.length; i < l; i++) {
+			wrapHandler(bindObjects[i]);
 		}
+		return bindObjects;
 	}
 
 	/**
 	 * バインドオブジェクトに基づいてイベントハンドラをバインドします。
 	 *
+	 * @private
 	 * @param {Object} bindObj バインドオブジェクト
+	 * @param {Object} eventHandlerInfo バインドマップに登録されているイベントハンドラの情報
+	 * @param {Document} doc documentオブジェクト
 	 */
-	function bindByBindObject(bindObj) {
+	function bindByBindObject(bindObj, eventHandlerInfo, doc) {
 		var controller = bindObj.controller;
 		var rootElement = controller.rootElement;
 		var selector = bindObj.selector;
 		var eventName = bindObj.eventName;
 		var handler = bindObj.handler;
-		var useBind = isBindRequested(eventName);
-		var event = useBind ? trimBindEventBracket(eventName) : eventName;
-		var doc = getDocumentOf(rootElement);
+		var useBind = eventHandlerInfo.bindRequested;
+		var isGlobal = eventHandlerInfo.global;
 
-		if (isGlobalSelector(selector)) {
+		if (isGlobal) {
 			// グローバルなセレクタの場合
-			var selectorTrimmed = trimGlobalSelectorBracket(selector);
 			var isSelf = false;
 			var selectTarget;
-			if (selectorTrimmed === ROOT_ELEMENT_NAME) {
+			if (selector === ROOT_ELEMENT_NAME) {
 				selectTarget = rootElement;
 				isSelf = true;
 			} else {
-				selectTarget = getGlobalSelectorTarget(selectorTrimmed, doc);
+				selectTarget = getGlobalSelectorTarget(selector, doc);
 			}
 
 			// バインド対象がオブジェクトの場合、必ず直接バインドする
 			if (isSelf || useBind || !isString(selectTarget)) {
 				// bindObjにselectorTypeを登録する
-				bindObj.evSelectorType = selectorTypeConst.SELECTOR_TYPE_OBJECT;
+				bindObj.evSelectorType = SELECTOR_TYPE_CONST.SELECTOR_TYPE_OBJECT;
 
-				$(selectTarget).bind(event, handler);
+				$(selectTarget).bind(eventName, handler);
 			} else {
 				// bindObjにselectorTypeを登録する
-				bindObj.evSelectorType = selectorTypeConst.SELECTOR_TYPE_GLOBAL;
+				bindObj.evSelectorType = SELECTOR_TYPE_CONST.SELECTOR_TYPE_GLOBAL;
 
-				$(doc).delegate(selectTarget, event, handler);
+				$(doc).delegate(selectTarget, eventName, handler);
 			}
 			// selectorがグローバル指定の場合はcontext.selectorに{}を取り除いた文字列を格納する
 			// selectorがオブジェクト指定(rootElement, window, document)の場合はオブジェクトを格納する
@@ -4985,119 +5887,79 @@ var h5internal = {
 		} else {
 			// selectorがグローバル指定でない場合
 			// bindObjにselectorTypeを登録し、selectorは文字列を格納する
-			bindObj.evSelectorType = selectorTypeConst.SELECTOR_TYPE_LOCAL;
+			bindObj.evSelectorType = SELECTOR_TYPE_CONST.SELECTOR_TYPE_LOCAL;
 			bindObj.evSelector = selector;
 
 			if (useBind) {
-				$(selector, rootElement).bind(event, handler);
+				$(selector, rootElement).bind(eventName, handler);
 			} else {
-				$(rootElement).delegate(selector, event, handler);
+				$(rootElement).delegate(selector, eventName, handler);
 			}
 		}
-	}
 
-	/**
-	 * バインドオブジェクトに対して必要であればイベント名を修正し、アンバインドマップにハンドラを追加した後、 実際にバインドを行います。
-	 *
-	 * @param {Object} bindObj バインドオブジェクト
-	 * @param {Boolean} bindRequested イベントハンドラをバインド([]記法)すべきかどうか
-	 */
-	function useBindObj(bindObj, bindRequested) {
-		if (bindRequested) {
-			bindObj.eventName = '[' + bindObj.eventName + ']';
+		// h5trackstartのバインド先のstyle.touchActionにh5.settings.trackstartTouchActionの値(デフォルト'none')を設定する
+		// touchActionをサポートしていないなら何もしない
+		// h5.settings.trackstartTouchActionがnullなら何もしない
+		// TODO プラッガブル(どのイベントの時にどういう処理をするか)が設定できるようにする
+		if (isTouchActionSupported && eventName === EVENT_NAME_H5_TRACKSTART
+				&& h5.settings.trackstartTouchAction != null) {
+			var $trackTarget = isGlobal ? $(bindObj.evSelector, doc) : $(bindObj.evSelector,
+					rootElement);
+			$trackTarget.each(function() {
+				this.style[touchActionProp] = h5.settings.trackstartTouchAction;
+			});
 		}
-		// イベントコンテキストを作成してからハンドラを呼び出すようにhandlerをラップする
-		// unbindMapにラップしたものが登録されるように、このタイミングで行う必要がある
-		var handler = bindObj.handler;
-
-		bindObj.handler = function(/* var args */) {
-			var currentTargetShortcut = h5.settings.listenerElementType === 1 ? $(arguments[0].currentTarget)
-					: arguments[0].currentTarget;
-			handler.call(bindObj.controller, createEventContext(bindObj, arguments),
-					currentTargetShortcut);
-		};
-		// アンバインドマップにハンドラを追加
-		registerUnbindMap(bindObj.controller, bindObj.selector, bindObj.eventName, bindObj.handler);
-		bindByBindObject(bindObj);
-	}
-
-	/**
-	 * 子孫コントローラのイベントハンドラをアンバインドします。
-	 *
-	 * @param {Controller} controller コントローラ
-	 */
-	function unbindDescendantHandlers(controller) {
-		var execute = function(controllerInstance) {
-			var meta = controllerInstance.__meta;
-			var notBindControllers = {};
-			if (meta) {
-				for ( var prop in meta) {
-					if (meta[prop].useHandlers === false) {
-						// trueより文字数が少ないため1を代入。機能的には"true"を表せば何を代入しても良い。
-						notBindControllers[prop] = 1;
-					}
-				}
-			}
-
-			for ( var prop in controllerInstance) {
-				var c = controllerInstance[prop];
-				if (!isChildController(controllerInstance, prop)) {
-					continue;
-				}
-				execute(c);
-				if (!notBindControllers[prop]) {
-					unbindByBindMap(c);
-				}
-			}
-		};
-		execute(controller);
 	}
 
 	/**
 	 * バインドマップに基づいてイベントハンドラをアンバインドします。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 */
-	function unbindByBindMap(controller) {
+	function unbindEventHandlers(controller) {
 		var rootElement = controller.rootElement;
 		if (!rootElement) {
 			// ルートエレメントが設定される前のunbind(=イベントハンドリング前)なら何もしない
 			return;
 		}
+
 		// ドキュメントはrootElementのownerDocument。rootElement自体がdocumentノードならrootElement。
 		var doc = getDocumentOf(rootElement);
-		var unbindMap = controller.__controllerContext.unbindMap;
+		var unbindHandlerList = controller.__controllerContext.unbindHandlerList;
 
-		for ( var selector in unbindMap) {
-			for ( var eventName in unbindMap[selector]) {
-				var handler = unbindMap[selector][eventName];
-				var useBind = isBindRequested(eventName);
-				var event = useBind ? trimBindEventBracket(eventName) : eventName;
-				if (isGlobalSelector(selector)) {
-					var selectTarget = trimGlobalSelectorBracket(selector);
-					var isSelf = false;
-					if (selectTarget === ROOT_ELEMENT_NAME) {
-						selectTarget = rootElement;
-						isSelf = true;
-					} else {
-						if (getWindowOfDocument(doc) == null) {
-							// アンバインドする対象のdocumentがもうすでに閉じられている場合は何もしない
-							continue;
-						}
-						selectTarget = getGlobalSelectorTarget(selectTarget, doc);
-					}
-
-					if (isSelf || useBind || !isString(selectTarget)) {
-						$(selectTarget).unbind(event, handler);
-					} else {
-						$(doc).undelegate(selectTarget, event, handler);
-					}
+		for (var i = 0, l = unbindHandlerList.length; i < l; i++) {
+			var eventHandlerInfo = unbindHandlerList[i].eventHandlerInfo;
+			var bindObj = unbindHandlerList[i].bindObj;
+			var selector = bindObj.selector;
+			var handler = bindObj.handler;
+			var eventName = bindObj.eventName;
+			var useBind = eventHandlerInfo.bindRequested;
+			var isGlobal = eventHandlerInfo.global;
+			if (isGlobal) {
+				var selectTarget = selector;
+				var isSelf = false;
+				if (selectTarget === ROOT_ELEMENT_NAME) {
+					selectTarget = rootElement;
+					isSelf = true;
 				} else {
-					if (useBind) {
-						$(selector, rootElement).unbind(event, handler);
-					} else {
-						$(rootElement).undelegate(selector, event, handler);
+					if (getWindowOfDocument(doc) == null) {
+						// アンバインドする対象のdocumentがもうすでに閉じられている場合は何もしない
+						continue;
 					}
+					selectTarget = getGlobalSelectorTarget(selectTarget, doc);
+				}
+
+				if (isSelf || useBind || !isString(selectTarget)) {
+					$(selectTarget).unbind(eventName, handler);
+				} else {
+					$(doc).undelegate(selectTarget, eventName, handler);
+				}
+			} else {
+				if (useBind) {
+					$(selector, rootElement).unbind(eventName, handler);
+				} else {
+					$(rootElement).undelegate(selector, eventName, handler);
 				}
 			}
 		}
@@ -5106,168 +5968,131 @@ var h5internal = {
 	/**
 	 * 指定されたフラグで子コントローラを含む全てのコントローラのexecuteListenersフラグを変更します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 * @param {Boolean} flag フラグ
 	 */
 	function setExecuteListenersFlag(controller, flag) {
-		controller.__controllerContext.executeListeners = flag;
-		var targets = [];
-		var changeFlag = function(controllerInstance) {
-			targets.push(controllerInstance);
-			for ( var prop in controllerInstance) {
-				if (isChildController(controllerInstance, prop)) {
-					var c = controllerInstance[prop];
-					c.__controllerContext.executeListeners = flag;
-					if ($.inArray(c, targets) === -1) {
-						changeFlag(c);
-					}
-				}
-			}
-		};
-		changeFlag(controller);
+		doForEachControllerGroups(controller, function(c) {
+			c.__controllerContext.executeListeners = flag;
+		});
 	}
 
 	/**
-	 * rootControllerとparentControllerをセットします。
+	 * コントローラに定義されたライフサイクルイベントを呼び出す関数を作成する
 	 *
-	 * @param {Controller} controller コントローラ
+	 * @param {Controller} controller
+	 * @param {String} funcName __init, __postInit, __ready のいずれか
+	 * @param {Function} callback ライフサイクルイベントの実行が終わった時(非同期ならresolveされた時)に実行する関数
+	 * @returns {Function}
 	 */
-	function initRootAndParentController(controller) {
-		var targets = [];
-		var init = function(controllerInstance, root, parent) {
-			controllerInstance.rootController = root;
-			controllerInstance.parentController = parent;
-			targets.push(controllerInstance);
-			for ( var prop in controllerInstance) {
-				if (isChildController(controllerInstance, prop)) {
-					var c = controllerInstance[prop];
-					if ($.inArray(c, targets) === -1) {
-						init(c, root, controllerInstance);
-					}
+	function createLifecycleCaller(controller, funcName, callback) {
+		return function() {
+			var ret = null;
+			var lifecycleFunc = controller[funcName];
+			var controllerName = controller.__name;
+			if (lifecycleFunc) {
+				try {
+					ret = controller[funcName](createInitializationContext(controller));
+				} catch (e) {
+					// ライフサイクルイベントの呼び出しで例外が投げられた
+					fwLogger.error(FW_LOG_INIT_CONTROLLER_THROWN_ERROR, controllerName, funcName);
+
+					// 同じrootControllerを持つ他の子のdisposeによって、
+					// controller.rootControllerがnullになっている場合があるのでそのチェックをしてからdisposeする
+					controller.rootController && controller.rootController.dispose(arguments);
+
+					// dispose処理が終わったら例外を投げる
+					throw e;
 				}
 			}
+			if (ret && isFunction(ret.done) && isFunction(ret.fail)) {
+				// ライフサイクルイベントがpromiseを返している場合
+				// resolveされたらcallbackを実行
+				ret.done(callback).fail(
+						function(/* var_args */) {
+							// rejectされた場合は連鎖的にdisposeする
+							fwLogger.error(FW_LOG_INIT_CONTROLLER_REJECTED, controllerName,
+									funcName);
+							fwLogger.error(FW_LOG_INIT_CONTROLLER_ERROR,
+									controller.rootController.__name);
+
+							var failReason = createRejectReason(
+									ERR_CODE_CONTROLLER_REJECTED_BY_USER, controllerName,
+									argsToArray(arguments));
+
+							// 同じrootControllerを持つ他の子のdisposeによって、
+							// controller.rootControllerがnullになっている場合があるのでそのチェックをしてからdisposeする
+							controller.rootController
+									&& controller.rootController.dispose(failReason);
+						});
+			} else {
+				// callbackを実行
+				callback();
+			}
 		};
-		init(controller, controller, null);
 	}
 
 	/**
-	 * __init, __readyイベントを実行する.
+	 * 非同期で実行するライフサイクル(__init, __postInit, __ready)イベントを実行する
 	 *
-	 * @param ｛Object} controller コントローラ.
-	 * @param {Booelan} isInitEvent __initイベントを実行するかどうか.
+	 * @private
+	 * @param {Controller} controller コントローラ(ルートコントローラ)
+	 * @returns {Promise[]} Promiseオブジェクト
+	 * @param {String} funcName 非同期で実行するライフサイクル関数名。__init, __postInit, __readyのいずれか。
 	 */
-	function executeLifecycleEventChain(controller, isInitEvent) {
-		var funcName = isInitEvent ? '__init' : '__ready';
-
-		var leafDfd = getDeferred();
-		setTimeout(function() {
-			leafDfd.resolve();
-		}, 0);
-		var leafPromise = leafDfd.promise();
-
-		var execInner = function(controllerInstance) {
-			var isLeafController = true;
-			for ( var prop in controllerInstance) {
-				// 子コントローラがあれば再帰的に処理
-				if (isChildController(controllerInstance, prop)) {
-					isLeafController = false;
-					execInner(controllerInstance[prop]);
-				}
+	function executeLifecycleEventChain(controller, funcName) {
+		function execInner(c) {
+			// すでにpromisesのいずれかが失敗している場合は、失敗した時にdisposeされているはずなので、disposeされているかどうかチェックする
+			// disopseされていたら何もしない。
+			if (isDisposing(c)) {
+				return;
 			}
 
-			// 子孫コントローラの準備ができた時に実行させる関数を定義
-			var func = function() {
-				var ret = null;
-				var lifecycleFunc = controllerInstance[funcName];
-				var controllerName = controllerInstance.__name;
-				if (lifecycleFunc) {
-					try {
-						ret = controllerInstance[funcName]
-								(createInitializationContext(controllerInstance));
-					} catch (e) {
-						// __init, __readyで例外が投げられた
-						fwLogger.error(FW_LOG_INIT_CONTROLLER_THROWN_ERROR, controllerName,
-								isInitEvent ? '__init' : '__ready');
+			var callback, promises;
 
-						// 同じrootControllerを持つ他の子のdisposeによって、
-						// controller.rootControllerがnullになっている場合があるのでそのチェックをしてからdisposeする
-						controller.rootController && controller.rootController.dispose(arguments);
-
-						// dispose処理が終わったら例外を投げる
-						throw e;
-					}
-				}
-				// ライフサイクルイベント実行後に呼ぶべきコールバック関数を作成
-				var callback = isInitEvent ? createCallbackForInit(controllerInstance)
-						: createCallbackForReady(controllerInstance);
-				if (ret && $.isFunction(ret.done) && $.isFunction(ret.fail)) {
-					// __init, __ready がpromiseを返している場合
-					ret.done(function() {
-						callback();
-					}).fail(
-							function(/* var_args */) {
-								// rejectされた場合は連鎖的にdisposeする
-								fwLogger.error(FW_LOG_INIT_CONTROLLER_REJECTED, controllerName,
-										isInitEvent ? '__init' : '__ready');
-								fwLogger.error(FW_LOG_INIT_CONTROLLER_ERROR,
-										controller.rootController.__name);
-
-								var failReason = createRejectReason(
-										ERR_CODE_CONTROLLER_REJECTED_BY_USER, controllerName,
-										argsToArray(arguments));
-
-								// 同じrootControllerを持つ他の子のdisposeによって、
-								// controller.rootControllerがnullになっている場合があるのでそのチェックをしてからdisposeする
-								controller.rootController
-										&& controller.rootController.dispose(failReason);
-							});
-				} else {
-					callback();
-				}
-			};
-			// getPromisesForXXXの戻り値が空の配列の場合はfunc()は同期的に呼ばれる
-			var promises = isInitEvent ? getPromisesForInit(controllerInstance)
-					: getPromisesForReady(controllerInstance);
-			if (isInitEvent && isLeafController) {
-				promises.push(leafPromise);
+			// ライフサイクルイベント名で場合分けして、待機するプロミスの取得と実行するコールバックの作成を行う
+			// __postInit, __readyは子から先に実行する
+			if (funcName === '__init') {
+				callback = createCallbackForInit(c);
+				promises = getPromisesForInit(c);
+			} else if (funcName === '__postInit') {
+				callback = createCallbackForPostInit(c);
+				promises = getDescendantControllerPromises(c, 'postInitPromise');
+			} else {
+				callback = createCallbackForReady(c);
+				promises = getDescendantControllerPromises(c, 'readyPromise');
 			}
-			// dfdがrejectされたとき、commonFailHandlerが発火しないようにするため、dummyのfailハンドラを登録する
-			h5.async.when(promises).done(function() {
-				func();
-			}).fail(dummyFailHandler);
-		};
-		execInner(controller);
+
+			// waitForPromisesで全てのプロミスが終わってからライフサイクルイベントの呼び出しを行う
+			// promisesの中にpendingのpromiseが無い場合(空または全てのプロミスがresolve/reject済み)の場合、
+			// ライフサイクルイベントの呼び出しは同期的に呼ばれる
+			waitForPromises(promises, createLifecycleCaller(c, funcName, callback));
+		}
+		doForEachControllerGroups(controller, execInner);
 	}
 
 	/**
-	 * __initイベントを実行するために必要なPromiseを返します。
+	 * __postInitイベントを実行するために必要なPromiseを返します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 * @returns {Promise[]} Promiseオブジェクト
 	 */
 	function getPromisesForInit(controller) {
-		// 子孫コントローラのinitPromiseオブジェクトを取得
-		var initPromises = getDescendantControllerPromises(controller, 'initPromise');
+		// 先祖コントローラのinitPromiseオブジェクトを取得
+		var initPromises = getAncestorControllerPromises(controller, 'initPromise');
 		// 自身のテンプレート用Promiseオブジェクトを取得
-		initPromises.push(controller.preinitPromise);
+		initPromises.push(controller.preInitPromise);
 		return initPromises;
 	}
 
 	/**
-	 * __readyイベントを実行するために必要なPromiseを返します。
+	 * __init実行後に実行するコールバック関数を返します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
-	 * @returns {Promise[]} Promiseオブジェクト
-	 */
-	function getPromisesForReady(controller) {
-		// 子孫コントローラのreadyPromiseオブジェクトを取得
-		return getDescendantControllerPromises(controller, 'readyPromise');
-	}
-
-	/**
-	 * __initイベントで実行するコールバック関数を返します。
-	 *
-	 * @param {Controller} controller コントローラ
+	 * @returns {Function} 次に実行する__initを知らせるために、子コントローラの配列を返す関数を返します
 	 */
 	function createCallbackForInit(controller) {
 		return function() {
@@ -5279,13 +6104,99 @@ var h5internal = {
 			var initDfd = controller.__controllerContext.initDfd;
 			// FW、ユーザともに使用しないので削除
 			delete controller.__controllerContext.templatePromise;
-			delete controller.__controllerContext.preinitDfd;
+			delete controller.__controllerContext.preInitDfd;
 			delete controller.__controllerContext.initDfd;
+
+			// 子コントローラのrootElementとviewを設定
+			var rootElement = controller.rootElement;
+			var childControllers = [];
+			try {
+				var meta = controller.__meta;
+				doForEachChildControllers(controller, function(c, parent, prop) {
+					childControllers.push(c);
+					// __metaが指定されている場合、__metaのrootElementを考慮した要素を取得する
+					var target;
+					if (meta && meta[prop] && meta[prop].rootElement) {
+						target = getBindTarget(meta[prop].rootElement, rootElement, c);
+					} else {
+						target = rootElement;
+					}
+					// ターゲット要素のチェック
+					validateTargetElement(target, c.__controllerContext.controllerDef, c.__name);
+					// ルートエレメントの設定
+					c.rootElement = target;
+					// コントローラのviewにコントローラを設定
+					c.view.__controller = c;
+				});
+			} catch (e) {
+				// エラーが起きたらコントローラをdispose
+				controller.rootController.dispose(e);
+				return;
+			}
+
+			// resolveして、次のコールバックがあれば次を実行
 			initDfd.resolveWith(controller);
 
+			// resolveして呼ばれたコールバック内(子の__init)でdisposeされたかどうかチェック
+			if (isDisposing(controller)) {
+				return;
+			}
+
+			// 子コントローラが無い(リーフノード)の場合、全コントローラのinitが終わったかどうかをチェック
+			var isAllInitDone = !childControllers.length && (function() {
+				var ret = true;
+				doForEachControllerGroups(controller.rootController, function(c) {
+					ret = c.isInit;
+					return ret;
+				});
+				return ret;
+			})();
+			if (isAllInitDone) {
+				// 全コントローラの__initが終わったら__postInitを呼び出す
+				triggerPostInit(controller.rootController);
+				return;
+			}
+		};
+	}
+
+	/**
+	 * __postInitイベントで実行するコールバック関数を返します。
+	 *
+	 * @private
+	 * @param {Controller} controller コントローラ
+	 * @returns {Function} コールバック関数
+	 */
+	function createCallbackForPostInit(controller) {
+		return function() {
+			// disopseされていたら何もしない。
+			if (isDisposing(controller)) {
+				return;
+			}
+			controller.isPostInit = true;
+			var postInitDfd = controller.__controllerContext.postInitDfd;
+			// FW、ユーザともに使用しないので削除
+			delete controller.__controllerContext.postInitDfd;
+			postInitDfd.resolveWith(controller);
+
 			if (!isDisposed(controller) && controller.__controllerContext.isRoot) {
-				// ルートコントローラであれば次の処理(イベントハンドラのバインドと__readyの実行)へ進む
-				bindAndTriggerReady(controller);
+				// ルートコントローラであれば次の処理
+				// イベントハンドラのバインド
+				doForEachControllerGroups(controller, function(c, parent, prop) {
+					// 親コントローラの__metaからこのコントローラについてuseHandlersの定義を取得
+					var useHandlers = parent && parent.__meta && parent.__meta[prop]
+							&& parent.__meta[prop].useHandlers;
+					if (useHandlers === false) {
+						// 親のuseHandlersでfalseが指定されていた場合は何もしない
+						return;
+					}
+					// rootElementに値が無ければバインドしない(unbindされた場合等)
+					if (!c.rootElement) {
+						return;
+					}
+					bindByBindMap(c);
+				});
+				// __readyの実行
+				triggerReady(controller);
 			}
 		};
 	}
@@ -5293,7 +6204,9 @@ var h5internal = {
 	/**
 	 * __readyイベントで実行するコールバック関数を返します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
+	 * @returns {Function} コールバック関数
 	 */
 	function createCallbackForReady(controller) {
 		return function() {
@@ -5310,7 +6223,8 @@ var h5internal = {
 
 			if (!isDisposed(controller) && controller.__controllerContext.isRoot) {
 				// ルートコントローラであれば全ての処理が終了したことを表すイベント"h5controllerready"をトリガ
-				if (!controller.rootElement || !controller.isInit || !controller.isReady) {
+				if (!controller.rootElement || !controller.isInit || !controller.isPostInit
+						|| !controller.isReady) {
 					return;
 				}
 				$(controller.rootElement).trigger('h5controllerready', controller);
@@ -5321,6 +6235,7 @@ var h5internal = {
 	/**
 	 * テンプレートに渡すセレクタとして正しいかどうかを返します。
 	 *
+	 * @private
 	 * @param {String} selector セレクタ
 	 * @returns {Boolean} テンプレートに渡すセレクタとして正しいかどうか(true=正しい)
 	 */
@@ -5338,7 +6253,8 @@ var h5internal = {
 	 * 指定された要素が文字列があれば、ルートエレメント、{}記法を考慮した要素をjQueryオブジェクト化して返します。 DOM要素、jQueryオブジェクトであれば、
 	 * jQueryオブジェクト化して(指定要素がjQueryオブジェクトの場合、無駄な処理になるがコスト的には問題ない)返します。
 	 *
-	 * @param {String|DOM|jQuery} セレクタ、DOM要素、jQueryオブジェクト
+	 * @private
+	 * @param {String|DOM|jQuery} element セレクタ、DOM要素、jQueryオブジェクト
 	 * @param {DOM} rootElement ルートエレメント
 	 * @param {Boolean} isTemplate テンプレートで使用するかどうか
 	 * @returns {jQuery} jQueryオブジェクト
@@ -5364,21 +6280,21 @@ var h5internal = {
 	/**
 	 * ハンドラをアンバインドマップに登録します。
 	 *
-	 * @param {Controller} controller コントローラ
-	 * @param {String} selector セレクタ
-	 * @param {String} eventName イベント名
-	 * @param {Function} handler ハンドラ
+	 * @private
+	 * @param {Object} bindObj
+	 * @param {Object} eventHandlerInfo イベントハンドラ情報
 	 */
-	function registerUnbindMap(controller, selector, eventName, handler) {
-		if (!controller.__controllerContext.unbindMap[selector]) {
-			controller.__controllerContext.unbindMap[selector] = {};
-		}
-		controller.__controllerContext.unbindMap[selector][eventName] = handler;
+	function registerWithUnbindList(bindObj, eventHandlerInfo) {
+		bindObj.controller.__controllerContext.unbindHandlerList.push({
+			bindObj: bindObj,
+			eventHandlerInfo: eventHandlerInfo
+		});
 	}
 
 	/**
 	 * バインドオブジェクトを返します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 * @param {String} selector セレクタ
 	 * @param {String} eventName イベント名
@@ -5403,6 +6319,7 @@ var h5internal = {
 	/**
 	 * クラスブラウザな"mousewheel"イベントのためのバインドオブジェクトを返します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 * @param {String} selector セレクタ
 	 * @param {String} eventName イベント名
@@ -5444,11 +6361,12 @@ var h5internal = {
 	/**
 	 * hifiveの独自イベント"h5trackstart", "h5trackmove", "h5trackend"のためのバインドオブジェクトを返します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 * @param {String} selector セレクタ
-	 * @param {String} eventName イベント名
+	 * @param {String} eventName イベント名 h5trackstart,h5trackmove,h5trackendのいずれか
 	 * @param {Function} func ハンドラとして登録したい関数
-	 * @returns {Object[]} バインドオブジェクト
+	 * @returns {Object|Object[]} バインドオブジェクト
 	 *          <ul>
 	 *          <li>bindObj.controller - コントローラ</li>
 	 *          <li>bindObj.selector - セレクタ</li>
@@ -5460,22 +6378,25 @@ var h5internal = {
 		// タッチイベントがあるかどうか
 		var hasTouchEvent = typeof document.ontouchstart !== TYPE_OF_UNDEFINED;
 		if (eventName !== EVENT_NAME_H5_TRACKSTART) {
-			if (hasTouchEvent) {
-				return getNormalBindObj(controller, selector, eventName, func);
-			}
-			// イベントオブジェクトの正規化
+			// h5trackmove,h5trackendはh5trackstart時にバインドするのでここでmouseやtouchにバインドするbindObjは作らない
+			// h5trackmoveまたはh5trackendのbindObjのみを返す
 			return getNormalBindObj(controller, selector, eventName, function(context) {
-				var event = context.event;
-				var offset = $(event.currentTarget).offset() || {
-					left: 0,
-					top: 0
-				};
-				event.offsetX = event.pageX - offset.left;
-				event.offsetY = event.pageY - offset.top;
+				// マウスイベントによる発火なら場合はオフセットを正規化する
+				var originalEventType = context.event.h5DelegatingEvent.type;
+				if (originalEventType === 'mousemove' || originalEventType === 'mouseup') {
+					var event = context.event;
+					var offset = $(event.currentTarget).offset() || {
+						left: 0,
+						top: 0
+					};
+					event.offsetX = event.pageX - offset.left;
+					event.offsetY = event.pageY - offset.top;
+				}
 				func.apply(this, arguments);
 			});
 		}
-		var getEventType = function(en) {
+
+		function getEventType(en) {
 			switch (en) {
 			case 'touchstart':
 			case 'mousedown':
@@ -5487,11 +6408,11 @@ var h5internal = {
 			case 'mouseup':
 				return EVENT_NAME_H5_TRACKEND;
 			}
-		};
+		}
 
 		// jQuery.Eventオブジェクトのプロパティをコピーする。
 		// 1.6.xの場合, "liveFired"というプロパティがあるがこれをコピーしてしまうとtriggerしてもイベントが発火しない。
-		var copyEventObject = function(src, dest) {
+		function copyEventObject(src, dest) {
 			for ( var prop in src) {
 				if (src.hasOwnProperty(prop) && !dest[prop] && prop !== 'target'
 						&& prop !== 'currentTarget' && prop !== 'originalEvent'
@@ -5500,17 +6421,21 @@ var h5internal = {
 				}
 			}
 			dest.h5DelegatingEvent = src;
-		};
+		}
 
-		var start = hasTouchEvent ? 'touchstart' : 'mousedown';
-		var move = hasTouchEvent ? 'touchmove' : 'mousemove';
-		var end = hasTouchEvent ? 'touchend' : 'mouseup';
 		var $document = $(getDocumentOf(controller.rootElement));
-		var getBindObjects = function() {
+
+		/**
+		 * トラックイベントの一連のイベントについてのbindObjを作る
+		 *
+		 * @private
+		 * @returns {Objects[]}
+		 */
+		function getBindObjects() {
 			// h5trackendイベントの最後でハンドラの除去を行う関数を格納するための変数
 			var removeHandlers = null;
 			var execute = false;
-			var getHandler = function(en, eventTarget, setup) {
+			function getHandler(en, eventTarget, setup) {
 				return function(context) {
 					var type = getEventType(en);
 					var isStart = type === EVENT_NAME_H5_TRACKSTART;
@@ -5518,7 +6443,10 @@ var h5internal = {
 						// スタートイベントが起きた時に実行中 = マルチタッチされた時なので、何もしない
 						return;
 					}
-					if (hasTouchEvent) {
+
+					// タッチイベントかどうか
+					var isTouch = context.event.type.indexOf('touch') === 0;
+					if (isTouch) {
 						// タッチイベントの場合、イベントオブジェクトに座標系のプロパティを付加
 						initTouchEventObject(context.event, en);
 					}
@@ -5552,9 +6480,13 @@ var h5internal = {
 					// sotredEventsにイベントが登録されていれば、そのindexからトリガ済みフラグを取得する
 					var triggeredFlag = h5trackTriggeredFlags[index];
 
-					if (!triggeredFlag && (!hasTouchEvent || execute || isStart)) {
+					if (!triggeredFlag && (!isTouch || execute || isStart)) {
+						// 親子コントローラで複数のイベントハンドラが同じイベントにバインドされているときに、
+						// それぞれがトリガしてイベントハンドラがループしないように制御している。
 						// マウス/タッチイベントがh5track*にトリガ済みではない時にトリガする。
-						// h5track中でないのにmoveやmouseupが起きた時は何もしない。
+						// タッチイベントの場合、h5track中でないのにmoveやtouchendが起きた時は何もしない。
+						// タッチイベントの場合はターゲットにバインドしており(マウスの場合はdocument)、
+						// バブリングによって同じイベントが再度トリガされるのを防ぐためである。
 
 						// トリガ済みフラグを立てる
 						h5trackTriggeredFlags[index] = true;
@@ -5601,8 +6533,12 @@ var h5internal = {
 
 						// h5trackstart実行時に、move、upのハンドラを作成して登録する。
 						// コンテキストをとるように関数をラップして、bindする。
-						var moveHandler = getHandler(move, nt, setupDPos);
-						var upHandler = getHandler(end, nt);
+						// touchstartで発火したならtouchstart,touchendにバインド、
+						// そうでない場合(mousedown)ならmousemove,mousenendにバインド
+						var moveEventType = isTouch ? 'touchmove' : 'mousemove';
+						var endEventType = isTouch ? 'touchend' : 'mouseup';
+						var moveHandler = getHandler(moveEventType, nt, setupDPos);
+						var upHandler = getHandler(endEventType, nt);
 						var moveHandlerWrapped = function(e) {
 							context.event = e;
 							context.evArg = handlerArgumentsToContextEvArg(arguments);
@@ -5614,33 +6550,34 @@ var h5internal = {
 							upHandler(context);
 						};
 
-						var $bindTarget = hasTouchEvent ? $(nt) : $document;
+						// タッチならイベントの起きた要素、マウスならdocumentにバインド
+						var $bindTarget = isTouch ? $(nt) : $document;
 						// moveとendのunbindをする関数
 						removeHandlers = function() {
 							storedEvents = [];
 							h5trackTriggeredFlags = [];
-							$bindTarget.unbind(move, moveHandlerWrapped);
-							$bindTarget.unbind(end, upHandlerWrapped);
-							if (!hasTouchEvent && controller.rootElement !== document) {
-								$(controller.rootElement).unbind(move, moveHandlerWrapped);
-								$(controller.rootElement).unbind(end, upHandlerWrapped);
+							$bindTarget.unbind(moveEventType, moveHandlerWrapped);
+							$bindTarget.unbind(endEventType, upHandlerWrapped);
+							if (!isTouch && controller.rootElement !== document) {
+								$(controller.rootElement).unbind(moveEventType, moveHandlerWrapped);
+								$(controller.rootElement).unbind(endEventType, upHandlerWrapped);
 							}
 						};
 						// h5trackmoveとh5trackendのbindを行う
-						$bindTarget.bind(move, moveHandlerWrapped);
-						$bindTarget.bind(end, upHandlerWrapped);
+						$bindTarget.bind(moveEventType, moveHandlerWrapped);
+						$bindTarget.bind(endEventType, upHandlerWrapped);
 
 						// タッチでなく、かつコントローラのルートエレメントがdocumentでなかったら、ルートエレメントにもバインドする
-						// タッチイベントのない場合、move,endをdocumentにバインドしているが、途中でmousemove,mouseupを
+						// タッチイベントでない場合、move,endをdocumentにバインドしているが、途中でmousemove,mouseupを
 						// stopPropagationされたときに、h5trackイベントを発火することができなくなる。
 						// コントローラのルートエレメント外でstopPropagationされていた場合を考慮して、
 						// ルートエレメントにもmove,endをバインドする。
 						// (ルートエレメントの内側でstopPropagationしている場合は考慮しない)
 						// (タッチの場合はターゲットはstart時の要素なので2重にバインドする必要はない)
-						if (!hasTouchEvent && controller.rootElement !== document) {
+						if (!isTouch && controller.rootElement !== document) {
 							// h5trackmoveとh5trackendのbindを行う
-							$(controller.rootElement).bind(move, moveHandlerWrapped);
-							$(controller.rootElement).bind(end, upHandlerWrapped);
+							$(controller.rootElement).bind(moveEventType, moveHandlerWrapped);
+							$(controller.rootElement).bind(endEventType, upHandlerWrapped);
 						}
 					} else if (type === EVENT_NAME_H5_TRACKEND) {
 						// touchend,mousup時(=h5trackend時)にmoveとendのイベントをunbindする
@@ -5648,19 +6585,23 @@ var h5internal = {
 						execute = false;
 					}
 				};
-			};
-			var createBindObj = function(en) {
+			}
+			function createBindObj(en) {
 				return {
 					controller: controller,
 					selector: selector,
 					eventName: en,
 					handler: getHandler(en)
 				};
-			};
+			}
 			var bindObjects = [getNormalBindObj(controller, selector, eventName, func)];
-			bindObjects.push(createBindObj(start));
+			if (hasTouchEvent) {
+				// タッチがあるならタッチにもバインド
+				bindObjects.push(createBindObj('touchstart'));
+			}
+			bindObjects.push(createBindObj('mousedown'));
 			return bindObjects;
-		};
+		}
 		return getBindObjects();
 	}
 
@@ -5668,8 +6609,10 @@ var h5internal = {
 	 * タッチイベントのイベントオブジェクトにpageXやoffsetXといった座標系のプロパティを追加します。
 	 * <p>
 	 * touchstart/touchmove/touchendをjQuery.trigger()で発火させた場合、originalEventプロパティは存在しないので、座標系プロパティのコピーを行いません。
+	 * </p>
 	 *
-	 * @param {Object} event jQuery.Eventオブジェクト
+	 * @private
+	 * @param {Event} event jQuery.Eventオブジェクト
 	 * @param {String} eventName イベント名
 	 */
 	function initTouchEventObject(event, eventName) {
@@ -5707,6 +6650,7 @@ var h5internal = {
 	/**
 	 * イベントオブジェクトを正規化します。
 	 *
+	 * @private
 	 * @param {Object} event jQuery.Eventオブジェクト
 	 */
 	function normalizeEventObjext(event) {
@@ -5739,7 +6683,7 @@ var h5internal = {
 	 * 引数が複数(イベントオブジェクトは除く)ある場合は配列、1つしかない場合はそれをそのまま、無い場合はundefinedを返します。
 	 *
 	 * @private
-	 * @param {argumentsObject} イベントハンドラに渡されたargumentsオブジェクト
+	 * @param {argumentsObject} args イベントハンドラに渡されたargumentsオブジェクト
 	 * @returns {Any} context.evArgに格納する形式のオブジェクト
 	 */
 	function handlerArgumentsToContextEvArg(args) {
@@ -5762,8 +6706,10 @@ var h5internal = {
 	/**
 	 * イベントコンテキストを作成します。
 	 *
+	 * @private
 	 * @param {Object} bindObj バインドオブジェクト
 	 * @param {Array} args 1番目にはjQuery.Eventオブジェクト、2番目はjQuery.triggerに渡した引数
+	 * @returns {EventContext}
 	 */
 	function createEventContext(bindObj, args) {
 		var event = null;
@@ -5782,7 +6728,9 @@ var h5internal = {
 	/**
 	 * 初期化イベントコンテキストをセットアップします。
 	 *
-	 * @param {Object} rootController ルートコントローラ
+	 * @private
+	 * @param {Controller} rootController ルートコントローラ
+	 * @returns {Object} argsを持つオブジェクト
 	 */
 	function createInitializationContext(rootController) {
 		return {
@@ -5791,47 +6739,22 @@ var h5internal = {
 	}
 
 	/**
-	 * コントローラとその子孫コントローラのrootElementにnullをセットします。
+	 * コントローラとその子孫コントローラのrootElementと、view.__controllerにnullをセットします。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 */
 	function unbindRootElement(controller) {
-		for ( var prop in controller) {
-			var c = controller[prop];
-			if (isChildController(controller, prop)) {
-				c.rootElement = null;
-				c.view.__controller = null;
-				unbindRootElement(c);
-			}
-		}
-	}
-
-	/**
-	 * コントローラとその子孫コントローラのrootElementをセットします。
-	 *
-	 * @param {Controller} controller コントローラ
-	 */
-	function copyAndSetRootElement(controller) {
-		var rootElement = controller.rootElement;
-		var meta = controller.__meta;
-		for ( var prop in controller) {
-			var c = controller[prop];
-			if (isChildController(controller, prop)) {
-				// __metaが指定されている場合、__metaのrootElementを考慮した要素を取得する
-				if (meta && meta[prop] && meta[prop].rootElement) {
-					c.rootElement = getBindTarget(meta[prop].rootElement, rootElement, c);
-				} else {
-					c.rootElement = rootElement;
-				}
-				c.view.__controller = c;
-				copyAndSetRootElement(c);
-			}
-		}
+		doForEachControllerGroups(controller, function(c) {
+			c.rootElement = null;
+			c.view.__controller = null;
+		});
 	}
 
 	/**
 	 * コントローラをバインドする対象となる要素を返します。
 	 *
+	 * @private
 	 * @param {String|DOM|jQuery} element セレクタ、DOM要素、もしくはjQueryオブジェクト
 	 * @param {DOM} [rootElement] ルートエレメント
 	 * @param {Controller} controller コントローラ
@@ -5864,19 +6787,17 @@ var h5internal = {
 	}
 
 	/**
-	 * イベントハンドラのバインドと__readyイベントを実行します。
+	 * __readyイベントを実行します
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
+	 * @returns {Promose}
 	 */
-	function bindAndTriggerReady(controller) {
-		bindByBindMap(controller);
-		bindDescendantHandlers(controller);
-
-		var managed = controller.__controllerContext.managed;
-
+	function triggerReady(controller) {
 		// コントローラマネージャの管理対象に追加する
 		// フレームワークオプションでコントローラマネージャの管理対象としない(managed:false)の場合、コントローラマネージャに登録しない
-		var controllers = h5.core.controllerManager.controllers;
+		var managed = controller.__controllerContext.managed;
+		var controllers = controllerManager.controllers;
 		if ($.inArray(controller, controllers) === -1 && managed !== false) {
 			controllers.push(controller);
 		}
@@ -5887,59 +6808,73 @@ var h5internal = {
 			$(controller.rootElement).trigger('h5controllerbound', controller);
 		}
 
-		// コントローラの__ready処理を実行
-		var initPromises = getDescendantControllerPromises(controller, 'initPromise');
-		initPromises.push(controller.initPromise);
-		h5.async.when(initPromises).done(function() {
-			executeLifecycleEventChain(controller, false);
+		// __readyイベントの実行
+		executeLifecycleEventChain(controller, '__ready');
+	}
+
+	/**
+	 * __initイベントを実行します
+	 *
+	 * @private
+	 * @param {Controller} controller コントローラ
+	 */
+	function triggerInit(controller) {
+		// 必ず非同期になるようにする
+		var asyncDfd = getDeferred();
+		setTimeout(function() {
+			asyncDfd.resolve();
+		}, 0);
+
+		// __initイベントの実行
+		// (CFHの動作回避のためfailにdummyを登録)
+		asyncDfd.promise().done(function() {
+			executeLifecycleEventChain(controller, '__init');
 		}).fail(dummyFailHandler);
 	}
 
 	/**
-	 * rootController, parentControllerのセットと__initイベントを実行します。
+	 * rootController, parentControllerのセットと__postInitイベントを実行します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 */
-	function setRootAndTriggerInit(controller) {
-		if (controller.rootController === null) {
-			// rootControllerとparentControllerのセット
-			initRootAndParentController(controller);
-		}
-		copyAndSetRootElement(controller);
-
-		// __initイベントの実行
-		executeLifecycleEventChain(controller, true);
+	function triggerPostInit(controller) {
+		// __postInitイベントの実行
+		executeLifecycleEventChain(controller, '__postInit');
 	}
 
 	/**
 	 * h5.core.bindController()のために必要なプロパティをコントローラに追加します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 * @param {Object} param 初期化パラメータ
 	 */
 	function initInternalProperty(controller, param) {
-		var templateDfd = getDeferred();
-		templateDfd.resolve();
-		controller.__controllerContext.templatePromise = templateDfd.promise();
-		controller.__controllerContext.initDfd = getDeferred();
-		controller.initPromise = controller.__controllerContext.initDfd.promise();
-		controller.__controllerContext.readyDfd = getDeferred();
-		controller.readyPromise = controller.__controllerContext.readyDfd.promise();
-		controller.isInit = false;
-		controller.isReady = false;
-		controller.__controllerContext.args = param;
-		for ( var prop in controller) {
-			if (isChildController(controller, prop)) {
-				initInternalProperty(controller[prop]);
-			}
-		}
+		doForEachControllerGroups(controller, function(c) {
+			var templateDfd = getDeferred();
+			templateDfd.resolve();
+			c.__controllerContext.templatePromise = templateDfd.promise();
+			c.__controllerContext.initDfd = getDeferred();
+			c.initPromises = c.__controllerContext.initDfd.promise();
+			c.__controllerContext.postInitDfd = getDeferred();
+			c.postInitPromise = c.__controllerContext.postInitDfd.promise();
+			c.__controllerContext.readyDfd = getDeferred();
+			c.readyPromise = c.__controllerContext.readyDfd.promise();
+			c.isInit = false;
+			c.isPostInit = false;
+			c.isReady = false;
+			c.__controllerContext.args = param;
+		});
 	}
 
 	/**
 	 * インジケータを呼び出します。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 * @param {Object} option インジケータのオプション
+	 * @returns {Indicator}
 	 */
 	function callIndicator(controller, option) {
 		var target = null;
@@ -5955,46 +6890,39 @@ var h5internal = {
 	}
 
 	/**
-	 * __unbind, __disposeイベントを実行します。
+	 * __unbind, __disposeイベントを実行します。 各コントローラの__unbind,__disposeが返すプロミスを成功かどうか変わらずに待つプロミス
 	 *
-	 * @param {Controller} controller コントローラ
-	 * @param {String} property プロパティ名(__unbind | __dispose)
+	 * @private
+	 * @param {Controller} controller コントローラ(ルートコントローラ)
+	 * @param {String} funcName プロパティ名(__unbind | __dispose)
 	 * @returns {Promise[]} Promiseオブジェクト
 	 */
-	function executeLifeEndChain(controller, property) {
+	function executeLifeEndChain(controller, funcName) {
 		var promises = [];
-		var targets = [];
-		var execute = function(parentController) {
-			var df = getDeferred();
-
-			targets.push(parentController);
-			for ( var prop in parentController) {
-				if (isChildController(parentController, prop)) {
-					var c = parentController[prop];
-					if ($.inArray(c, targets) === -1) {
-						execute(c);
-					}
-				}
-			}
-			if (parentController[property] && $.isFunction(parentController[property])) {
-				var promise = parentController[property]();
-				if (h5.async.isPromise(promise)) {
-					promise.always(function() {
+		// 子から順に__unbind,__disposeの実行
+		doForEachControllerGroupsDepthFirst(controller, function(c) {
+			if (c[funcName] && isFunction(c[funcName])) {
+				var ret = c[funcName]();
+				if (isPromise(ret)) {
+					var df = h5.async.deferred();
+					ret.always(function() {
+						// __unbind,__disposeが返すプロミスが成功したかどうかにかかわらず終了を待つプロミスにする
 						df.resolve();
 					});
 					promises.push(df.promise());
 				}
 			}
-		};
-		execute(controller);
+		});
 		return promises;
 	}
+
 	/**
 	 * オブジェクトのhasOwnPropertyがtrueのプロパティ全てにnullを代入します。
 	 * <p>
 	 * ネストしたオブジェクトへのnull代入は行いません
 	 * </p>
 	 *
+	 * @private
 	 * @param {Object} obj
 	 */
 	function nullify(obj) {
@@ -6008,28 +6936,18 @@ var h5internal = {
 	/**
 	 * コントローラのリソース解放処理を行います。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 */
 	function disposeController(controller) {
-		var targets = [];
-		function dispose(parentController) {
-			targets.push(parentController);
-			if (parentController.view.__view) {
-				parentController.view.clear();
+		// 子から順にview.clearとnullifyの実行
+		doForEachControllerGroupsDepthFirst(controller, function(c) {
+			nullify(c);
+			if (c.view && c.view.__view) {
+				c.view.clear();
 			}
-			for ( var prop in parentController) {
-				if (parentController.hasOwnProperty(prop)
-						&& isChildController(parentController, prop)) {
-					var c = parentController[prop];
-					if ($.inArray(c, targets) === -1) {
-						dispose(c);
-					}
-				}
-			}
-			// 子コントローラのdispose処理が終わってからプロパティにnullを代入する
-			nullify(parentController);
-		}
-		dispose(controller);
+			nullify(c);
+		});
 	}
 
 	/**
@@ -6037,8 +6955,10 @@ var h5internal = {
 	 * 持っているかどうか問い合わせ、持っていればそのインスタンスを、持っていなければ更に上に問い合わせます。
 	 * ルートコントローラのViewインスタンスも持っていない場合、h5.core.viewに格納された最上位のViewインスタンスを返します。
 	 *
+	 * @private
 	 * @param {String} templateId テンプレートID
 	 * @param {Controller} controller コントローラ
+	 * @returns {View}
 	 */
 	function getView(templateId, controller) {
 		if (controller.view.__view.isAvailable(templateId)) {
@@ -6080,52 +7000,38 @@ var h5internal = {
 	/**
 	 * 指定されたコントローラとその子供コントローラのresolve/rejectされていないdeferredをrejectします。
 	 *
+	 * @private
 	 * @param {Controller} controller コントローラ
 	 * @param {Any} [errorObj] rejectに渡すオブジェクト
 	 */
 	function rejectControllerDfd(controller, errorObj) {
-		// 指定されたコントローラから見た末裔のコントローラを取得
-		var descendantControllers = [];
-		var getDescendant = function(con) {
-			var hasChildController = false;
-			for ( var prop in con) {
-				// 子コントローラがあれば再帰的に処理
-				if (isChildController(con, prop)) {
-					hasChildController = true;
-					getDescendant(con[prop]);
-				}
-			}
-			if (!hasChildController) {
-				// 子コントローラを持っていないなら、descendantControllersにpush
-				descendantControllers.push(con);
-			}
-		};
-		getDescendant(controller);
+		// 指定されたコントローラのルートコントローラを取得
+		// ルートからinitDfdをrejectしていく
+		var propertyArray = ['postInitDfd', 'readyDfd'];
 
-		var propertyArray = ['initDfd', 'readyDfd'];
-		function rejectControllerDfdLoop(con, propertyIndex) {
-			var property = propertyArray[propertyIndex];
-			var dfd = con.__controllerContext[property];
-			if (dfd) {
-				if (!isRejected(dfd) && !isResolved(dfd)) {
+		// ルートからinitDfd.rejectしていく
+		var controllers = [];
+		doForEachControllerGroups(controller, function(c) {
+			controllers.push(c);
+			var dfd = c.__controllerContext['initDfd'];
+			if (dfd && !isRejected(dfd) && !isResolved(dfd)) {
+				// thisをDfdを持つコントローラにしてreject
+				dfd.rejectWith(c, [errorObj]);
+			}
+		});
+
+		// 子からpostInitDfd, readyDfdをrejectしていく
+		for (var i = 0, l = propertyArray.length; i < l; i++) {
+			var property = propertyArray[i];
+			// initDfdと逆順
+			for (var index = controllers.length - 1; index >= 0; index--) {
+				var c = controllers[index];
+				var dfd = c.__controllerContext[property];
+				if (dfd && !isRejected(dfd) && !isResolved(dfd)) {
 					// thisをDfdを持つコントローラにしてreject
-					dfd.rejectWith(con, [errorObj]);
+					dfd.rejectWith(c, [errorObj]);
 				}
 			}
-			if (con.parentController) {
-				rejectControllerDfdLoop(con.parentController, propertyIndex);
-			} else {
-				// readyDfdまでrejectしたら終了
-				if (propertyIndex < propertyArray.length - 1) {
-					// ルートコントローラまで辿ったら、末裔のコントローラに対して次のdfdをrejectさせる
-					for (var i = 0, l = descendantControllers.length; i < l; i++) {
-						rejectControllerDfdLoop(descendantControllers[i], propertyIndex + 1);
-					}
-				}
-			}
-		}
-		for (var i = 0, l = descendantControllers.length; i < l; i++) {
-			rejectControllerDfdLoop(descendantControllers[i], 0);
 		}
 	}
 
@@ -6133,7 +7039,7 @@ var h5internal = {
 	 * インラインコメントテンプレートノードを探す
 	 *
 	 * @private
-	 * @param {Node} node 探索を開始するルートノード
+	 * @param {Node} rootNode 探索を開始するルートノード
 	 * @param {String} id テンプレートID
 	 * @returns {Node} 発見したコメントノード、見つからなかった場合はnull
 	 */
@@ -6181,6 +7087,8 @@ var h5internal = {
 	 * ロジック、コントローラが持つown
 	 *
 	 * @private
+	 * @param {Function} func
+	 * @returns funcの実行結果
 	 */
 	function own(func) {
 		var that = this;
@@ -6193,6 +7101,8 @@ var h5internal = {
 	 * ロジック、コントローラが持つownWithOrg
 	 *
 	 * @private
+	 * @param {Function} func
+	 * @returns funcの実行結果
 	 */
 	function ownWithOrg(func) {
 		var that = this;
@@ -6201,6 +7111,200 @@ var h5internal = {
 			args.unshift(this);
 			return func.apply(that, args);
 		};
+	}
+
+	/**
+	 * templateDfdにテンプレートのロード待機処理を設定する
+	 *
+	 * @param {Controller} controller
+	 * @param {Deferred} templateDfd
+	 * @param {String|String[]} templates テンプレートのパス(またはその配列)
+	 */
+	function setTemlatesDeferred(controller, templateDfd, templates) {
+		var controllerName = controller.__name;
+		function viewLoad(count) {
+			// Viewモジュールがない場合、この直後のloadでエラーが発生してしまうためここでエラーを投げる。
+			if (!h5.u.obj.getByPath('h5.core.view')) {
+				throwFwError(ERR_CODE_NOT_VIEW);
+			}
+			var vp = controller.view.load(templates);
+			vp.done(function(result) {
+				/* del begin */
+				if (templates && templates.length > 0) {
+					fwLogger.debug(FW_LOG_TEMPLATE_LOADED, controllerName);
+				}
+				/* del end */
+				templateDfd.resolve();
+			}).fail(
+					function(result) {
+						// テンプレートのロードをリトライする条件は、リトライ回数が上限回数未満、かつ
+						// jqXhr.statusが"0"、もしくは"12029"であること。
+						// jqXhr.statusの値の根拠は、IE以外のブラウザだと通信エラーの時に"0"になっていること、
+						// IEの場合は、コネクションが繋がらない時のコードが"12029"であること。
+						// 12000番台すべてをリトライ対象としていないのは、何度リトライしても成功しないエラーが含まれていることが理由。
+						// WinInet のエラーコード(12001 - 12156):
+						// http://support.microsoft.com/kb/193625/ja
+						var jqXhrStatus = result.detail.error.status;
+						if (count === h5.settings.dynamicLoading.retryCount || jqXhrStatus !== 0
+								&& jqXhrStatus !== 12029) {
+							fwLogger.error(FW_LOG_TEMPLATE_LOAD_FAILED, controllerName,
+									result.detail.url);
+							setTimeout(function() {
+								templateDfd.reject(result);
+							}, 0);
+							return;
+						}
+						setTimeout(function() {
+							viewLoad(++count);
+						}, h5.settings.dynamicLoading.retryInterval);
+					});
+		}
+		viewLoad(0);
+	}
+	/**
+	 * コントローラキャッシュエントリークラス
+	 *
+	 * @private
+	 * @name ControllerCacheEntry
+	 * @class
+	 */
+	function ControllerCacheEntry() {
+		// ロジックのプロパティ
+		this.logicProperties = [];
+		// イベントハンドランプロパティ
+		this.eventHandlerProperties = [];
+		// 関数のプロパティ
+		this.functionProperties = [];
+		// その他、コントローラインスタンスに持たせるプロパティ
+		this.otherProperties = [];
+		// バインドマップ
+		this.bindMap = {};
+		// 子コントローラのプロパティ
+		this.childControllerProperties = [];
+	}
+
+	/**
+	 * コントローラのキャッシュを作成する
+	 *
+	 * @private
+	 * @param {Object} controllerDef コントローラ定義オブジェクト
+	 * @returns コントローラのキャッシュオブジェクト
+	 */
+	function createControllerCache(controllerDef) {
+		var cache = new ControllerCacheEntry();
+		var logicProperties = cache.logicProperties;
+		var eventHandlerProperties = cache.eventHandlerProperties;
+		var functionProperties = cache.functionProperties;
+		var otherProperties = cache.otherProperties;
+		var bindMap = cache.bindMap;
+		var childControllerProperties = cache.childControllerProperties;
+
+		// 同じセレクタかつ同じイベントに複数のハンドラが指定されているかをチェックするためのマップ
+		var checkBindMap = {};
+
+		for ( var prop in controllerDef) {
+			if (isEventHandler(controllerDef, prop)) {
+				// イベントハンドラのキー
+				eventHandlerProperties.push(prop);
+				// イベントハンドラの場合
+				// bindMapの作成
+				var propTrimmed = $.trim(prop);
+				var lastIndex = propTrimmed.lastIndexOf(' ');
+				var selector = $.trim(propTrimmed.substring(0, lastIndex));
+				var eventName = $.trim(propTrimmed.substring(lastIndex + 1, propTrimmed.length));
+				var global = isGlobalSelector(selector);
+				var bindRequested = isBindRequested(eventName);
+				if (bindRequested) {
+					eventName = $.trim(trimBindEventBracket(eventName));
+				}
+
+				if (global) {
+					var selector = trimGlobalSelectorBracket(selector);
+					if (selector === 'this') {
+						throwFwError(ERR_CODE_EVENT_HANDLER_SELECTOR_THIS, [controllerDef.__name],
+								{
+									controllerDef: controllerDef
+								});
+					}
+				}
+				if (!checkBindMap[selector]) {
+					checkBindMap[selector] = {};
+				}
+
+				// 同じセレクタ、同じイベントハンドラに同じ指定(global,bindRequested)でイベントハンドラが指定されていたらエラー
+				if (checkBindMap[selector][eventName]
+						&& checkBindMap[selector][eventName].global === global
+						&& checkBindMap[selector][eventName].bindRequested === bindRequested) {
+					throwFwError(ERR_CODE_SAME_EVENT_HANDLER, [controllerDef.__name, selector,
+							eventName], {
+						controllerDef: controllerDef
+					});
+				} else {
+					checkBindMap[selector][eventName] = {
+						global: global,
+						bindRequested: bindRequested
+					};
+				}
+
+				bindMap[prop] = {
+					selector: selector,
+					global: global,
+					bindRequested: bindRequested,
+					eventName: eventName,
+					propertyKey: prop
+				};
+			} else if (endsWith(prop, SUFFIX_CONTROLLER) && controllerDef[prop]
+					&& !isFunction(controllerDef[prop])) {
+				// 子コントローラ
+				childControllerProperties.push(prop);
+			} else if (endsWith(prop, SUFFIX_LOGIC) && controllerDef[prop]
+					&& !isFunction(controllerDef[prop])) {
+				// ロジック
+				logicProperties.push(prop);
+			} else if (isFunction(controllerDef[prop])) {
+				// メソッド(ライフサイクル含む)
+				functionProperties.push(prop);
+			} else {
+				// その他プロパティ
+				otherProperties.push(prop);
+			}
+		}
+		return cache;
+	}
+
+	/**
+	 * ロジックキャッシュエントリークラス
+	 *
+	 * @private
+	 * @name LogicCacheEntry
+	 * @class
+	 */
+	function LogicCacheEntry() {
+		// ロジックのプロパティ(子ロジック)
+		this.logicProperties = [];
+		// 関数のプロパティ
+		this.functionProperties = [];
+	}
+
+	/**
+	 * ロジックのキャッシュを作成する
+	 *
+	 * @private
+	 * @param {Object} logicDef ロジック定義オブジェクト
+	 * @returns ロジックのキャッシュオブジェクト
+	 */
+	function createLogicCache(logicDef) {
+		var cache = new LogicCacheEntry();
+		var functionProperties = cache.functionProperties;
+		var logicProperties = cache.logicProperties;
+		for ( var p in logicDef) {
+			if (isChildLogic(logicDef, p)) {
+				logicProperties.push(p);
+			} else if (isFunction(logicDef[p])) {
+				functionProperties.push(p);
+			}
+		}
+		return cache;
 	}
 	// =========================================================================
 	//
@@ -6261,18 +7365,11 @@ var h5internal = {
 			isRoot: isRoot,
 
 			/**
-			 * バインド対象となるイベントハンドラのマップ.
-			 *
-			 * @type Object
-			 */
-			bindMap: {},
-
-			/**
 			 * アンバインド対象となるイベントハンドラのマップ.
 			 *
 			 * @type Object
 			 */
-			unbindMap: {},
+			unbindHandlerList: [],
 
 			/**
 			 * コントローラ定義オブジェクト
@@ -6293,6 +7390,15 @@ var h5internal = {
 		 * @name isInit
 		 */
 		controller.isInit = false;
+
+		/**
+		 * コントローラのライフサイクルイベント__postInitが終了したかどうかを返します。
+		 *
+		 * @type Boolean
+		 * @memberOf Controller
+		 * @name isPostInit
+		 */
+		controller.isPostInit = false;
 
 		/**
 		 * コントローラのライフサイクルイベント__readyが終了したかどうかを返します。
@@ -6367,14 +7473,14 @@ var h5internal = {
 		 * </tr>
 		 * </table>
 		 * <p>
-		 * また、preinitPromise.done()に関数を設定すると読み込み成功時に、
-		 * preinitPromise.fail()に関数を設定すると読み込み失敗時に、設定した関数を実行します。
+		 * また、preInitPromise.done()に関数を設定すると読み込み成功時に、
+		 * preInitPromise.fail()に関数を設定すると読み込み失敗時に、設定した関数を実行します。
 		 *
 		 * @type Promise
 		 * @memberOf Controller
-		 * @name preinitPromise
+		 * @name preInitPromise
 		 */
-		controller.preinitPromise = null;
+		controller.preInitPromise = null;
 
 		/**
 		 * コントローラのライフサイクルイベント__initについてのPromiseオブジェクトを返します。
@@ -6384,6 +7490,15 @@ var h5internal = {
 		 * @name initPromise
 		 */
 		controller.initPromise = null;
+
+		/**
+		 * コントローラのライフサイクルイベント__postInitについてのPromiseオブジェクトを返します。
+		 *
+		 * @type Promise
+		 * @memberOf Controller
+		 * @name postInitPromise
+		 */
+		controller.postInitPromise = null;
 
 		/**
 		 * コントローラのライフサイクルイベント__readyについてのPromiseオブジェクトを返します。
@@ -6431,6 +7546,9 @@ var h5internal = {
 	 * JSDTのフォーマッタが過剰にインデントしてしまうので、独立した関数として記述している
 	 *
 	 * @private
+	 * @param element
+	 * @param context
+	 * @returns {Binding}
 	 */
 	function View_bind(element, context) {
 		var target = element;
@@ -6468,205 +7586,159 @@ var h5internal = {
 		return this.__view.bind(target, context);
 	}
 
-	$
-			.extend(
-					View.prototype,
-					{
-						/**
-						 * パラメータで置換された、指定されたテンプレートIDのテンプレートを取得します。
-						 *
-						 * @param {String} templateId テンプレートID
-						 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
-						 * @returns {String} テンプレート文字列
-						 * @function
-						 * @name get
-						 * @memberOf Controller.view
-						 * @see View.get
-						 */
-						get: function(templateId, param) {
-							return getView(templateId, this.__controller).get(templateId, param);
-						},
+	$.extend(View.prototype, {
+		/**
+		 * パラメータで置換された、指定されたテンプレートIDのテンプレートを取得します。
+		 *
+		 * @param {String} templateId テンプレートID
+		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
+		 * @returns {String} テンプレート文字列
+		 * @function
+		 * @name get
+		 * @memberOf Controller.view
+		 * @see View.get
+		 */
+		get: function(templateId, param) {
+			return getView(templateId, this.__controller).get(templateId, param);
+		},
 
-						/**
-						 * 要素を指定されたIDのテンプレートで書き換えます。
-						 *
-						 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素,
-						 *            jQueryオブジェクト)
-						 * @param {String} templateId テンプレートID
-						 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
-						 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
-						 * @function
-						 * @name update
-						 * @memberOf Controller.view
-						 * @see View.update
-						 */
-						update: function(element, templateId, param) {
-							var target = getTarget(element, this.__controller.rootElement, true);
-							return getView(templateId, this.__controller).update(target,
-									templateId, param);
-						},
+		/**
+		 * 要素を指定されたIDのテンプレートで書き換えます。
+		 *
+		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
+		 * @param {String} templateId テンプレートID
+		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
+		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
+		 * @function
+		 * @name update
+		 * @memberOf Controller.view
+		 * @see View.update
+		 */
+		update: function(element, templateId, param) {
+			var target = getTarget(element, this.__controller.rootElement, true);
+			return getView(templateId, this.__controller).update(target, templateId, param);
+		},
 
-						/**
-						 * 要素の末尾に指定されたIDのテンプレートを挿入します。
-						 *
-						 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素,
-						 *            jQueryオブジェクト)
-						 * @param {String} templateId テンプレートID
-						 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
-						 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
-						 * @function
-						 * @name append
-						 * @memberOf Controller.view
-						 * @see View.append
-						 */
-						append: function(element, templateId, param) {
-							var target = getTarget(element, this.__controller.rootElement, true);
-							return getView(templateId, this.__controller).append(target,
-									templateId, param);
-						},
+		/**
+		 * 要素の末尾に指定されたIDのテンプレートを挿入します。
+		 *
+		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
+		 * @param {String} templateId テンプレートID
+		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
+		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
+		 * @function
+		 * @name append
+		 * @memberOf Controller.view
+		 * @see View.append
+		 */
+		append: function(element, templateId, param) {
+			var target = getTarget(element, this.__controller.rootElement, true);
+			return getView(templateId, this.__controller).append(target, templateId, param);
+		},
 
-						/**
-						 * 要素の先頭に指定されたIDのテンプレートを挿入します。
-						 *
-						 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素,
-						 *            jQueryオブジェクト)
-						 * @param {String} templateId テンプレートID
-						 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
-						 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
-						 * @function
-						 * @name prepend
-						 * @memberOf Controller.view
-						 * @see View.prepend
-						 */
-						prepend: function(element, templateId, param) {
-							var target = getTarget(element, this.__controller.rootElement, true);
-							return getView(templateId, this.__controller).prepend(target,
-									templateId, param);
-						},
+		/**
+		 * 要素の先頭に指定されたIDのテンプレートを挿入します。
+		 *
+		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
+		 * @param {String} templateId テンプレートID
+		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
+		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
+		 * @function
+		 * @name prepend
+		 * @memberOf Controller.view
+		 * @see View.prepend
+		 */
+		prepend: function(element, templateId, param) {
+			var target = getTarget(element, this.__controller.rootElement, true);
+			return getView(templateId, this.__controller).prepend(target, templateId, param);
+		},
 
-						/**
-						 * 指定されたパスのテンプレートファイルを非同期で読み込みキャッシュします。
-						 *
-						 * @param {String|String[]} resourcePaths テンプレートファイル(.ejs)のパス (配列で複数指定可能)
-						 * @returns {Promise} Promiseオブジェクト
-						 * @function
-						 * @name load
-						 * @memberOf Controller.view
-						 * @see View.load
-						 */
-						load: function(resourcePaths) {
-							return this.__view.load(resourcePaths);
-						},
+		/**
+		 * 指定されたパスのテンプレートファイルを非同期で読み込みキャッシュします。
+		 *
+		 * @param {String|String[]} resourcePaths テンプレートファイル(.ejs)のパス (配列で複数指定可能)
+		 * @returns {Promise} Promiseオブジェクト
+		 * @function
+		 * @name load
+		 * @memberOf Controller.view
+		 * @see View.load
+		 */
+		load: function(resourcePaths) {
+			return this.__view.load(resourcePaths);
+		},
 
-						/**
-						 * Viewインスタンスに、指定されたIDとテンプレート文字列からテンプレートを1件登録します。
-						 *
-						 * @param {String} templateId テンプレートID
-						 * @param {String} templateString テンプレート文字列
-						 * @function
-						 * @name register
-						 * @memberOf Controller.view
-						 * @see View.register
-						 */
-						register: function(templateId, templateString) {
-							this.__view.register(templateId, templateString);
-						},
+		/**
+		 * Viewインスタンスに、指定されたIDとテンプレート文字列からテンプレートを1件登録します。
+		 *
+		 * @param {String} templateId テンプレートID
+		 * @param {String} templateString テンプレート文字列
+		 * @function
+		 * @name register
+		 * @memberOf Controller.view
+		 * @see View.register
+		 */
+		register: function(templateId, templateString) {
+			this.__view.register(templateId, templateString);
+		},
 
-						/**
-						 * テンプレート文字列が、コンパイルできるかどうかを返します。
-						 *
-						 * @param {String} templateString テンプレート文字列
-						 * @returns {Boolean} 渡されたテンプレート文字列がコンパイル可能かどうか。
-						 * @function
-						 * @name isValid
-						 * @memberOf Controller.view
-						 * @see View.isValid
-						 */
-						isValid: function(templateString) {
-							return this.__view.isValid(templateString);
-						},
+		/**
+		 * テンプレート文字列が、コンパイルできるかどうかを返します。
+		 *
+		 * @param {String} templateString テンプレート文字列
+		 * @returns {Boolean} 渡されたテンプレート文字列がコンパイル可能かどうか。
+		 * @function
+		 * @name isValid
+		 * @memberOf Controller.view
+		 * @see View.isValid
+		 */
+		isValid: function(templateString) {
+			return this.__view.isValid(templateString);
+		},
 
-						/**
-						 * 指定されたテンプレートIDのテンプレートが存在するか判定します。
-						 *
-						 * @param {String} templateId テンプレートID
-						 * @returns {Boolean} 判定結果(存在する: true / 存在しない: false)
-						 * @function
-						 * @name isAvailable
-						 * @memberOf Controller.view
-						 * @see View.isAvailable
-						 */
-						isAvailable: function(templateId) {
-							return getView(templateId, this.__controller).isAvailable(templateId);
-						},
+		/**
+		 * 指定されたテンプレートIDのテンプレートが存在するか判定します。
+		 *
+		 * @param {String} templateId テンプレートID
+		 * @returns {Boolean} 判定結果(存在する: true / 存在しない: false)
+		 * @function
+		 * @name isAvailable
+		 * @memberOf Controller.view
+		 * @see View.isAvailable
+		 */
+		isAvailable: function(templateId) {
+			return getView(templateId, this.__controller).isAvailable(templateId);
+		},
 
-						/**
-						 * Viewインスタンスに登録されている、利用可能なテンプレートのIDの配列を返します。
-						 * <p>
-						 * 引数isRecursiveにtrueが渡された場合は、親コントローラを再帰的に探索し、
-						 * h5.core.viewで利用可能なIDも含めてこのコントローラviewで利用可能なテンプレートID全てを返します。
-						 * </p>
-						 *
-						 * @memberOf View
-						 * @name getAvailableTemplates
-						 * @function
-						 * @param {Boolean} isRecursive 再帰を
-						 * @returns {Array[String]} テンプレートIDの配列
-						 */
-						getAvailableTemplates: function(isRecursive) {
-							var ids = [];
-							for ( var id in this.__view.__cachedTemplates) {
-								ids.push(id);
-							}
-							if (!isRecursive) {
-								// 再帰探索を行わない場合は終了
-								return ids;
-							}
-							// 親コントローラがあるなら親コントローラのview、無いならh5.core.viewの利用可能IDを取得
-							// 親コントローラのviewからは再帰で取得する
-							var parentIds = this.__controller.parentController ? this.__controller.parentController.view
-									.getAvailableTemplates(true)
-									: h5.core.view.getAvailableTemplates(true);
-							// 親コントローラの利用可能IDとマージ
-							for (var i = 0, l = parentIds.length; i < l; i++) {
-								if ($.inArray(parentIds[i], ids) === -1) {
-									ids.push(parentIds[i]);
-								}
-							}
-							return ids;
-						},
+		/**
+		 * 引数に指定されたテンプレートIDをもつテンプレートをキャッシュから削除します。 <br />
+		 * 引数を指定しない場合はキャッシュされている全てのテンプレートを削除します。
+		 *
+		 * @param {String|String[]} [templateId] テンプレートID
+		 * @function
+		 * @name clear
+		 * @memberOf Controller.view
+		 * @see View.clear
+		 */
+		clear: function(templateIds) {
+			this.__view.clear(templateIds);
+		},
 
-						/**
-						 * 引数に指定されたテンプレートIDをもつテンプレートをキャッシュから削除します。 <br />
-						 * 引数を指定しない場合はキャッシュされている全てのテンプレートを削除します。
-						 *
-						 * @param {String|String[]} [templateId] テンプレートID
-						 * @function
-						 * @name clear
-						 * @memberOf Controller.view
-						 * @see View.clear
-						 */
-						clear: function(templateIds) {
-							this.__view.clear(templateIds);
-						},
-
-						/**
-						 * データバインドを開始します。
-						 *
-						 * @since 1.1.0
-						 * @param {String|Element|Element[]|jQuery} element
-						 *            コメントビュー疑似セレクタ、またはDOM要素(セレクタ文字列, DOM要素, DOM要素の配列,
-						 *            jQueryオブジェクト)。コメントビューを指定する場合は、「h5view#xxx」（xxxはid）と記述してください
-						 *            （id属性がxxxになっているh5viewタグを指定する、ような記法になっています）。
-						 *            DOM要素の配列を指定する場合、全ての要素ノードの親ノードが同じでなければいけません。
-						 * @param {Object} context データコンテキストオブジェクト
-						 * @function
-						 * @name bind
-						 * @memberOf Controller.view
-						 * @see View.bind
-						 */
-						bind: View_bind
-					});
+		/**
+		 * データバインドを開始します。
+		 *
+		 * @since 1.1.0
+		 * @param {String|Element|Element[]|jQuery} element コメントビュー疑似セレクタ、またはDOM要素(セレクタ文字列, DOM要素,
+		 *            DOM要素の配列, jQueryオブジェクト)。コメントビューを指定する場合は、「h5view#xxx」（xxxはid）と記述してください
+		 *            （id属性がxxxになっているh5viewタグを指定する、ような記法になっています）。
+		 *            DOM要素の配列を指定する場合、全ての要素ノードの親ノードが同じでなければいけません。
+		 * @param {Object} context データコンテキストオブジェクト
+		 * @function
+		 * @name bind
+		 * @memberOf Controller.view
+		 * @see View.bind
+		 */
+		bind: View_bind
+	});
 
 	/**
 	 * コントローラのコンストラクタ
@@ -6679,6 +7751,7 @@ var h5internal = {
 	 * @class
 	 */
 	/**
+	 * @private
 	 * @param {Document} doc コントローラをバインドした要素が属するdocumentノード
 	 * @param {Element} rootElement コントローラをバインドした要素
 	 * @param {String} controllerName コントローラ名
@@ -6779,7 +7852,7 @@ var h5internal = {
 			this.view.__controller = this;
 			var args = param ? param : null;
 			initInternalProperty(this, args);
-			setRootAndTriggerInit(this);
+			triggerInit(this);
 			return this;
 		},
 
@@ -6795,25 +7868,29 @@ var h5internal = {
 
 			executeLifeEndChain(this, '__unbind');
 
-			unbindByBindMap(this);
-			unbindDescendantHandlers(this);
+			doForEachControllerGroups(this, function(c, parent, prop) {
+				// 親のuseHandlersでfalseが指定されていた場合は何もしない
+				var useHandlers = parent && parent.__meta && parent.__meta[prop]
+						&& parent.__meta[prop].useHandlers;
+				if (useHandlers === false) {
+					return;
+				}
+				unbindEventHandlers(c);
+			});
 
-			this.__controllerContext.unbindMap = {};
+			this.__controllerContext.unbindList = {};
 
 			// コントローラマネージャの管理対象から外す.
-			var controllers = h5.core.controllerManager.controllers;
+			var controllers = controllerManager.controllers;
 			var that = this;
-			h5.core.controllerManager.controllers = $.grep(controllers,
-					function(controllerInstance) {
-						return controllerInstance !== that;
-					});
+			controllerManager.controllers = $.grep(controllers, function(controllerInstance) {
+				return controllerInstance !== that;
+			});
 
 			// h5controllerunboundイベントをトリガ
 			$(this.rootElement).trigger('h5controllerunbound', this);
 
-			// rootElementのアンバインド
-			this.rootElement = null;
-			this.view.__controller = null;
+			// rootElementとview.__view.controllerにnullをセット
 			unbindRootElement(this);
 		},
 
@@ -6830,18 +7907,19 @@ var h5internal = {
 			if (isDisposing(this)) {
 				return;
 			}
+			this.__controllerContext.isDisposing = 1;
+
 			// rejectまたはfailされていないdeferredをreject()する。
 			rejectControllerDfd(this, errorObj);
 
-			this.__controllerContext.isDisposing = 1;
 			var dfd = this.deferred();
 			this.unbind();
 			var that = this;
 			var promises = executeLifeEndChain(this, '__dispose');
-			h5.async.when(promises).done(function() {
+			waitForPromises(promises, function() {
 				disposeController(that);
 				dfd.resolve();
-			});
+			}, null, true);
 			return dfd.promise();
 		},
 
@@ -7122,6 +8200,63 @@ var h5internal = {
 		}
 	});
 
+	/**
+	 * キャッシュマネージャクラス
+	 * <p>
+	 * マップを使ってキャッシュの登録、削除を行うクラス
+	 * </p>
+	 *
+	 * @name CacheManager
+	 * @class
+	 */
+	function CacheManager() {
+		this._init();
+	}
+	$.extend(CacheManager.prototype, {
+		/**
+		 * コントローラの名前からキャッシュを取り出す。 無ければnullを返す。
+		 *
+		 * @param {String} name
+		 */
+		get: function(name) {
+			return this._cacheMap[name];
+		},
+
+		/**
+		 * キャッシュを登録する。
+		 */
+		register: function(name, cacheObj) {
+			this._cacheMap[name] = cacheObj;
+		},
+
+		/**
+		 * 指定された名前のコントローラのキャッシュをクリア
+		 *
+		 * @param {String} name
+		 */
+		clear: function(name) {
+			delete this._cacheMap[name];
+		},
+
+		/**
+		 * キャッシュを全てクリア
+		 */
+		clearAll: function() {
+			this._cacheMap = {};
+		},
+
+		/**
+		 * 初期化処理
+		 */
+		_init: function() {
+			this._cacheMap = {};
+		}
+	});
+
+	// キャッシュ変数にコントローラマネージャ、キャッシュマネージャのインスタンスをそれぞれ格納
+	definitionCacheManager = new CacheManager();
+	controllerManager = new ControllerManager();
+
 	h5.u.obj.expose('h5.core', {
 		/**
 		 * コントローラマネージャ
@@ -7130,33 +8265,65 @@ var h5internal = {
 		 * @type ControllerManager
 		 * @memberOf h5.core
 		 */
-		controllerManager: new ControllerManager()
+		controllerManager: controllerManager,
+
+		/**
+		 * 定義オブジェクトのキャッシュを管理するキャッシュマネージャ
+		 *
+		 * @name definitionCacheManager
+		 * @memberOf h5.core
+		 */
+		definitionCacheManager: {
+			/**
+			 * 名前を指定してキャッシュをクリアする
+			 *
+			 * @param {String} name コントローラまたはロジックの名前(__nameの値)
+			 * @memberOf h5.core.definitionCacheManager
+			 */
+			clear: function(name) {
+				definitionCacheManager.clear(name);
+			},
+
+			/**
+			 * キャッシュを全てクリアする
+			 *
+			 * @memberOf h5.core.definitionCacheManager
+			 */
+			clearAll: function() {
+				definitionCacheManager.clearAll();
+			}
+		}
 	});
 
 	// プロパティ重複チェック用のコントローラプロパティマップを作成
-	var controllerPropertyMap = {};
-	var tempInstance = new Controller(null, 'a');
-	for ( var p in tempInstance) {
-		if (tempInstance.hasOwnProperty(p) && p !== '__name' && p !== '__templates'
-				&& p !== '__meta') {
-			controllerPropertyMap[p] = 1;
+	var controllerPropertyMap = (function() {
+		var ret = {};
+		var tempInstance = new Controller(null, 'a');
+		for ( var p in tempInstance) {
+			if (tempInstance.hasOwnProperty(p) && p !== '__name' && p !== '__templates'
+					&& p !== '__meta') {
+				ret[p] = 1;
+			}
 		}
-	}
-	tempInstance = null;
-	var proto = Controller.prototype;
-	for ( var p in proto) {
-		if (proto.hasOwnProperty(p)) {
-			controllerPropertyMap[p] = 1;
+		tempInstance = null;
+		var proto = Controller.prototype;
+		for ( var p in proto) {
+			if (proto.hasOwnProperty(p)) {
+				ret[p] = null;
+			}
 		}
-	}
-	proto = null;
+		proto = null;
+		return ret;
+	})();
 
 	/**
 	 * コントローラのファクトリ
 	 *
-	 * @param {String|Element|jQuery} targetElement バインド対象とする要素のセレクタ、DOMエレメント、もしくはjQueryオブジェクト.
+	 * @private
+	 * @param {String|Element|jQuery} targetElement バインド対象とする要素のセレクタ、DOMエレメント、もしくはjQueryオブジェクト
 	 * @param {Object} controllerDefObj コントローラ定義オブジェクト
-	 * @param {Object} [param] 初期化パラメータ.
+	 * @param {Object} [param] 初期化パラメータ
+	 * @returns {Controller}
 	 */
 	// fwOptは内部的に使用している.
 	function createAndBindController(targetElement, controllerDefObj, param, fwOpt) {
@@ -7171,6 +8338,7 @@ var h5internal = {
 			});
 		}
 
+		// 初期化開始のログ
 		fwLogger.debug(FW_LOG_INIT_CONTROLLER_BEGIN, controllerName);
 
 		// 初期化パラメータがオブジェクトかどうかチェック
@@ -7187,45 +8355,36 @@ var h5internal = {
 			});
 		}
 
-		// バインド対象となる要素のチェック
-		// 文字列、オブジェクト(配列含む)でない場合はエラー (それぞれ、セレクタ、DOMオブジェクト(またはjQueryオブジェクト)を想定している)
-		if (isRoot || targetElement) {
-			if (targetElement == null) {
-				throwFwError(ERR_CODE_BIND_TARGET_REQUIRED, [controllerName], {
-					controllerDefObj: controllerDefObj
-				});
-			} else if (isString(targetElement) || typeof targetElement === 'object') {
-				var $bindTargetElement = $(targetElement);
-				// 要素が1つでない場合はエラー
-				if ($bindTargetElement.length === 0) {
-					throwFwError(ERR_CODE_BIND_NO_TARGET, [controllerName], {
-						controllerDefObj: controllerDefObj
-					});
-				}
-				if ($bindTargetElement.length > 1) {
-					throwFwError(ERR_CODE_BIND_TOO_MANY_TARGET, [controllerName], {
-						controllerDefObj: controllerDefObj
-					});
-				}
-			} else {
-				throwFwError(ERR_CODE_BIND_TARGET_ILLEGAL, [controllerName], {
-					controllerDefObj: controllerDefObj
-				});
-			}
+		// キャッシュの取得(無かったらundefined)
+		var cache = definitionCacheManager.get(controllerName);
+
+		// コントローラ定義オブジェクトのチェック
+		// キャッシュがある場合はコントローラ定義オブジェクトについてはチェック済みなのでチェックしない
+		if (!cache) {
+			validateControllerDef(isRoot, targetElement, controllerDefObj, param, controllerName);
 		}
 
-		// コントローラの循環参照チェック
-		if (checkControllerCircularRef(controllerDefObj)) {
-			throwFwError(ERR_CODE_CONTROLLER_CIRCULAR_REF, [controllerName], {
-				controllerDefObj: controllerDefObj
-			});
+		// 循環参照チェックはキャッシュが残っていても行う
+		// cache作成時にチェックしてOKだったとしても、子コントローラの中身が変わってしまっていることがあるため
+		if (isRoot) {
+			// コントローラの循環参照チェック(ルートコントローラで1度やればよい)
+			validateControllerCircularRef(controllerDefObj, controllerName);
+
+			// ロジックの循環参照チェック(ルートコントローラで1度やればよい)
+			validateLogicCircularRef(controllerDefObj, controllerName);
 		}
 
-		// ロジックの循環参照チェック
-		if (checkLogicCircularRef(controllerDefObj)) {
-			throwFwError(ERR_CODE_LOGIC_CIRCULAR_REF, [controllerName], {
-				controllerDefObj: controllerDefObj
-			});
+		// キャッシュが無かった場合、キャッシュの作成と登録
+		if (!cache) {
+			cache = createControllerCache(controllerDefObj);
+			definitionCacheManager.register(controllerName, cache);
+		}
+
+		if (isRoot) {
+			// ルートコントローラの場合はバインド対象となる要素のチェックを同期で行う
+			// (子コントローラの時は親の__init後にチェックしている)
+			// 文字列、オブジェクト(配列含む)でない場合はエラー (それぞれ、セレクタ、DOMオブジェクト(またはjQueryオブジェクト)を想定している)
+			validateTargetElement(targetElement, controllerDefObj, controllerName);
 		}
 
 		// new Controllerで渡すコントローラ定義オブジェクトはクローンしたものではなくオリジナルなものを渡す。
@@ -7233,77 +8392,57 @@ var h5internal = {
 		var controller = new Controller(targetElement ? $(targetElement).get(0) : null,
 				controllerName, controllerDefObj, param, isRoot);
 
-		var clonedControllerDef = $.extend(true, {}, controllerDefObj);
-		var templates = controllerDefObj.__templates;
-		var templateDfd = getDeferred();
-		var templatePromise = templateDfd.promise();
-		var preinitDfd = getDeferred();
-		var preinitPromise = preinitDfd.promise();
-
-		controller.__controllerContext.preinitDfd = preinitDfd;
-		controller.preinitPromise = preinitPromise;
-		controller.__controllerContext.initDfd = getDeferred();
-
-		// initPromiseが失敗してもcommonFailHandlerを発火させないようにするため、dummyのfailハンドラを登録する
-		controller.initPromise = controller.__controllerContext.initDfd.promise().fail(
-				dummyFailHandler);
-		controller.__controllerContext.readyDfd = getDeferred();
-		controller.readyPromise = controller.__controllerContext.readyDfd.promise();
-
+		// ------ controllerContextの作成 ------//
+		// Deferred,Promiseの作成
+		// preInitPromise, initPromise, postInitPromiseが失敗してもcFHを発火させないようにするため、dummyのfailハンドラを登録する
+		var preInitDfd = getDeferred();
+		var preInitPromise = preInitDfd.promise().fail(dummyFailHandler);
+		var initDfd = getDeferred();
+		var initPromise = initDfd.promise().fail(dummyFailHandler);
+		var postInitDfd = getDeferred();
+		var postInitPromise = postInitDfd.promise().fail(dummyFailHandler);
+		var readyDfd = getDeferred();
+		var readyPromise = readyDfd.promise();
 		if (!isRoot) {
 			// ルートコントローラでないなら、readyPromiseの失敗でcommonFailHandlerを発火させないようにする
-			controller.readyPromise.fail(dummyFailHandler);
+			// (ルートコントローラのreadyPromiseのみ、失敗したらcommonFailHandlerが発火する)
+			readyPromise.fail(dummyFailHandler);
 		}
 		/* del begin */
 		else {
 			// ルートコントローラなら、readyPromise.doneのタイミングで、ログを出力する
-			controller.readyPromise.done(function() {
+			readyPromise.done(function() {
 				fwLogger.info(FW_LOG_INIT_CONTROLLER_COMPLETE, controllerName);
 			});
 		}
 		/* del end */
+
+		// __controllerContextに必要な情報を持たせる
+		var controllerContext = controller.__controllerContext;
+		// cacheを持たせる
+		controllerContext.cache = cache;
+		// 各ライフサイクルのdeferredを持たせる
+		controllerContext.preInitDfd = preInitDfd;
+		controllerContext.initDfd = initDfd;
+		controllerContext.postInitDfd = postInitDfd;
+		controllerContext.readyDfd = readyDfd;
+
+		// コントローラにpromiseを持たせる
+		controller.preInitPromise = preInitPromise;
+		controller.initPromise = initPromise;
+		controller.postInitPromise = postInitPromise;
+		controller.readyPromise = readyPromise;
+
+		// templateDfdの設定
+		var clonedControllerDef = $.extend(true, {}, controllerDefObj);
+		var templates = controllerDefObj.__templates;
+		var templateDfd = getDeferred();
+		var templatePromise = templateDfd.promise();
 		if (templates && templates.length > 0) {
-			// テンプレートがあればロード
-			var viewLoad = function(count) {
-				// Viewモジュールがない場合、この直後のloadでエラーが発生してしまうためここでエラーを投げる。
-				if (!h5.u.obj.getByPath('h5.core.view')) {
-					throwFwError(ERR_CODE_NOT_VIEW);
-				}
-				var vp = controller.view.load(templates);
-				vp.done(function(result) {
-					/* del begin */
-					if (templates && templates.length > 0) {
-						fwLogger.debug(FW_LOG_TEMPLATE_LOADED, controllerName);
-					}
-					/* del end */
-					templateDfd.resolve();
-				}).fail(
-						function(result) {
-							// テンプレートのロードをリトライする条件は、リトライ回数が上限回数未満、かつ
-							// jqXhr.statusが"0"、もしくは"12029"であること。
-							// jqXhr.statusの値の根拠は、IE以外のブラウザだと通信エラーの時に"0"になっていること、
-							// IEの場合は、コネクションが繋がらない時のコードが"12029"であること。
-							// 12000番台すべてをリトライ対象としていないのは、何度リトライしても成功しないエラーが含まれていることが理由。
-							// WinInet のエラーコード(12001 - 12156):
-							// http://support.microsoft.com/kb/193625/ja
-							var jqXhrStatus = result.detail.error.status;
-							if (count === h5.settings.dynamicLoading.retryCount
-									|| jqXhrStatus !== 0 && jqXhrStatus !== 12029) {
-								fwLogger.error(FW_LOG_TEMPLATE_LOAD_FAILED, controllerName,
-										result.detail.url);
-								setTimeout(function() {
-									templateDfd.reject(result);
-								}, 0);
-								return;
-							}
-							setTimeout(function() {
-								viewLoad(++count);
-							}, h5.settings.dynamicLoading.retryInterval);
-						});
-			};
-			viewLoad(0);
+			// テンプレートファイルのロードを待機する処理を設定する
+			setTemlatesDeferred(controller, templateDfd, templates);
 		} else {
-			// テンプレートがない場合は、resolve()しておく
+			// テンプレートの指定がない場合は、resolve()しておく
 			templateDfd.resolve();
 		}
 
@@ -7311,128 +8450,103 @@ var h5internal = {
 		templatePromise.done(function() {
 			if (!isDisposing(controller)) {
 				// thisをコントローラにしてresolve
-				preinitDfd.resolveWith(controller);
+				preInitDfd.resolveWith(controller);
 			}
 		}).fail(function(e) {
 			// eはview.load()のfailに渡されたエラーオブジェクト
 			// thisをコントローラにしてreject
-			preinitDfd.rejectWith(controller, [e]);
+			preInitDfd.rejectWith(controller, [e]);
 
 			/* del begin */
+			// disposeされていなければルートコントローラの名前でログを出力
 			if (controller.rootController && !isDisposing(controller.rootController)) {
 				fwLogger.error(FW_LOG_INIT_CONTROLLER_ERROR, controller.rootController.__name);
 			}
 			/* del end */
 
-			// 同じrootControllerを持つ他の子のdisposeによって、
-			// controller.rootControllerがnullになっている場合があるのでそのチェックをしてからdisposeする
+			// disposeする
+			// 同じrootControllerを持つ他の子コントローラにdisposeされているかどうか
+			// (controller.rootControllerがnullになっていないか)をチェックをしてからdisposeする
 			controller.rootController && controller.rootController.dispose(e);
 		});
 
-		for ( var prop in clonedControllerDef) {
-			if (controllerPropertyMap[prop]) {
-				throwFwError(ERR_CODE_CONTROLLER_SAME_PROPERTY, [controllerName, prop], {
-					controllerDefObj: controllerDefObj
-				});
-			} else if (isLifecycleProperty(clonedControllerDef, prop)) {
-				// ライフサイクルイベント
-				controller[prop] = weaveControllerAspect(clonedControllerDef, prop);
-			} else if (isEventHandler(clonedControllerDef, prop)) {
-				// イベントハンドラ
-				var propTrimmed = $.trim(prop);
-				var lastIndex = propTrimmed.lastIndexOf(' ');
-				var selector = $.trim(propTrimmed.substring(0, lastIndex));
-				var eventName = $.trim(propTrimmed.substring(lastIndex + 1, propTrimmed.length));
-				if (isBindRequested(eventName)) {
-					eventName = '[' + $.trim(trimBindEventBracket(eventName)) + ']';
+		// 子コントローラをコントローラ化
+		// コントローラ化したものに差し替える
+		for (var i = 0, l = cache.childControllerProperties.length; i < l; i++) {
+			// createAndBindControllerの呼び出し時に、fwOpt.isInternalを指定して、内部からの呼び出し(=子コントローラ)であることが分かるようにする
+			var prop = cache.childControllerProperties[i];
+			controller[prop] = createAndBindController(null, $.extend(true, {},
+					clonedControllerDef[prop]), param, $.extend({
+				isInternal: true
+			}, fwOpt));
+		}
+
+		// ロジック定義をロジック化
+		// ロジック定義はクローンされたものではなく、定義時に記述されたものを使用する
+		// ロジックが持つロジック定義オブジェクトはオリジナルの定義オブジェクトになる
+		for (var i = 0, l = cache.logicProperties.length; i < l; i++) {
+			var prop = cache.logicProperties[i];
+			var logicDef = controllerDefObj[prop];
+			controller[prop] = createLogic(logicDef);
+		}
+
+		// イベントハンドラにアスペクトを設定
+		for (var i = 0, l = cache.eventHandlerProperties.length; i < l; i++) {
+			var prop = cache.eventHandlerProperties[i];
+			controller[prop] = weaveControllerAspect(clonedControllerDef, prop, true);
+		}
+
+		// イベントハンドラではないメソッド(ライフサイクル含む)にアスペクトを設定
+		for (var i = 0, l = cache.functionProperties.length; i < l; i++) {
+			var prop = cache.functionProperties[i];
+			// アスペクトを設定する
+			controller[prop] = weaveControllerAspect(clonedControllerDef, prop);
+		}
+
+		// その他プロパティをコピー
+		for (var i = 0, l = cache.otherProperties.length; i < l; i++) {
+			var prop = cache.otherProperties[i];
+			controller[prop] = clonedControllerDef[prop];
+		}
+
+		if (isRoot) {
+			// __constructを実行。ここまでは完全に同期処理になる。
+			// 子コントローラのバインドが終わってから、親→子の順番で実行する
+			var isDisposed = false;
+			doForEachControllerGroups(controller, function(c, parent, prop) {
+				// __construct呼び出し
+				c.__construct && c.__construct(createInitializationContext(c));
+
+				if (isDisposing(c)) {
+					// 途中(__constructの中)でdisposeされたら__constructの実行を中断
+					isDisposed = true;
+					return false;
 				}
 
-				if (isGlobalSelector(selector)) {
-					var selectTarget = trimGlobalSelectorBracket(selector);
-					if (selectTarget === 'this') {
-						throwFwError(ERR_CODE_EVENT_HANDLER_SELECTOR_THIS, [controllerName], {
-							controllerDefObj: controllerDefObj
-						});
-					}
+				// __construct呼び出し後にparentControllerとrootControllerの設定
+				if (c === controller) {
+					// ルートコントローラの場合(parentが無い場合)、rootControllerは自分自身、parentControllerはnull
+					c.rootController = c;
+					c.parentController = null;
+				} else {
+					// rootControllerはisRoot===trueのコントローラには設定済みなので、親から子に同じrootControllerを引き継ぐ
+					c.parentController = parent;
+					c.rootController = parent.rootController;
 				}
-				var bindMap = controller.__controllerContext.bindMap;
-				if (!bindMap[selector]) {
-					bindMap[selector] = {};
-				}
-				if (bindMap[selector][eventName]) {
-					throwFwError(ERR_CODE_SAME_EVENT_HANDLER,
-							[controllerName, selector, eventName], {
-								controllerDefObj: controllerDefObj
-							});
-				}
-				var weavedFunc = weaveControllerAspect(clonedControllerDef, prop, true);
-				bindMap[selector][eventName] = weavedFunc;
-				controller[prop] = weavedFunc;
-			} else if (endsWith(prop, SUFFIX_CONTROLLER) && clonedControllerDef[prop]
-					&& !$.isFunction(clonedControllerDef[prop])) {
-				// 子コントローラをバインドする。fwOpt.isInternalを指定して、子コントローラであるかどうか分かるようにする
-				var c = createAndBindController(null,
-						$.extend(true, {}, clonedControllerDef[prop]), param, $.extend({
-							isInternal: true
-						}, fwOpt));
-				controller[prop] = c;
-			} else if (endsWith(prop, SUFFIX_LOGIC) && clonedControllerDef[prop]
-					&& !$.isFunction(clonedControllerDef[prop])) {
-				// ロジック
-				// ロジック定義はクローンされたものではなく、定義時に記述されたものを使用する
-				// ロジックが持つロジック定義オブジェクトはオリジナルの定義オブジェクトになる
-				var logicDef = controllerDefObj[prop];
-				controller[prop] = createLogic(logicDef);
-			} else if ($.isFunction(clonedControllerDef[prop])) {
-				// イベントハンドラではないメソッド
-				controller[prop] = weaveControllerAspect(clonedControllerDef, prop);
-			} else {
-				// その他プロパティ
-				controller[prop] = clonedControllerDef[prop];
+			});
+			if (isDisposed) {
+				// __constructでdisposeが呼ばれたらnullを返す
+				// (h5.core.controllerの戻り値がnullになる)
+				return null;
 			}
 		}
 
-		// __metaのチェック
-		var meta = controller.__meta;
-		if (meta) {
-			for ( var prop in meta) {
-				var c = controller[prop];
-				if (c === undefined) {
-					throwFwError(ERR_CODE_CONTROLLER_META_KEY_INVALID, [controllerName, prop], {
-						controllerDefObj: controllerDefObj
-					});
-				}
-				if (c === null) {
-					throwFwError(ERR_CODE_CONTROLLER_META_KEY_NULL, [controllerName, prop], {
-						controllerDefObj: controllerDefObj
-					});
-				}
-				if (Controller.prototype.constructor !== c.constructor) {
-					throwFwError(ERR_CODE_CONTROLLER_META_KEY_NOT_CONTROLLER,
-							[controllerName, prop], {
-								controllerDefObj: controllerDefObj
-							});
-				}
-			}
-		}
+		// コントローラマネージャの管理対象とするか判定する(fwOpt.false===falseなら管理対象外)
+		controllerContext.managed = fwOpt && fwOpt.managed;
 
-		// __constructがあれば実行。ここまでは完全に同期処理になる。
-		if (controller.__construct) {
-			controller.__construct(createInitializationContext(controller));
-		}
-
-		if (isDisposing(controller)) {
-			return null;
-		}
-
-		// コントローラマネージャの管理対象とするか判定する
-		if (fwOpt && 'managed' in fwOpt) {
-			controller.__controllerContext.managed = fwOpt.managed;
-		}
-
-		// ルートコントローラなら、ルートをセット
-		if (controller.__controllerContext.isRoot) {
-			setRootAndTriggerInit(controller);
+		if (isRoot) {
+			// ルートコントローラなら自分以下のinitを実行
+			triggerInit(controller);
 		}
 		return controller;
 	}
@@ -7478,12 +8592,11 @@ var h5internal = {
 		logic.own = own;
 		logic.ownWithOrg = ownWithOrg;
 
-		for ( var prop in logic) {
-			if (logic.hasOwnProperty(prop) && endsWith(prop, SUFFIX_LOGIC)) {
-				var target = logic[prop];
-				logic[prop] = createLogic(target);
-			}
-		}
+		// ロジックが持っているロジック定義もロジック化
+		doForEachLogics(logic, function(logic, parent, prop) {
+			parent[prop] = createLogic(logic);
+		});
+
 		return logic;
 	}
 
@@ -7641,9 +8754,6 @@ var h5internal = {
 
 	/** schemaに定義されていないプロパティを取得した */
 	var ERR_CODE_CANNOT_GET_NOT_DEFINED_PROPERTY = 15014;
-
-	/** addEventListenerに不正な引数が渡された */
-	var ERR_CODE_INVALID_ARGS_ADDEVENTLISTENER = 15015;
 
 	/** depend.calcが制約を満たさない値を返している */
 	var ERR_CODE_CALC_RETURNED_INVALID_VALUE = 15016;
@@ -7805,7 +8915,6 @@ var h5internal = {
 	errMsgMap[ERR_CODE_DEPEND_PROPERTY] = 'depend指定されているプロパティに値をセットすることはできません。データモデル={0} 違反したプロパティ={1}';
 	errMsgMap[ERR_CODE_CANNOT_SET_NOT_DEFINED_PROPERTY] = 'スキーマに定義されていないプロパティに値をセットすることはできません。データモデル={0} 違反したプロパティ={1}';
 	errMsgMap[ERR_CODE_CANNOT_GET_NOT_DEFINED_PROPERTY] = 'スキーマに定義されていないプロパティは取得できません。データモデル={0} 違反したプロパティ={1}';
-	errMsgMap[ERR_CODE_INVALID_ARGS_ADDEVENTLISTENER] = 'addEventListenerには、イベント名(文字列)、イベントリスナ(関数)を渡す必要があります。';
 	errMsgMap[ERR_CODE_CALC_RETURNED_INVALID_VALUE] = 'calcで返却された値が、スキーマで指定された型・制約に違反しています。データモデル={0} プロパティ={1} 返却値={2}';
 	errMsgMap[ERR_CODE_INVALID_COPYFROM_ARGUMENT] = 'copyFromの引数が不正です。配列を指定してください。引数位置={0}、値={1}';
 	errMsgMap[ERR_CODE_INVALID_MANAGER_NAME] = 'マネージャ名が不正です。識別子として有効な文字列を指定してください。';
@@ -8181,7 +9290,7 @@ var h5internal = {
 	 * @returns unboxしたもの
 	 */
 	function unbox(v) {
-		if ($.isArray(v)) {
+		if (isArray(v)) {
 			var ary = v.slice(0);
 			for (var i = 0, l = ary.length; i < l; i++) {
 				// aryalueOfメソッドのあるオブジェクトならその値を入れる
@@ -8627,7 +9736,7 @@ var h5internal = {
 					// type指定がenumでないならエラー
 					pushErrorReason(SCHEMA_ERR_DETAIL_ENUMVALUE_TYPE, schemaProp);
 				}
-				if (!$.isArray(enumValue) || enumValue.length === 0
+				if (!isArray(enumValue) || enumValue.length === 0
 						|| $.inArray(null, enumValue) > -1 || $.inArray(undefined, enumValue) > -1) {
 					// 配列でない、または空配列、null,undefinedを含む配列ならエラー
 					pushErrorReason(SCHEMA_ERR_DETAIL_INVALID_ENUMVALUE, schemaProp);
@@ -8988,7 +10097,7 @@ var h5internal = {
 				if (v == null) {
 					return true;
 				}
-				if (!$.isArray(v) && !h5.core.data.isObservableArray(v)) {
+				if (!isArray(v) && !h5.core.data.isObservableArray(v)) {
 					errorReason.push({
 						dimension: dim
 					});
@@ -9343,7 +10452,7 @@ var h5internal = {
 			//型のチェックは終わっているので、typeがnumber・integerならnewValueは数値・数値変換可能文字列・null またはそれらを要素に持つ配列のいずれかである
 			if (newValue != null && type && type.match(/number|integer/)
 					&& typeof newValue !== 'number') {
-				if ($.isArray(newValue) || h5.core.data.isObservableArray(newValue)) {
+				if (isArray(newValue) || h5.core.data.isObservableArray(newValue)) {
 					for (var i = 0, l = newValue.length; i < l; i++) {
 						// スパースな配列の場合、undefinedが入っている可能性があるので、!= で比較
 						// parseFloatできる値(isNumberValueに渡してtrueになる値)ならparseFloatする
@@ -9619,7 +10728,7 @@ var h5internal = {
 					[createItemDescErrorReason(DESC_ERR_DETAIL_NOT_OBJECT)]);
 		}
 
-		if (!$.isArray(descriptor)) {
+		if (!isArray(descriptor)) {
 			// 既に同名のモデルが登録済みならそれを返す。
 			if (this.models[descriptor.name]) {
 				fwLogger.info(MSG_ERROR_DUP_REGISTER, this.name, descriptor.name);
@@ -10013,189 +11122,6 @@ var h5internal = {
 	//
 	// =========================================================================
 
-	//-------------------------------------------
-	// EventDispatcher
-	//-------------------------------------------
-	/**
-	 * イベントディスパッチャ
-	 * <p>
-	 * イベントリスナを管理するクラスです。このクラスはnewできません。
-	 * </p>
-	 * <p>
-	 * 以下のクラスがイベントディスパッチャのメソッドを持ちます。
-	 * <ul>
-	 * <li><a href="ObservableArray.html">ObservableArray</a>
-	 * <li><a href="ObservableItem.html">ObservableItem</a>
-	 * <li><a href="DataModelManager.html">DataModelManager</a>
-	 * <li><a href="DataModel.html">DataModel</a>
-	 * <li><a href="DataItem.html">DataItem</a>
-	 * </ul>
-	 * </p>
-	 *
-	 * @since 1.1.0
-	 * @class
-	 * @name EventDispatcher
-	 */
-	function EventDispatcher() {
-	// 空コンストラクタ
-	}
-
-	/**
-	 * イベントリスナが登録されているかどうかを返します
-	 * <p>
-	 * 第一引数にイベント名、第二引数にイベントリスナを渡し、指定したイベントに指定したイベントリスナが登録済みかどうかを返します。
-	 * </p>
-	 *
-	 * @since 1.1.0
-	 * @memberOf EventDispatcher
-	 * @param {String} type イベント名
-	 * @param {Function} listener イベントリスナ
-	 * @returns {Boolean} 第一引数のイベント名に第二引数のイベントリスナが登録されているかどうか
-	 */
-	EventDispatcher.prototype.hasEventListener = function(type, listener) {
-		if (!this.__listeners) {
-			return false;
-		}
-		var l = this.__listeners[type];
-		if (!l || !this.__listeners.hasOwnProperty(type)) {
-			return false;
-		}
-
-		for (var i = 0, count = l.length; i < count; i++) {
-			if (l[i] === listener) {
-				return true;
-			}
-		}
-		return false;
-
-	};
-
-	/**
-	 * イベントリスナを登録します。
-	 * <p>
-	 * 第一引数にイベント名、第二引数にイベントリスナを渡し、イベントリスナを登録します。指定したイベントが起こった時にイベントリスナが実行されます。
-	 * </p>
-	 * <p>
-	 * イベントリスナは、関数または<a
-	 * href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-EventListener">EventListener</a>
-	 * インタフェースを実装するオブジェクト(handleEventプロパティに関数を持つオブジェクト)で指定できます。
-	 * <p>
-	 * 指定したイベントに、指定したイベントリスナが既に登録されていた場合は何もしません。
-	 * </p>
-	 * <p>
-	 * 同一のイベントに対して複数回addEventListener()を呼び、複数のイベントリスナを登録した場合は、イベント発火時に登録した順番に実行されます。
-	 * </p>
-	 *
-	 * @since 1.1.0
-	 * @memberOf EventDispatcher
-	 * @param {String} type イベント名
-	 * @param {Function|Object} listener イベントリスナまたはhandleEventを持つイベントリスナオブジェクト
-	 */
-	EventDispatcher.prototype.addEventListener = function(type, listener) {
-		// 引数チェック
-		// typeは文字列で、第2引数まで指定されていることをチェックする
-		// listenerが関数またはイベントリスナオブジェクトかどうかは、実行時に判定し、関数でもイベントリスナオブジェクトでもない場合は実行しない
-		if (arguments.length !== 2 || !isString(type)) {
-			throwFwError(ERR_CODE_INVALID_ARGS_ADDEVENTLISTENER);
-		}
-		if (listener == null || this.hasEventListener(type, listener)) {
-			// nullまたはundefinedが指定されている、または既に登録済みのイベントリスナなら何もしない
-			return;
-		}
-
-		if (!this.__listeners) {
-			this.__listeners = {};
-		}
-
-		if (!(this.__listeners.hasOwnProperty(type))) {
-			this.__listeners[type] = [];
-		}
-
-		this.__listeners[type].push(listener);
-	};
-
-	/**
-	 * イベントリスナを削除します。
-	 * <p>
-	 * 第一引数にイベント名、第二引数にイベントリスナを渡し、指定したイベントから指定したイベントリスナを削除します。
-	 * </p>
-	 * <p>
-	 * 指定したイベント名に指定したイベントリスナが登録されていない場合は何もしません。
-	 * </p>
-	 *
-	 * @since 1.1.0
-	 * @memberOf EventDispatcher
-	 * @param {String} type イベント名
-	 * @param {Function} listener イベントリスナ
-	 */
-	EventDispatcher.prototype.removeEventListener = function(type, listener) {
-		if (!this.hasEventListener(type, listener)) {
-			return;
-		}
-
-		var l = this.__listeners[type];
-
-		for (var i = 0, count = l.length; i < count; i++) {
-			if (l[i] === listener) {
-				l.splice(i, 1);
-				return;
-			}
-		}
-	};
-
-	/**
-	 * イベントをディスパッチします
-	 * <p>
-	 * イベントオブジェクトを引数に取り、そのevent.typeに登録されているイベントリスナを実行します。
-	 * イベントオブジェクトにpreventDefault()関数を追加してイベントリスナの引数に渡して呼び出します。
-	 * </p>
-	 * <p>
-	 * 戻り値は『イベントリスナ内でpreventDefault()が呼ばれたかどうか』を返します。
-	 * </p>
-	 *
-	 * @since 1.1.0
-	 * @memberOf EventDispatcher
-	 * @param {Object} event イベントオブジェクト
-	 * @returns {Boolean} イベントリスナ内でpreventDefault()が呼ばれたかどうか。
-	 */
-	EventDispatcher.prototype.dispatchEvent = function(event) {
-		if (!this.__listeners) {
-			return;
-		}
-		var l = this.__listeners[event.type];
-		if (!l) {
-			return;
-		}
-
-		if (!event.target) {
-			event.target = this;
-		}
-
-		var isDefaultPrevented = false;
-
-		event.preventDefault = function() {
-			isDefaultPrevented = true;
-		};
-
-		var isImmediatePropagationStopped = false;
-		event.stopImmediatePropagation = function() {
-			isImmediatePropagationStopped = true;
-		};
-
-		// リスナーを実行。stopImmediatePropagationが呼ばれていたらそこでループを終了する。
-		for (var i = 0, count = l.length; i < count && !isImmediatePropagationStopped; i++) {
-			if ($.isFunction(l[i])) {
-				l[i].call(event.target, event);
-			} else if (l[i].handleEvent) {
-				// イベントリスナオブジェクトの場合はhandleEventを呼ぶ
-				// handleEvent内のコンテキストはイベントリスナオブジェクトなので、callは使わずにそのまま呼び出す
-				l[i].handleEvent(event);
-			}
-		}
-
-		return isDefaultPrevented;
-	};
-
 	//--------------------------------------------
 	// DataModelManager
 	//--------------------------------------------
@@ -10207,14 +11133,14 @@ var h5internal = {
 	 * href="h5.core.data.html#createManager">h5.core.data.createManager()</a>で作成します。
 	 * </p>
 	 * <p>
-	 * このクラスは<a href="EventDispatcher.html">EventDispatcherクラス</a>のメソッドを持ちます。イベント関連のメソッドについては<a
-	 * href="EventDispatcher.html">EventDispatcherクラス</a>を参照してください。<br>
+	 * このクラスは<a href="EventDispatcher.html">EventDispatcher</a>のメソッドを持ちます。イベント関連のメソッドについては<a
+	 * href="EventDispatcher.html">EventDispatcherミックスイン</a>を参照してください。<br>
 	 * データモデルマネージャは、データモデルマネージャが管理するデータモデルに変更があった場合に'itemsChange'イベントが発火します。
 	 * </p>
 	 *
 	 * @since 1.1.0
 	 * @class
-	 * @extends EventDispatcher
+	 * @mixes EventDispatcher
 	 * @name DataModelManager
 	 */
 	function DataModelManager(managerName) {
@@ -10281,7 +11207,9 @@ var h5internal = {
 		 */
 		this._isArrayPropChangeSilentlyRequested = false;
 	}
-	DataModelManager.prototype = new EventDispatcher();
+
+	// MixinでEventDispatcherをで継承
+	h5.mixin.eventDispatcher.mix(DataModelManager.prototype);
 	$.extend(DataModelManager.prototype, {
 		/**
 		 * データモデルを作成します。
@@ -10731,14 +11659,14 @@ var h5internal = {
 	 * <a href="DataModelManager.html#createModel">DataModelManager#createModel()</a>を呼ぶと、DataModelクラスを生成して返します。
 	 * </p>
 	 * <p>
-	 * このクラスは<a href="EventDispatcher.html">EventDispatcherクラス</a>のメソッドを持ちます。イベント関連のメソッドについては<a
-	 * href="EventDispatcher.html">EventDispatcherクラス</a>を参照してください。<br>
+	 * このクラスは<a href="EventDispatcher.html">EventDispatcher</a>のメソッドを持ちます。イベント関連のメソッドについては<a
+	 * href="EventDispatcher.html">EventDispatcherミックスイン</a>を参照してください。<br>
 	 * データモデルは、データモデルが管理するデータアイテムに変更があった場合に'itemsChange'イベントが発火します。
 	 * </p>
 	 *
 	 * @since 1.1.0
 	 * @class
-	 * @extends EventDispatcher
+	 * @mixes EventDispatcher
 	 * @name DataModel
 	 */
 	/**
@@ -10839,8 +11767,9 @@ var h5internal = {
 		manager.models[this.name] = this;
 	}
 
-	//EventDispatcherの機能を持たせるため、prototypeをコピーし、そのうえでDataModel独自のプロパティを追加する
-	$.extend(DataModel.prototype, EventDispatcher.prototype, {
+	// EventDispatcherをミックスイン
+	h5.mixin.eventDispatcher.mix(DataModel.prototype);
+	$.extend(DataModel.prototype, {
 		/**
 		 * 指定されたIDと初期値がセットされたデータアイテムを生成します。
 		 * <p>
@@ -10923,7 +11852,7 @@ var h5internal = {
 				this._manager.endUpdate();
 			}
 
-			if ($.isArray(objOrArray)) {
+			if (isArray(objOrArray)) {
 				return ret;
 			}
 			return ret[0];
@@ -10968,7 +11897,7 @@ var h5internal = {
 				var idKey = this._idKey;
 				var items = wrapInArray(value);
 				// objctでもArrayでもなかったらエラー
-				if (typeof value !== 'object' && !$.isArray(value)) {
+				if (typeof value !== 'object' && !isArray(value)) {
 					throwFwError(ERR_CODE_INVALID_CREATE_ARGS);
 				}
 				if (asCreate) {
@@ -11015,7 +11944,7 @@ var h5internal = {
 		 * @returns {DataItem|DataItem[]} データアイテム、またはその配列
 		 */
 		get: function(idOrArray) {
-			if ($.isArray(idOrArray) || h5.core.data.isObservableArray(idOrArray)) {
+			if (isArray(idOrArray) || h5.core.data.isObservableArray(idOrArray)) {
 				var ret = [];
 				for (var i = 0, len = idOrArray.length; i < len; i++) {
 					ret.push(this._findById(idOrArray[i]));
@@ -11091,7 +12020,7 @@ var h5internal = {
 				this._manager.endUpdate();
 			}
 
-			if ($.isArray(objOrItemIdOrArray)) {
+			if (isArray(objOrItemIdOrArray)) {
 				return ret;
 			}
 			return ret[0];
@@ -11133,7 +12062,7 @@ var h5internal = {
 				return !!this._findById(idOrObj);
 			} else if (typeof idOrObj === 'object') {
 				//型の厳密性はitemsとの厳密等価比較によってチェックできるので、if文ではtypeofで充分
-				return idOrObj != null && $.isFunction(idOrObj.get)
+				return idOrObj != null && isFunction(idOrObj.get)
 						&& idOrObj === this.items[idOrObj.get(this._idKey)];
 			} else {
 				return false;
@@ -11165,7 +12094,7 @@ var h5internal = {
 		 */
 		_findById: function(id) {
 			var item = this.items[id];
-			return item === undefined ? null : item;
+			return typeof item === TYPE_OF_UNDEFINED ? null : item;
 		},
 
 		/**
@@ -11229,14 +12158,14 @@ var h5internal = {
 		 * データアイテムは<a href="DataModel.html#create">DataModel#create()</a>で作成します。
 		 * </p>
 		 * <p>
-		 * このクラスは<a href="EventDispatcher.html">EventDispatcherクラス</a>のメソッドを持ちます。イベント関連のメソッドについては<a
-		 * href="EventDispatcher.html">EventDispatcherクラス</a>を参照してください。<br>
+		 * このクラスは<a href="EventDispatcher.html">EventDispatcher</a>のメソッドを持ちます。イベント関連のメソッドについては<a
+		 * href="EventDispatcher.html">EventDispatcherミックスイン</a>を参照してください。<br>
 		 * データアイテムは、アイテムが持つ値に変更があった場合に'change'イベントが発火します。
 		 * </p>
 		 *
 		 * @since 1.1.0
 		 * @class
-		 * @extends EventDispatcher
+		 * @mixes EventDispatcher
 		 * @name DataItem
 		 */
 		/**
@@ -11260,9 +12189,10 @@ var h5internal = {
 			}
 		}
 
-		// EventDispatcherと、schemaInfoもprototypeに追加
-		$.extend(DataItem.prototype, EventDispatcher.prototype, schemaInfo, itemProto);
-		$.extend(DataItem.prototype, {
+		// EventDispatcherをミックスイン
+		h5.mixin.eventDispatcher.mix(DataItem.prototype);
+		// EventDispatcherと、schemaInfoもprototypeに追加する
+		$.extend(DataItem.prototype, schemaInfo, itemProto, {
 
 			/**
 			 * データアイテムが属しているデータモデル
@@ -11314,13 +12244,15 @@ var h5internal = {
 	 *
 	 * @since 1.1.0
 	 * @class
-	 * @extends EventDispatcher
+	 * @mixes EventDispatcher
 	 * @name ObservableItem
 	 */
 	function ObservableItem(item) {
 	// 空コンストラクタ
 	}
-	$.extend(ObservableItem.prototype, EventDispatcher.prototype, itemProto, {
+	// EventDispatcherをミックスイン
+	h5.mixin.eventDispatcher.mix(ObservableItem.prototype);
+	$.extend(ObservableItem.prototype, itemProto, {
 		/**
 		 * ObservableItemのスキーマに違反しないかどうか引数をチェックします。
 		 * <p>
@@ -11415,7 +12347,7 @@ var h5internal = {
 	 */
 	function isObservableItem(obj) {
 		// _validateItemValueを持っているかつ、getModelメソッドがない場合はObservableItemと判定する。
-		return !!(obj && obj.constructor && obj._validateItemValue && !$.isFunction(obj.getModel));
+		return !!(obj && obj.constructor && obj._validateItemValue && !isFunction(obj.getModel));
 	}
 
 	//--------------------------------------------
@@ -11435,14 +12367,14 @@ var h5internal = {
 	 * indexOf, lastIndexOf, every, filter, forEach, map, some, reduce, reduceRight)が使えます。
 	 * </p>
 	 * <p>
-	 * このクラスは<a href="EventDispatcher.html">EventDispatcherクラス</a>のメソッドを持ちます。イベント関連のメソッドについては<a
-	 * href="EventDispatcher.html">EventDispatcherクラス</a>を参照してください。<br>
+	 * このクラスは<a href="EventDispatcher.html">EventDispatcher</a>のメソッドを持ちます。イベント関連のメソッドについては<a
+	 * href="EventDispatcher.html">EventDispatcherミックスイン</a>を参照してください。<br>
 	 * ObservableArrayは、自身の内容が変更されるメソッドが呼び出される時、実行前に'changeBefore'、実行後に'change'イベントを発生させます。
 	 * </p>
 	 *
 	 * @since 1.1.0
 	 * @class
-	 * @extends EventDispatcher
+	 * @mixes EventDispatcher
 	 * @name ObservableArray
 	 */
 	function ObservableArray() {
@@ -11458,7 +12390,8 @@ var h5internal = {
 
 		this._src = [];
 	}
-	$.extend(ObservableArray.prototype, EventDispatcher.prototype);
+	// EventDispatcherをミックスイン
+	h5.mixin.eventDispatcher.mix(ObservableArray.prototype);
 
 	//ObservableArrayの関数はフックされるので、直接prototypeに置かない
 	var obsFuncs = {
@@ -11477,7 +12410,7 @@ var h5internal = {
 
 			// aryが配列でもObservableArrayでもないならfalse
 			//サイズが異なる場合もfalse
-			if (!($.isArray(ary) || isObservableArray(ary)) || ary.length !== len) {
+			if (!(isArray(ary) || isObservableArray(ary)) || ary.length !== len) {
 				return false;
 			}
 
@@ -11514,7 +12447,7 @@ var h5internal = {
 
 			src = isObservableArray(src) ? src._src : src;
 
-			if (!$.isArray(src)) {
+			if (!isArray(src)) {
 				//引数が配列でない場合はエラー
 				throwFwError(ERR_CODE_INVALID_COPYFROM_ARGUMENT, [0, src]);
 			}
@@ -11710,9 +12643,6 @@ var h5internal = {
 	// Production
 	// =============================
 
-	/** Node.ELEMENT_NODE。IE8-ではNodeがないので自前で定数を作っている */
-	var NODE_TYPE_ELEMENT = 1;
-
 	var DATA_H5_BIND = 'data-h5-bind';
 
 	var DATA_H5_CONTEXT = 'data-h5-context';
@@ -11906,7 +12836,7 @@ var h5internal = {
 
 		for (var i = 0, len = attrs.length; i < len; i++) {
 			var attrValue = rootNode.getAttribute(attrs[i]);
-			if (value === undefined) {
+			if (typeof value === TYPE_OF_UNDEFINED) {
 				if (attrValue !== null) {
 					ret.push(rootNode);
 					break;
@@ -12035,7 +12965,7 @@ var h5internal = {
 	function isObservableItem(obj) {
 		//TODO 厳密に判定
 		// ObservableItemの場合もtrueを返す
-		if (obj && obj.addEventListener && obj.getModel && !$.isArray(obj)
+		if (obj && obj.addEventListener && obj.getModel && !isArray(obj)
 				&& !h5.core.data.isObservableArray(obj) || h5.core.data.isObservableItem(obj)) {
 			return true;
 		}
@@ -12073,7 +13003,7 @@ var h5internal = {
 			return;
 		}
 
-		if (!($.isArray(context) || h5.core.data.isObservableArray(context))) {
+		if (!(isArray(context) || h5.core.data.isObservableArray(context))) {
 			//data-h5-loop-contextの場合contextは配列でなければならない
 			throwFwError(ERR_CODE_INVALID_CONTEXT_SRC);
 		}
@@ -12162,7 +13092,7 @@ var h5internal = {
 		if (context) {
 			//TODO loop-contextにおいて個々のループ単位のコンテキスト自身をcontextやloop-contextにバインドする方法を追加した場合
 			//ここのチェックルーチンは変更になる
-			if (typeof context !== 'object' || $.isArray(context)
+			if (typeof context !== 'object' || isArray(context)
 					|| h5.core.data.isObservableArray(context)) {
 				//data-h5-contextの場合contextはオブジェクトでなければならない（配列は不可）
 				throwFwError(ERR_CODE_INVALID_CONTEXT_SRC);
@@ -12631,8 +13561,10 @@ var h5internal = {
 
 	/**
 	 * バインディングを管理します。
+	 * <p>
+	 * このクラスは自分でnewすることはありません。<a href="View.html#bind">view.bind()</a>を呼ぶとこのクラスのインスタンスが返ります。
+	 * </p>
 	 *
-	 * @private
 	 * @name Binding
 	 * @class
 	 */
@@ -12769,8 +13701,10 @@ var h5internal = {
 	}
 	$.extend(Binding.prototype, {
 		/**
-		 * このデータバインドを解除します。解除後は、ソースオブジェクトを変更してもビューには反映されません。<br>
-		 * ビュー（HTML）の状態は、このメソッドを呼んだ時の状態のままです。
+		 * このデータバインドを解除します。
+		 * <p>
+		 * 解除後は、ソースオブジェクトを変更してもビューには反映されません。 ビュー（HTML）の状態は、このメソッドを呼んだ時の状態のままです。
+		 * </p>
 		 *
 		 * @since 1.1.0
 		 * @memberOf Binding
@@ -13890,7 +14824,7 @@ var h5internal = {
 		 * @function
 		 */
 		clear: function(templateIds) {
-			if (templateIds === undefined) {
+			if (typeof templateIds === TYPE_OF_UNDEFINED) {
 				this.__cachedTemplates = {};
 				return;
 			}
@@ -13941,6 +14875,7 @@ var h5internal = {
 		 * @memberOf View
 		 * @name bind
 		 * @function
+		 * @returns {Binding}
 		 */
 		bind: function(element, context) {
 			var targetNodes = null;
@@ -13950,7 +14885,7 @@ var h5internal = {
 			}
 
 			// targetのチェック
-			if ($.isArray(element)) {
+			if (isArray(element)) {
 				//配列はDOMノードの配列であることを仮定
 				targetNodes = element;
 			} else {
@@ -13972,7 +14907,7 @@ var h5internal = {
 			}
 
 			// contextのチェック
-			if (context == null || typeof context !== 'object' || $.isArray(context)
+			if (context == null || typeof context !== 'object' || isArray(context)
 					|| h5.core.data.isObservableArray(context)) {
 				throwFwError(ERR_CODE_BIND_CONTEXT_INVALID);
 			}
@@ -14136,6 +15071,14 @@ var h5internal = {
 	 * scrollToTop() リトライまでの待機時間
 	 */
 	var WAIT_MILLIS = 500;
+
+	/**
+	 * アニメーション(fadeIn,fadeOut)するときの1フレームの時間(ms)
+	 * <p>
+	 * jQuery.fx.intervalがデフォルトで13なので、それに倣って13を指定している
+	 * </p>
+	 */
+	var ANIMATION_INTERVAL = 13;
 
 
 	// =============================
@@ -14404,7 +15347,8 @@ var h5internal = {
 			//意図しないスクロールバーが出ないようにする。
 			//-1しているのは四捨五入させるため(描画の際はピクセルにスナップされるようなので)。
 
-			var comStyle = getComputedStyle(elem, null);
+			// エレメントが別ウィンドウの場合もあるので、elemの属するwindowのgetComputedStyleを使用
+			var comStyle = getWindowOfDocument(getDocumentOf(elem)).getComputedStyle(elem, null);
 
 			var eW = parseFloat(comStyle.width) + parseFloat(comStyle.paddingLeft)
 					+ parseFloat(comStyle.paddingRight);
@@ -14596,6 +15540,276 @@ var h5internal = {
 				+ ' { behavior:url(#default#VML); }';
 		vmlStyle.setAttribute('type', 'text/css');
 		vmlStyle.styleSheet.cssText = styleDef;
+	}
+
+	/**
+	 * getComputedStyleがあるブラウザについて、getComputedStyleを呼び出した結果を返します。
+	 * <p>
+	 * 渡されたエレメントが属するdocumentツリーのwindowオブジェクトのgetComputedStyleを使用します
+	 * </p>
+	 *
+	 * @private
+	 * @param {DOM} elem
+	 * @returns {Style} elemのcomputedStyle
+	 */
+	function getComputedStyleObject(elem) {
+		return getWindowOf(elem).getComputedStyle(elem, null);
+	}
+
+	/**
+	 * スタイルを取得する
+	 * <p>
+	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
+	 * </p>
+	 * <p>
+	 * getComputedStyleがないブラウザについては、jQuery.css()を使って取得した値を返す。
+	 * </p>
+	 *
+	 * @private
+	 * @param elem {DOM}
+	 * @param prop {String} CSSプロパティ
+	 * @returns 第1引数について、computedStyleを取得し、第2引数に指定されたプロパティの値を返す
+	 */
+	function getComputedStyleValue(elem, prop) {
+		if (!getWindowOf(elem).getComputedStyle) {
+			return $(elem).css(prop);
+		}
+		return getComputedStyleObject(elem)[prop];
+	}
+
+	/**
+	 * 要素のheight(offsetHeight)を取得する
+	 * <p>
+	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
+	 * </p>
+	 * <p>
+	 * getComputedStyleがないブラウザについては、height()で取得した値を返す。
+	 * </p>
+	 *
+	 * @private
+	 * @param {DOM} elem
+	 * @returns {Number} 引数で渡された要素のheight
+	 */
+	function getHeight(elem) {
+		if (!getWindowOf(elem).getComputedStyle) {
+			return $(elem).height();
+		}
+		var elemStyle = getComputedStyleObject(elem);
+		return elem.offsetHeight - parseFloat(elemStyle.paddingTop)
+				- parseFloat(elemStyle.paddingBottom);
+	}
+
+	/**
+	 * 要素のwidth(offsetWidth)を取得する
+	 * <p>
+	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
+	 * </p>
+	 * <p>
+	 * getComputedStyleがないブラウザについては、width()で取得した値を返す。
+	 * </p>
+	 *
+	 * @private
+	 * @param {DOM} elem
+	 * @returns {Number} 引数で渡された要素のwidth
+	 */
+	function getWidth(elem) {
+		if (!getWindowOf(elem).getComputedStyle) {
+			return $(elem).width();
+		}
+		var elemStyle = getComputedStyleObject(elem);
+		return elem.offsetWidth - parseFloat(elemStyle.paddingLeft)
+				- parseFloat(elemStyle.paddingRight);
+	}
+
+	/**
+	 * 要素のouterHeightを取得する
+	 * <p>
+	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
+	 * </p>
+	 * <p>
+	 * getComputedStyleがないブラウザについては、outerHeight()で取得した値を返す。
+	 * </p>
+	 *
+	 * @private
+	 * @param {DOM} elem
+	 * @param {Boolean} [includeMargin=true] maginを含めるかどうか
+	 * @returns {Number} 引数で渡された要素のouterHeight
+	 */
+	function getOuterHeight(elem, includeMargin) {
+		if (!getWindowOf(elem).getComputedStyle) {
+			return $(elem).outerHeight();
+		}
+
+		var elemStyle = getComputedStyleObject(elem);
+		return getHeight(elem)
+				+ parseFloat(elemStyle.paddingTop)
+				+ parseFloat(elemStyle.paddingBottom)
+				+ parseFloat(elemStyle.borderTopWidth)
+				+ parseFloat(elemStyle.borderBottomWidth)
+				+ (includeMargin ? (parseFloat(elemStyle.marginTop) + parseFloat(elemStyle.marginBottom))
+						: 0);
+	}
+
+	/**
+	 * 要素のouterWidthを取得する
+	 * <p>
+	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
+	 * </p>
+	 * <p>
+	 * getComputedStyleがないブラウザについては、outerWidth()で取得した値を返す。
+	 * </p>
+	 *
+	 * @param {DOM} elem
+	 * @param {Boolean} [includeMargin=true] maginを含めるかどうか
+	 * @returns {Number} 引数で渡された要素のouterWidth
+	 */
+	function getOuterWidth(elem, includeMargin) {
+		if (!getWindowOf(elem).getComputedStyle) {
+			return $(elem).outerWidth();
+		}
+		var elemStyle = getComputedStyleObject(elem);
+		return getWidth(elem)
+				+ parseFloat(elemStyle.paddingLeft)
+				+ parseFloat(elemStyle.paddingRight)
+				+ parseFloat(elemStyle.borderLeftWidth)
+				+ parseFloat(elemStyle.borderRightWidth)
+				+ (includeMargin ? (parseFloat(elemStyle.marginLeft) + parseFloat(elemStyle.marginRight))
+						: 0);
+	}
+
+	/**
+	 * 要素のinnerHeightを取得する
+	 * <p>
+	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
+	 * </p>
+	 * <p>
+	 * getComputedStyleがないブラウザについては、innerHeight()で取得した値を返す。
+	 * </p>
+	 *
+	 * @param {DOM} elem
+	 * @returns {Number} 引数で渡された要素のinnerHeight
+	 */
+	function getInnerHeight(elem) {
+		if (!getWindowOf(elem).getComputedStyle) {
+			return $(elem).innerHeight();
+		}
+		var elemStyle = getComputedStyleObject(elem);
+		return getHeight(elem) + parseFloat(elemStyle.paddingTop)
+				+ parseFloat(elemStyle.paddingBottom);
+	}
+
+	/**
+	 * 要素のinnerWidthを取得する
+	 * <p>
+	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
+	 * </p>
+	 * <p>
+	 * getComputedStyleがないブラウザについては、innerWidth()で取得した値を返す。
+	 * </p>
+	 *
+	 * @param {DOM} elem
+	 * @returns {Number} 引数で渡された要素のinnerWidth
+	 */
+	function getInnerWidth(elem) {
+		if (!getWindowOf(elem).getComputedStyle) {
+			return $(elem).innerWidth();
+		}
+		var elemStyle = getComputedStyleObject(elem);
+		return getWidth(elem) + parseFloat(elemStyle.paddingLeft)
+				+ parseFloat(elemStyle.paddingRight);
+	}
+
+	/**
+	 * fadeIn, fadeOut用のアニメーション関数
+	 *
+	 * @param {Array} props $elemのアニメーション終了時のスタイルの配列。propsの配列のインデックスは$elemのインデックスに対応する。
+	 * @param {jQuery} $elem アニメーションさせる要素
+	 * @param {Number} time アニメーションに掛ける時間
+	 * @param {Function} callback アニメーション終了時に実行するコールバック関数
+	 */
+	function animate(props, $elem, time, callback) {
+		var interval = ANIMATION_INTERVAL;
+		var count = 0;
+		// 現在の値(アニメーションするごとに変化)
+		var curProps = [];
+		// 1インターバルごとに変化する量
+		var v = [];
+		// 現在のスタイルを$elemの最初の要素から取得し、それを基準にアニメーションする
+		$elem.each(function(i) {
+			var prop = props[i];
+			v[i] = {};
+			curProps[i] = {};
+			var curStyle = getComputedStyleObject($elem[i]);
+			for ( var p in prop) {
+				curProps[i][p] = parseFloat(curStyle[p]);
+				v[i][p] = (parseFloat(prop[p]) - parseFloat(curStyle[p])) * interval / time;
+			}
+		});
+		function fn() {
+			count += interval;
+			if (count > time) {
+				// アニメーション終了
+				clearInterval(timerId);
+				// スタイルを削除して、デフォルト(cssなどで指定されている値)に戻す
+				$elem.each(function(i) {
+					for ( var p in props[i]) {
+						this.style[p] = '';
+					}
+				});
+				callback();
+				return;
+			}
+			$elem.each(function(i) {
+				var curProp = curProps[i];
+				for ( var p in curProp) {
+					curProp[p] += v[i][p];
+				}
+				$(this).css(curProp);
+			});
+		}
+		fn();
+		var timerId = setInterval(fn, interval);
+	}
+
+	/**
+	 * opacityを0から、現在の要素のopacityの値までアニメーションします
+	 *
+	 * @param {jQuery} $elem fadeInさせる要素
+	 * @param {Number} time アニメーションに掛ける時間(ms)
+	 * @param {Function} callback アニメーションが終了した時に呼び出すコールバック関数
+	 */
+	function fadeIn($elem, time, callback) {
+		// 現在のopacityを取得
+		var opacities = [];
+		$elem.each(function() {
+			var opacity = parseFloat(getComputedStyleValue(this, 'opacity'));
+			opacities.push({
+				opacity: opacity
+			});
+		});
+		// opacityを0にして、display:blockにする
+		$elem.css({
+			opacity: 0,
+			display: 'block'
+		});
+		animate(opacities, $elem, time, callback);
+	}
+
+	/**
+	 * opacityを現在の値から、0までアニメーションします
+	 *
+	 * @param {jQuery} $elem fadeOutさせる要素
+	 * @param {Number} time アニメーションに掛ける時間(ms)
+	 * @param {Function} callback アニメーションが終了した時に呼び出すコールバック関数
+	 */
+	function fadeOut($elem, time, callback) {
+		var opacities = [];
+		$elem.each(function() {
+			opacities.push({
+				opacity: 0
+			});
+		});
+		animate(opacities, $elem, time, callback);
 	}
 
 	// =========================================================================
@@ -14896,11 +16110,17 @@ var h5internal = {
 			return;
 		}
 		// スクリーンロックで表示するか判定
+		// (自分のwindowのみで、ポップアップウィンドウの場合はスクリーンロックと判定しない)
 		var isScreenlock = isScreenlockTarget($t);
 		// スクリーンロックで表示する場合はターゲットはbodyにする
 		$t = isScreenlock ? $('body') : $t;
 		// documentの取得
 		var doc = getDocumentOf($t[0]);
+
+		// 別ウィンドウのwindow又はdocumentが指定されていた場合は、そのwindow,documentのbodyに出す
+		if (doc !== window.document && ($t[0] === doc || getWindowOfDocument(doc) === $t[0])) {
+			$t = $(doc.body);
+		}
 
 		// デフォルトオプション
 		var defaultOption = {
@@ -14979,14 +16199,14 @@ var h5internal = {
 		for (var i = 0, len = this._$target.length; i < len; i++) {
 			this._$content = this._$content.add($(doc.createElement('div')).append(contentElem)
 					.addClass(CLASS_INDICATOR_ROOT).addClass(settings.theme).addClass(
-							CLASS_INDICATOR_CONTENT).hide());
+							CLASS_INDICATOR_CONTENT).css('display', 'none'));
 			this._$overlay = this._$overlay
 					.add((settings.block ? $(doc.createElement('div')) : $()).addClass(
 							CLASS_INDICATOR_ROOT).addClass(settings.theme).addClass(CLASS_OVERLAY)
-							.hide());
+							.css('display', 'none'));
 			this._$skin = this._$skin.add(((isLegacyIE || compatMode) ? $(doc
 					.createElement('iframe')) : $()).attr('src', srcVal).addClass(
-					CLASS_INDICATOR_ROOT).addClass(CLASS_SKIN).hide());
+					CLASS_INDICATOR_ROOT).addClass(CLASS_SKIN).css('display', 'none'));
 		}
 
 		var position = this._isScreenLock && usePositionFixed ? 'fixed' : 'absolute';
@@ -15002,10 +16222,10 @@ var h5internal = {
 
 		// jQuery1.7以下ならpipe、1.8以降ならthenを使ってコールバックを登録
 		var pipeMethod = $.hasOwnProperty('curCSS') ? 'pipe' : 'then';
-		if ($.isArray(promises)) {
+		if (isArray(promises)) {
 			// プロミスでないものを除去
 			promises = $.map(promises, function(item, idx) {
-				return item && $.isFunction(item.promise) ? item : null;
+				return item && isFunction(item.promise) ? item : null;
 			});
 
 			if (promises.length > 0) {
@@ -15014,7 +16234,7 @@ var h5internal = {
 				registerCallbacksSilently(h5.async.when(promises), pipeMethod, [promiseCallback,
 						promiseCallback]);
 			}
-		} else if (promises && $.isFunction(promises.promise)) {
+		} else if (promises && isFunction(promises.promise)) {
 			// CFHの発火を阻害しないようにpipeを呼び出し。
 			registerCallbacksSilently(promises, pipeMethod, [promiseCallback, promiseCallback]);
 		}
@@ -15063,10 +16283,11 @@ var h5internal = {
 
 				// position:absoluteの子要素を親要素からの相対位置で表示するため、親要素がposition:staticの場合はrelativeに変更する(親要素がbody(スクリーンロック)の場合は変更しない)
 				// また、IEのレイアウトバグを回避するためzoom:1を設定する
-				if (!this._isScreenLock && _$target.css('position') === 'static') {
+				var targetPosition = getComputedStyleValue(_$target[0], 'position');
+				if (!this._isScreenLock && targetPosition === 'static') {
 					// スロバーメッセージ要素に親要素のposition/zoomを記憶させておく
-					_$target.data(DATA_KEY_POSITION, _$target.css('position'));
-					_$target.data(DATA_KEY_ZOOM, _$target.css('zoom'));
+					_$target.data(DATA_KEY_POSITION, targetPosition);
+					_$target.data(DATA_KEY_ZOOM, getComputedStyleValue(_$target[0], 'zoom'));
 
 					_$target.css({
 						position: 'relative',
@@ -15086,13 +16307,17 @@ var h5internal = {
 				_$target.append(_$skin).append(_$overlay).append(_$content);
 			}
 
-			var $elems = $().add(this._$skin).add(this._$content).add(this._$overlay);
+			// Array.prototype.pushを使って、適用する要素を配列にまとめる
+			var elems = this._$skin.toArray();
+			Array.prototype.push.apply(elems, this._$content.toArray());
+			Array.prototype.push.apply(elems, this._$overlay.toArray());
+			var $elems = $(elems);
 
 			if (fadeInTime < 0) {
-				$elems.show();
+				$elems.css('display', 'block');
 				cb();
 			} else {
-				$elems.fadeIn(fadeInTime, cb);
+				fadeIn($elems, fadeInTime, cb);
 			}
 
 			this._reposition();
@@ -15131,10 +16356,12 @@ var h5internal = {
 					w = scrSize.w;
 					h = scrSize.h;
 				}
-				_$overlay.width(w).height(h);
+				_$overlay[0].style.width = w + 'px';
+				_$overlay[0].style.height = h + 'px';
 
 				if (isLegacyIE || compatMode) {
-					_$skin.width(w).height(h);
+					_$skin[0].style.width = w + 'px';
+					_$skin[0].style.height = h + 'px';
 				}
 			}
 		},
@@ -15157,32 +16384,34 @@ var h5internal = {
 
 					if (usePositionFixed) {
 						// 可視領域からtopを計算する
-						_$content.css('top', ((wh - _$content.outerHeight()) / 2) + 'px');
+						_$content.css('top', ((wh - getOuterHeight(_$content[0])) / 2) + 'px');
 					} else {
 						// 可視領域+スクロール領域からtopを計算する
 						_$content.css('top',
-								((scrollTop() + (wh / 2)) - (_$content.outerHeight() / 2)) + 'px');
+								((scrollTop() + (wh / 2)) - (getOuterHeight(_$content[0]) / 2))
+										+ 'px');
 					}
 				} else {
 					//オーバーレイの計算はスクロールサイズを基準にしている。これに倣い、中央揃え計算の基準はinnerHeight()にする(＝paddingを含める)。leftも同様
 					_$content.css('top', _$target.scrollTop()
-							+ (_$target.innerHeight() - _$content.outerHeight()) / 2);
+							+ (getInnerHeight(_$target[0]) - getOuterHeight(_$content[0])) / 2);
 				}
 
-				var blockElementPadding = _$content.innerWidth() - _$content.width();
+				var blockElementPadding = getInnerWidth(_$content[0]) - getWidth(_$content[0]);
+
 				var totalWidth = 0;
 
 				_$content.children().each(function() {
 					var $e = $(this);
 					// IE9にて不可視要素に対してouterWidth(true)を実行すると不正な値が返ってくるため、display:noneの場合は値を取得しない
-					if ($e.css('display') === 'none') {
+					if (getComputedStyleValue($e[0], 'display') === 'none') {
 						return true;
 					}
-					totalWidth += $e.outerWidth(true);
+					totalWidth += getOuterWidth(this, true);
 				});
-				_$content.width(totalWidth + blockElementPadding);
+				_$content.css('width', totalWidth + blockElementPadding);
 				_$content.css('left', _$target.scrollLeft()
-						+ (_$target.innerWidth() - _$content.outerWidth()) / 2);
+						+ (getInnerWidth(_$target[0]) - getOuterWidth(_$content[0])) / 2);
 			}
 		},
 		/**
@@ -15201,7 +16430,11 @@ var h5internal = {
 
 			var that = this;
 			var fadeOutTime = this._fadeOutTime;
-			var $elems = $().add(this._$skin).add(this._$content).add(this._$overlay);
+			// Array.prototype.pushを使って、適用する要素を配列にまとめる
+			var elems = this._$skin.toArray();
+			Array.prototype.push.apply(elems, this._$content.toArray());
+			Array.prototype.push.apply(elems, this._$overlay.toArray());
+			var $elems = $(elems);
 			var cb = function() {
 				var $window = $(window);
 
@@ -15241,10 +16474,10 @@ var h5internal = {
 			}
 
 			if (fadeOutTime < 0) {
-				$elems.hide();
+				$elems.css('display', 'none');
 				cb();
 			} else {
-				$elems.fadeOut(fadeOutTime, cb);
+				fadeOut($elems, fadeOutTime, cb);
 			}
 
 			return this;
@@ -15473,7 +16706,7 @@ var h5internal = {
 		var height, width;
 
 		// containerの位置を取得。borderの内側の位置で判定する。
-		if (container === undefined) {
+		if (typeof container === TYPE_OF_UNDEFINED) {
 			// containerが指定されていないときは、画面表示範囲内にあるかどうか判定する
 			height = getDisplayArea('Height');
 			width = getDisplayArea('Width');
@@ -16312,12 +17545,12 @@ var h5internal = {
 						throwFwError(ERR_CODE_INVALID_TYPE, 'id');
 					}
 
-					if (cssSrc != null && !isString(cssSrc) && !$.isArray(cssSrc)) {
+					if (cssSrc != null && !isString(cssSrc) && !isArray(cssSrc)) {
 						throwFwError(ERR_CODE_INVALID_TYPE, 'cssSrc');
 					}
 
 					if (controllerDefObject != null) {
-						if (isString(controllerDefObject) || $.isArray(controllerDefObject)) {
+						if (isString(controllerDefObject) || isArray(controllerDefObject)) {
 							throwFwError(ERR_CODE_NAME_INVALID_PARAMETER);
 						}
 
@@ -16965,7 +18198,8 @@ var h5internal = {
 	/**
 	 * Statementクラス
 	 * <p>
-	 * このクラスを継承しているクラスはTransactionalExecutor.add()で追加できる。
+	 * このクラスを継承しているクラスは<a href="TransactionalExecutor.html#add">TransactionalExecutor.add()</a>で追加できます。
+	 * </p>
 	 *
 	 * @class
 	 * @name Statement
@@ -16973,6 +18207,8 @@ var h5internal = {
 	function Statement() {
 		/**
 		 * 1インスタンスで複数のステートメントを実行するか判定するフラグ このフラグがtrueの場合、execute()の実行結果を配列で返します
+		 *
+		 * @private
 		 */
 		this._multiple = false;
 	}
@@ -16980,6 +18216,9 @@ var h5internal = {
 	$.extend(Statement.prototype, {
 		/**
 		 * SQL文を実行します
+		 *
+		 * @memberOf Statement
+		 * @return {TransactionalExecutor} TransactionalExecutorオブジェクト
 		 */
 		execute: function() {
 			return this._executor.add(this)._execute(function(results) {
@@ -17258,7 +18497,7 @@ var h5internal = {
 		this._parameters = [];
 		this._executor = executor;
 		this._tableName = tableName;
-		this._columns = $.isArray(columns) ? columns.join(', ') : '*';
+		this._columns = isArray(columns) ? columns.join(', ') : '*';
 		this._where = null;
 		this._orderBy = null;
 	}
@@ -17383,7 +18622,7 @@ var h5internal = {
 				statement += (' WHERE ' + where);
 			}
 
-			if ($.isArray(this._orderBy)) {
+			if (isArray(this._orderBy)) {
 				statement += (' ORDER BY ' + this._orderBy.join(', '));
 			}
 
@@ -17808,7 +19047,7 @@ var h5internal = {
 		select: function(tableName, columns, txe) {
 			validTableName('select', tableName);
 
-			if (!$.isArray(columns) && columns !== '*') {
+			if (!isArray(columns) && columns !== '*') {
 				throwFwError(ERR_CODE_INVALID_COLUMN_NAME, 'select');
 			}
 
@@ -17870,7 +19109,7 @@ var h5internal = {
 		insert: function(tableName, values, txe) {
 			validTableName('insert', tableName);
 
-			if (values != null && !$.isArray(values) && !$.isPlainObject(values)) {
+			if (values != null && !isArray(values) && !$.isPlainObject(values)) {
 				throwFwError(ERR_CODE_INVALID_VALUES, 'insert');
 			}
 
@@ -17945,7 +19184,7 @@ var h5internal = {
 				throwFwError(ERR_CODE_INVALID_STATEMENT, 'sql');
 			}
 
-			if (parameters != null && !$.isArray(parameters)) {
+			if (parameters != null && !isArray(parameters)) {
 				throwFwError(ERR_CODE_TYPE_NOT_ARRAY, 'sql');
 			}
 
