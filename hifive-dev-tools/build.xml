@@ -2,13 +2,13 @@
 <project name="h5devtool-builder" basedir="." default="build">
 	<property name="webcontent.dir" value="WebContent" />
 	<property name="src.dir" value="${webcontent.dir}/src" />
-	<property name="src.filename" value="h5.devtool.js" />
-	<property name="src.supplement.html.filename" value="h5devtool.html" />
+	<property name="src.filename" value="h5-dev-tool.js" />
+	<property name="src.supplement.html.filename" value="h5-dev-tool.html" />
 	<property name="build.dir" value="${webcontent.dir}/build" />
 	<property name="build.tmp.dir" value="${build.tmp.dir}" />
-	<property name="build.dev.filename" value="h5.devtool.dev.js" />
-	<property name="build.min.filename" value="h5.devtool.js" />
-	<property name="build.supplement.html.filename" value="h5devtool.html" />
+	<property name="build.dev.filename" value="h5-dev-tool.dev.js" />
+	<property name="build.min.filename" value="h5-dev-tool.js" />
+	<property name="build.supplement.html.filename" value="h5-dev-tool.html" />
 	<property name="min.header.filename" value="min-build-header.txt" />
 	<property name="config.dir" value="config" />
 
