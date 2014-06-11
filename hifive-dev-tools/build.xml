@@ -51,9 +51,25 @@
 	</target>
 
 	<target name="build" depends="clean,getVersion,getGitHash">
+		<!-- タイムスタンプを取得 -->
+		<tstamp>
+			<format property="timestamp" pattern="yyyy/MM/dd HH:mm:ss.SSS (Z)" />
+		</tstamp>
+		<!-- dev版をbuild.tmp.dirにコピー -->
+		<copy file="${src.dir}/${src.filename}" todir="${build.tmp.dir}" />
+		<!-- version、gitCommitId, タイムスタンプを挿入 -->
+		<replace file="${build.tmp.dir}/${src.filename}">
+			<replacefilter token="{version}" value="${versionNumber}" />
+			<replacefilter token="{gitCommitId}" value="${gitCommitId}" />
+			<replacefilter token="{timestamp}" value="${timestamp}" />
+		</replace>
+
+		<!-- dev版をbuildに出力 -->
+		<copy file="${build.tmp.dir}/${src.filename}" tofile="${build.dir}/${build.dev.filename}" />
+
 		<!-- ClosureCompilerを使ってmin版の作成。コンパイル後にヘッダ追記するので、build.tmp.dirにいったん出力する -->
 		<jscomp compilationLevel="simple" debug="false" output="${build.tmp.dir}/${build.min.filename}">
-			<sources dir="${src.dir}">
+			<sources dir="${build.tmp.dir}">
 				<file name="${src.filename}" />
 			</sources>
 		</jscomp>
@@ -64,15 +80,16 @@
 			<replacefilter token="{version}" value="${versionNumber}" />
 			<replacefilter token="{gitCommitId}" value="${gitCommitId}" />
 		</replace>
-		<!-- ヘッダとソースを結合 -->
+		<!-- ヘッダとソースを結合してbuildに出力 -->
 		<concat destfile="${build.dir}/${build.min.filename}">
 			<filelist dir="${build.tmp.dir}" files="${min.header.filename},${build.min.filename}" />
 		</concat>
+
+		<!-- htmlファイルをbuildに出力 -->
+		<copy file="${src.dir}/${src.supplement.html.filename}" tofile="${build.dir}/${build.supplement.html.filename}" />
+
 		<!-- tmpフォルダの削除 -->
 		<delete dir="${build.tmp.dir}" />
-
-		<copy file="${src.dir}/${src.supplement.html.filename}" tofile="${build.dir}/${build.supplement.html.filename}" />
-		<copy file="${src.dir}/${src.filename}" tofile="${build.dir}/${build.dev.filename}" />
 
 		<property name="output.dir" location="${build.dir}" />
 		<echo message="ビルドしたファイルを${output.dir}に出力しました。" />

@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * hifive
+ * hifive Developer Tool
+ *   version {version}
+ *   gitCommitId : {gitCommitId}
+ *   build at {timestamp}
  */
 
 (function($) {
@@ -51,7 +54,7 @@
 	// =========================================================================
 
 	/** DvelopperToolのバージョン */
-	var H5_DEV_TOOL_VERSION = '1.0.0';
+	var H5_DEV_TOOL_VERSION = '{version}';
 	/** ログのインデント幅 */
 	var LOG_INDENT_WIDTH = 10;
 	/** ログ出力の遅延時間(ms) */
