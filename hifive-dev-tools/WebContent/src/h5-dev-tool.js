@@ -2092,9 +2092,6 @@
 		 * @param $el
 		 */
 		'.targetlist .target-name mouseover': function(context, $el) {
-			if (hasTouchEvent) {
-				return;
-			}
 			var target = this.getTargetFromElem($el);
 			this.removeOverlay();
 			if (!isDisposed(target) && target.__controllerContext) {
@@ -2111,9 +2108,6 @@
 		 * @param $el
 		 */
 		'.targetlist .target-name mouseout': function(context, $el) {
-			if (hasTouchEvent) {
-				return;
-			}
 			this.removeOverlay();
 		},
 
