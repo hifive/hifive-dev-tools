@@ -973,10 +973,11 @@
 	/**
 	 * jQueryを使って別ウィンドウのスタイルを取得できるかどうか
 	 * <p>
-	 * (IEでjQuery2.0.Xなら取得できない。jQuery2系の場合は自分で計算するようにする)
+	 * (IEのとき、jQuery2.系、1.8～1.10では別ウィンドウのスタイルを取得できない。)
 	 * </p>
 	 */
-	var useJQueryMeasuringFunctions = !$().jquery.match(/^2.*/);
+	var useJQueryMeasuringFunctions = !h5.env.ua.isIE
+			|| !/(^2\..*)|(^1\.8|9|(10)\..*)/.test($().jquery)
 
 	/**
 	 * devtoolで表示しているコントローラまたはロジックのマップ。idからコントローラまたはロジックを特定できる
