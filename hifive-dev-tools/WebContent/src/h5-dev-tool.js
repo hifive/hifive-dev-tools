@@ -926,11 +926,6 @@
 	});
 
 	/**
-	 * タッチイベントがあるか
-	 */
-	var hasTouchEvent = document.ontouchstart !== undefined;
-
-	/**
 	 * ログ用のObservableArrayを要素に持つ配列
 	 */
 	var logArrays = [];
