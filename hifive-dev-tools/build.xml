@@ -21,11 +21,8 @@
 	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpathref="base.path" />
 
 	<target name="clean">
-		<delete>
-			<fileset dir="${build.dir}/">
-				<include name="**" />
-			</fileset>
-		</delete>
+		<delete dir="${build.dir}" />
+		<mkdir dir="${build.dir}" />
 	</target>
 
 	<target name="getVersion" unless="versionNumber">
