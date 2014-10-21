@@ -2681,21 +2681,6 @@
 						this.appendTargetToList(controller, $li.find('ul:last'));
 					}
 				}
-				// ロジックを列挙して追加
-				var isAppendedLogiccUl = false;
-				for ( var p in target) {
-					if (h5.u.str.endsWith(p, 'Logic')) {
-						// ロジックがある場合、ロジックのulを追加
-						if (!isAppendedLogiccUl) {
-							view.append($li, 'target-list');
-							isAppendedLogiccUl = true;
-						}
-						// 『コントローラ名#定義名』を覚えさせておく
-						target[p].__logicContext.devtool = target[p].__logicContext.devtool || {};
-						target[p].__logicContext.devtool.instanceName = target.__name + '#' + p;
-						this.appendTargetToList(target[p], $li.find('ul:last'));
-					}
-				}
 			} else {
 				// ロジックの場合
 				// コントローラ名とログ用のObserbableArrayを持たせる
@@ -2713,6 +2698,21 @@
 
 				// 子コントローラの後にロジック追加
 				$ul.append($li);
+			}
+			// ロジックを列挙して追加
+			var isAppendedLogiccUl = false;
+			for ( var p in target) {
+				if (h5.u.str.endsWith(p, 'Logic')) {
+					// ロジックがある場合、ロジックのulを追加
+					if (!isAppendedLogiccUl) {
+						view.append($li, 'target-list');
+						isAppendedLogiccUl = true;
+					}
+					// 『コントローラ名#定義名』を覚えさせておく
+					target[p].__logicContext.devtool = target[p].__logicContext.devtool || {};
+					target[p].__logicContext.devtool.instanceName = target.__name + '#' + p;
+					this.appendTargetToList(target[p], $li.find('ul:last'));
+				}
 			}
 		},
 		/**
