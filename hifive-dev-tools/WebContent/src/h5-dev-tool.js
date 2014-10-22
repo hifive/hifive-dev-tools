@@ -2614,7 +2614,7 @@
 			}
 
 			// メソッド・イベントハンドラの実行回数を保持するオブジェクトを持たせる
-			devtoolContext.methodCount = new MethodCount(target);
+			devtoolContext.methodCount = devtoolContext.methodCount || new MethodCount(target);
 
 			if (target.__controllerContext) {
 				// コントローラの場合
