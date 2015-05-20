@@ -2662,7 +2662,7 @@
 			// ロジックを列挙して追加
 			var isAppendedLogicUl = false;
 			for ( var p in target) {
-				if (h5.u.str.endsWith(p, 'Logic')) {
+				if (h5.u.str.endsWith(p, 'Logic') && target[p] && !$.isFunction(target[p])) {
 					// ロジックがある場合、ロジックのulを追加
 					if (!isAppendedLogicUl) {
 						view.append($li, 'target-list');
