@@ -104,7 +104,8 @@
 				selector: '.h5devtool .floating-list',
 				rule: {
 					height: '100%',
-					overflow: 'auto'
+					overflow: 'auto',
+					margin: 0
 				}
 			},
 			{
@@ -146,6 +147,37 @@
 				}
 			},
 			/*
+			 * ログ共通
+			 */
+			{
+				selector: '.h5devtool .logline',
+				rule: {
+					paddingLeft: 0,
+					paddingTop: '4px',
+					borderTop: '1px solid #eee',
+					borderBottom: '1px solid #eee',
+					margin: 0,
+					color: 'gray',
+					whiteSpace: 'nowrap',
+					margin: '0 0 -1px 2px',
+					fontSize: '12px',
+					fontFamily: "'ＭＳ ゴシック','Osaka－等幅',sans-serif"
+				}
+			},
+			{
+				selector: '.h5devtool .fixedControlls',
+				rule: {
+					paddingLeft: 0,
+					margin: 0,
+					backgroundColor: '#fff',
+					border: 'solid 1px gray',
+					padding: '3px',
+					'-moz-box-sizing': 'border-box',
+					'-webkit-box-sizing': 'border-box',
+					boxSizing: 'border-box'
+				}
+			},
+			/*
 			 * トレースログ
 			 */
 			{
@@ -183,6 +215,21 @@
 				}
 			},
 			{
+				selector: '.h5devtool .trace .logColor',
+				rule: {
+					color: '#000',
+					borderColor: '#000'
+				}
+			},
+			{
+				selector: '.h5devtool .logLevelThreshold',
+				rule: {
+					margin: 0,
+					padding: 0,
+					height: '17px'
+				}
+			},
+			{
 				selector: '.h5devtool .trace .fixedControlls label',
 				rule: {
 					margin: '0 2px 4px 0',
@@ -194,24 +241,13 @@
 			{
 				selector: '.h5devtool .trace .fixedControlls',
 				rule: {
-					paddingLeft: 0,
-					margin: 0,
-					backgroundColor: '#fff',
-					border: 'solid 1px gray',
-					padding: '3px',
-					height: '60px',
-					'-moz-box-sizing': 'border-box',
-					'-webkit-box-sizing': 'border-box',
-					boxSizing: 'border-box'
+					height: '60px'
 				}
 			},
 			{
-				selector: '.h5devtool .trace-list',
+				selector: '.h5devtool .trace-list .logline',
 				rule: {
-					paddingLeft: 0,
-					margin: 0,
-					color: 'gray',
-					whiteSpace: 'nowrap'
+					color: 'gray'
 				}
 			},
 			{
@@ -244,45 +280,64 @@
 			 * ロガー
 			 */
 			{
-				selector: '.h5devtool .logger p',
+				selector: '.h5devtool .logger',
 				rule: {
-					margin: '4px 0 0 2px',
-					borderTop: '1px solid #eee',
-					fontSize: '12px'
+					paddingBottom: '24px',
+					overflow: 'hidden'
 				}
 			},
 			{
-				selector: '.h5devtool .logger p.TRACE',
+				selector: '.h5devtool .logger .console',
+				rule: {}
+			},
+			{
+				selector: '.h5devtool .logger .fixedControlls',
+				rule: {
+					height: '24px',
+					borderWidth: '1px 0 1px 0'
+				}
+			},
+			{
+				selector: '.h5devtool .logger .console',
+				rule: {
+					height: '100%',
+					margin: 0,
+					whiteSpace: 'nowrap',
+					fontFamily: "'ＭＳ ゴシック', Osaka－等幅, sans-serif"
+				}
+			},
+			{
+				selector: '.h5devtool .logger-log.TRACE',
 				rule: {
 					color: '#000000'
 				}
 			},
 			{
-				selector: '.h5devtool .logger p.DEBUG',
+				selector: '.h5devtool .logger-log.DEBUG',
 				rule: {
 					color: '#0000ff'
 				}
 			},
 			{
-				selector: '.h5devtool .logger p.INFO',
+				selector: '.h5devtool .logger-log.INFO',
 				rule: {
 					color: '#000000'
 				}
 			},
 			{
-				selector: '.h5devtool .logger p.WARN',
+				selector: '.h5devtool .logger-log.WARN',
 				rule: {
 					color: '#0000ff'
 				}
 			},
 			{
-				selector: '.h5devtool .logger p.ERROR',
+				selector: '.h5devtool .logger-log.ERROR',
 				rule: {
 					color: '#ff0000'
 				}
 			},
 			{
-				selector: '.h5devtool .logger p.EXCEPTION',
+				selector: '.h5devtool .logger-log.EXCEPTION',
 				rule: {
 					color: '#ff0000',
 					fontWeight: 'bold'
@@ -771,6 +826,7 @@
 	 * ディベロッパツールで使用するview
 	 */
 	var view = h5.core.view.createView();
+
 	// モバイル、タブレット用のラッパー。
 	view
 			.register(
@@ -785,7 +841,7 @@
 			+ '</ul><div class="tab-content">'
 			+ '<div class="active controller-info target-info columnLayoutWrapper"></div>'
 			+ '<div class="logic-info target-info columnLayoutWrapper"></div>'
-			+ '<div class="trace whole hasfix"></div>' + '<div class="logger"></div>'
+			+ '<div class="trace hasfix"></div>' + '<div class="logger hasfix"></div>'
 			+ '<div class="settings"></div>' + '</div>');
 
 	// --------------------- コントローラ・ロジック共通 --------------------- //
@@ -817,6 +873,8 @@
 							+ '<label class="public publicColor"><input type="checkbox" checked name="public" />パブリック</label>'
 							+ '<label class="private privateColor"><input type="checkbox" checked name="private" />プライベート</label>'
 							+ '<label class="lifecycle lifecycleColor"><input type="checkbox" checked name="lifecycle"/>ライフサイクル</label>'
+							+ '<label class="log logColor"><input type="checkbox" checked name="log"/>ログ'
+							+ '<select class="logLevelThreshold"><option value="10">TRACE</option><option value="20" selected>DEBUG</option><option value="30">INFO</option><option value="40">WARN</option><option value="50">ERROR</option></select></label>'
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '<span class="font-small">（ログを右クリックまたはタッチで関数にジャンプ）</span></div>'
@@ -824,11 +882,23 @@
 							+ '<ul class="contextMenu logContextMenu dropdown-menu"><li class="showFunction"><span>関数を表示</span></li></ul>');
 
 	// トレースログのli
-	view.register('trace-list-part', '<li class=[%= cls %]>'
+	view.register('trace-log-part', '<li class="[%= cls %] logLine">'
 			+ '<span class="time">[%= time %]</span>'
 			+ '<span style="margin-left:[%= indentWidth %]px" class="tag">[%= tag %]</span>'
 			+ '<span class="promiseState">[%= promiseState %]</span>'
 			+ '<span class="message [%= cls %] [%= cls %]Color">[%= message %]</span></li>');
+
+	// -------------------- ロガー ----------------------//
+	// ロガーのp(1行分)
+	view
+			.register(
+					'logger-log-part',
+					'<li class=" logger-log log logLine [%= levelString %]">[%= time %] [[%= levelString %]] [%= message %] </li>');
+
+	view
+			.register(
+					'logger',
+					'<div class="fixedControlls">フィルタ：<select class="logLevelThreshold"><option value="10">TRACE</option><option value="20" selected>DEBUG</option><option value="30">INFO</option><option value="40">WARN</option><option value="50">ERROR</option></select></div><ul class="liststyle-none no-padding floating-list console"></ul>');
 
 	// --------------------- コントローラ --------------------- //
 	// 詳細情報画面
@@ -1359,9 +1429,11 @@
 	 * @returns ログメッセージオブジェクト
 	 */
 	function createLogObject(target, message, cls, tag, promiseState, indentLevel) {
+		var date = new Date();
 		return {
 			target: target,
-			time: timeFormat(new Date()),
+			time: timeFormat(date),
+			timeStamp: date.getTime(),
 			cls: cls,
 			message: message,
 			tag: tag + ':',
@@ -2301,6 +2373,7 @@
 			var traceLogController = h5.core.controller(this.$find('.instance-detail .trace'),
 					h5.devtool.TraceLogController, {
 						traceLogs: logAry,
+						loggerArray: loggerArray,
 						// トレースログと紐づけるInfoControllerインスタンスをセット
 						infoCtrls: [this]
 					});
@@ -2451,6 +2524,7 @@
 			h5.core.controller(this.$find('.instance-detail .trace'),
 					h5.devtool.TraceLogController, {
 						traceLogs: logAry,
+						loggerArray: loggerArray,
 						// トレースログと違ってログのコントローラからControllerAndLogicInfoControllerが辿れなくなるため
 						// 引数で渡してログコントローラに覚えさせておく
 						infoCtrls: [this]
@@ -2996,20 +3070,66 @@
 		infoCtrls: [],
 
 		/**
+		 * トレースログ
+		 *
+		 * @memberOf h5.devtool.BaseLogController
+		 */
+		_traceLogArray: null,
+
+		/**
+		 * ロガーログ
+		 *
+		 * @memberOf h5.devtool.BaseLogController
+		 */
+		_loggerArray: null,
+
+		/**
+		 * loggerArrayが更新された時にトレースログも更新するようにするリスナ
+		 */
+		_loggerArrayUpdateListener: null,
+
+		/**
 		 * @memberOf h5.devtool.TraceLogController
 		 * @param context.evArg.logArray logArray
 		 */
 		__ready: function(context) {
 			view.update(this.rootElement, 'trace');
 			this.baseController.setCreateLogHTML(this.own(this._createLogHTML));
+			this._traceLogArray = context.args.traceLogs;
+			this._loggerArray = context.args.loggerArray;
 			this.baseController.setLogArray(context.args.traceLogs, this.$find('.trace-list')[0]);
 			if (context.args.infoCtrls) {
 				this.setInfoControllers(context.args.infoCtrls);
 			}
+			// traceLogに現在のloggerArrayの内容をマージする
+			// トレースタブに表示するログは両者を混在したものにする
+			for (var i = 0, l = this._loggerArray.length; i < l; i++) {
+				if (this._traceLogArray.indexOf(this._loggerArray.get(i)) === -1) {
+					this._traceLogArray.push(this._loggerArray.get(i));
+				}
+			}
+			this._traceLogArray.sort(function(a, b) {
+				return a.timeStamp - b.timeStamp;
+			});
+			// トレースログ表示にもロガーのログを表示する
+			// ロガーに更新があった時にトレースログに追加する
+			this._loggerArrayUpdateListener = this.own(this._loggerArrayUpdate);
+			this._loggerArray.addEventListener('logUpdate', this._loggerArrayUpdateListener);
 		},
-
+		__construct: function(ctx) {
+			ctx.args;
+		},
 		setInfoControllers: function(ctrls) {
 			this.infoCtrls = ctrls;
+		},
+
+		_loggerArrayUpdate: function() {
+			var logger = this._loggerArray;
+			var trace = this._traceLogArray;
+			trace.push(logger.get(logger.length - 1));
+			trace.dispatchEvent({
+				type: 'logUpdate'
+			});
 		},
 
 		_createLogHTML: function(logArray) {
@@ -3017,6 +3137,7 @@
 			var reg = this._condition.filterReg;
 			var isExclude = this._condition.filterStr && this._condition.exclude;
 			var hideCls = this._condition.hideCls;
+			var logLevelThreshold = this.$find('.logLevelThreshold').val();
 
 			var html = '';
 			// TODO view.getが重いので、文字列を直接操作する
@@ -3024,16 +3145,27 @@
 
 			for (var i = 0, l = logArray.length; i < l; i++) {
 				var logObj = logArray.get(i);
-				var part = view.get('trace-list-part', logObj);
+				var part = '';
+				if (logObj.tag) {
+					// コントローラ・ロジックのトレースの場合
+					part = view.get('trace-log-part', logObj);
+				} else {
+					part = view.get('logger-log-part', logObj);
+				}
 				// index番号を覚えさせる
 				part = $(part).attr('data-h5devtool-logindex', i)[0].outerHTML;
 				// フィルタにマッチしているか
-				if (!isExclude === !(reg ? logObj.message.match(reg)
-						: logObj.message.indexOf(str) !== -1)) {
+				var msg = logObj.message ? logObj.message : h5.u.str.format.apply(h5.u.str,
+						logObj.args);
+				if (!isExclude === !(reg ? logObj.message.match(reg) : msg.indexOf(str) !== -1)) {
 					html += $(part).css('display', 'none')[0].outerHTML;
 					continue;
 				} else if (hideCls && hideCls[logObj.cls]) {
 					// クラスのフィルタにマッチしているか
+					part = $(part).css('display', 'none')[0].outerHTML;
+				} else if (logObj.levelString
+						&& (hideCls && hideCls['log'] || logObj.level < logLevelThreshold)) {
+					// ログにフィルタが掛かっているまたは、ログレベルのフィルタが掛かっているか
 					part = $(part).css('display', 'none')[0].outerHTML;
 				}
 
@@ -3048,8 +3180,15 @@
 			} else {
 				this._condition.hideCls[cls] = true;
 			}
+			if (cls === 'log') {
+				$el.parent().find('select').prop('disabled', !$el.prop('checked'));
+			}
 			this.refresh();
 		},
+		'.logLevelThreshold change': function(context, $el) {
+			this.refresh();
+		},
+
 		/**
 		 * フィルタを掛ける
 		 *
@@ -3063,7 +3202,6 @@
 					return;
 				}
 				this._executeFilter(val);
-				this.$find('.filter-clear').prop('disabled', false);
 			}
 		},
 		/**
@@ -3099,6 +3237,7 @@
 			this.$find('.filter-clear').prop('disabled', true);
 		},
 		_executeFilter: function(val, execlude) {
+			this.$find('.filter-clear').prop('disabled', !val);
 			this._condition.filterStr = val;
 			this._condition.filterReg = val.indexOf('*') !== -1 ? getRegex(val) : null;
 			this._condition.exclude = !!execlude;
@@ -3113,6 +3252,13 @@
 		refresh: function() {
 			this.$find('.trace-list')[0].innerHTML = this
 					._createLogHTML(this.baseController._logArray);
+		},
+
+		/**
+		 * unbind処理
+		 */
+		__unbind: function() {
+			this._loggerArray.removeEventListener('logUpdate', this._loggerArrayUpdateListener);
 		}
 	};
 	h5.core.expose(traceLogController);
@@ -3141,12 +3287,19 @@
 		_logArray: null,
 
 		/**
+		 * @memberOf h5.devtool.BaseLogController
+		 */
+		__init: function() {
+			view.append(this.rootElement, 'logger');
+		},
+
+		/**
 		 * @memberOf h5.devtool.LoggerController
 		 * @param context
 		 */
 		__ready: function(context) {
 			this.baseController.setCreateLogHTML(this.own(this._createLogHTML));
-			this.baseController.setLogArray(context.args.loggerArray, this.rootElement);
+			this.baseController.setLogArray(context.args.loggerArray, this.$find('.console')[0]);
 
 			//--------------------------------------------
 			// window.onerrorで拾った例外も出すようにする
@@ -3157,15 +3310,34 @@
 				var message = ev.originalEvent.message;
 				var file = ev.originalEvent.fileName || '';
 				var lineno = ev.originalEvent.lineno || '';
-
+				var date = new Date();
 				loggerArray.push({
 					levelString: 'EXCEPTION',
-					date: new Date(),
-					args: ['{0} {1}:{2}', message, file, lineno]
+					level: 50, // エラーと同じレベル
+					time: timeFormat(date),
+					timeStamp: date.getTime(),
+					message: h5.u.str.format('{0} {1}:{2}', message, file, lineno)
 				});
-				this.baseController._updateView();
+				loggerArray.dispatchEvent({
+					type: 'logUpdate'
+				});
 			});
 			$(window).bind('error', this._onnerrorHandler);
+		},
+
+
+		'.logLevelThreshold change': function(context, $el) {
+			this.refresh();
+		},
+
+		/**
+		 * 表示されているログについてフィルタを掛けなおす
+		 *
+		 * @memberOf h5.devtool.TraceLogController
+		 */
+		refresh: function() {
+			this.$find('.console')[0].innerHTML = this
+					._createLogHTML(this.baseController._logArray);
 		},
 
 		/**
@@ -3176,17 +3348,20 @@
 		 * @returns {String}
 		 */
 		_createLogHTML: function(logArray) {
+			var logLevelThreshold = this.$find('.logLevelThreshold').val();
 			var html = '';
 			for (var i = 0, l = logArray.length; i < l; i++) {
-				var obj = logArray.get(i);
-				var msg = '[' + obj.levelString + ']' + timeFormat(obj.date) + ' '
-						+ h5.u.str.format.apply(h5.u.str, obj.args);
-				var cls = obj.levelString;
-				html += '<p class="' + cls + '">' + msg + '</p>';
-
+				var logObj = logArray.get(i);
+				var part = view.get('logger-log-part', logObj);
+				if (logObj.level < logLevelThreshold) {
+					// ログレベルのフィルタが掛かっているか
+					part = $(part).css('display', 'none')[0].outerHTML;
+				}
+				html += part;
 			}
 			return html;
 		},
+
 
 		/**
 		 * @memberOf h5.devtool.LoggerController
@@ -3350,7 +3525,17 @@
 									// ディベロッパツールが吐いてるログは出力しない
 									return;
 								}
-								loggerArray.push(obj);
+								var levelString = obj.levelString;
+								for (var i = levelString.length; i < 5; i++) {
+									levelString += ' ';
+								}
+								loggerArray.push({
+									levelString: levelString,
+									level: obj.level,
+									time: timeFormat(obj.date),
+									timeStamp: obj.date.getTime(),
+									message: h5.u.str.format.apply(h5.u.str, obj.args)
+								});
 								loggerArray.dispatchEvent({
 									type: 'logUpdate'
 								});
