@@ -230,7 +230,7 @@
 				}
 			},
 			{
-				selector: '.h5devtool .trace .fixedControlls label',
+				selector: '.h5devtool .trace .fixedControlls .filterLabel',
 				rule: {
 					margin: '0 2px 4px 0',
 					borderWidth: '0 0 3px 0',
@@ -869,12 +869,12 @@
 			.register(
 					'trace',
 					'<div class="fixedControlls">'
-							+ '<label class="event eventColor"><input type="checkbox" checked name="event"/>イベント</label>'
-							+ '<label class="public publicColor"><input type="checkbox" checked name="public" />パブリック</label>'
-							+ '<label class="private privateColor"><input type="checkbox" checked name="private" />プライベート</label>'
-							+ '<label class="lifecycle lifecycleColor"><input type="checkbox" checked name="lifecycle"/>ライフサイクル</label>'
-							+ '<label class="log logColor"><input type="checkbox" checked name="log"/>ログ'
-							+ '<select class="logLevelThreshold"><option value="10">TRACE</option><option value="20" selected>DEBUG</option><option value="30">INFO</option><option value="40">WARN</option><option value="50">ERROR</option></select></label>'
+							+ '<label class="event eventColor filterLabel"><input type="checkbox" checked name="event"/>イベント</label>'
+							+ '<label class="public publicColor filterLabel"><input type="checkbox" checked name="public" />パブリック</label>'
+							+ '<label class="private privateColor filterLabel"><input type="checkbox" checked name="private" />プライベート</label>'
+							+ '<label class="lifecycle lifecycleColor filterLabel"><input type="checkbox" checked name="lifecycle"/>ライフサイクル</label>'
+							+ '<span class="log logColor filterLabel"><label><input type="checkbox" checked name="log"/>ログ</label>'
+							+ '<select class="logLevelThreshold"><option value="50">ERROR</option><option value="40">WARN</option><option value="30">INFO</option><option value="20" selected>DEBUG</option><option value="10">TRACE</option></select></span>'
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '<span class="font-small">（ログを右クリックまたはタッチで関数にジャンプ）</span></div>'
@@ -884,7 +884,7 @@
 	// トレースログのli
 	view.register('trace-log-part', '<li class="[%= cls %] logLine">'
 			+ '<span class="time">[%= time %]</span>'
-			+ '<span style="margin-left:[%= indentWidth %]px" class="tag">[%= tag %]</span>'
+			+ '<span style="margin-left:[%= indentWidth %]px" class="tag">[%= tag %]:</span>'
 			+ '<span class="promiseState">[%= promiseState %]</span>'
 			+ '<span class="message [%= cls %] [%= cls %]Color">[%= message %]</span></li>');
 
@@ -898,7 +898,7 @@
 	view
 			.register(
 					'logger',
-					'<div class="fixedControlls">フィルタ：<select class="logLevelThreshold"><option value="10">TRACE</option><option value="20" selected>DEBUG</option><option value="30">INFO</option><option value="40">WARN</option><option value="50">ERROR</option></select></div><ul class="liststyle-none no-padding floating-list console"></ul>');
+					'<div class="fixedControlls">フィルタ：<select class="logLevelThreshold"><option value="50">ERROR</option><option value="40">WARN</option><option value="30">INFO</option><option value="20" selected>DEBUG</option><option value="10">TRACE</option></select></div><ul class="liststyle-none no-padding floating-list console"></ul>');
 
 	// --------------------- コントローラ --------------------- //
 	// 詳細情報画面
@@ -1436,7 +1436,7 @@
 			timeStamp: date.getTime(),
 			cls: cls,
 			message: message,
-			tag: tag + ':',
+			tag: tag,
 			promiseState: promiseState,
 			indentWidth: indentLevel * LOG_INDENT_WIDTH
 		};
