@@ -1,13 +1,12 @@
 <script type="text/ejs" id="list">
 [% for (var i = 0, len = entry.length; i < len; i++) {
- var group = entry[i].media$group;
- var title = group.media$title.$t;
- var url = entry[i].id.$t
- var id = url.substr(url.lastIndexOf('/') + 1);
+ var snippet = entry[i].snippet;
+ var title = snippet.title;
+ var id = entry[i].id.videoId;
  %]
 <li data-videoid="[%= id %]">
 	<div class="thumbnail">
-		<img src="http://i.ytimg.com/vi/[%= id %]/default.jpg">
+		<img src="[%= snippet.thumbnails.default.url %]">
 		<span>[%= title %]</span>
 	</div>
 </li>
@@ -38,5 +37,5 @@
 </script>
 
 <script type="text/ejs" id="videoInfo">
-<h3>[%= title.$t %]</h3><p>[%= content.$t %]</p>
+<h3>[%= snippet.title %]</h3><p>[%= snippet.description %]</p>
 </script>

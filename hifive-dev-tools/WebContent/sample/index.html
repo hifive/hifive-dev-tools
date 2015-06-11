@@ -7,45 +7,46 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Cache-Control" content="no-cache">
 <meta http-equiv="Expires" content="-1">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link rel="stylesheet" href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet"
+	href="/hifive-res/ext/bootstrap/2.2.1/css/bootstrap.min.css">
 
 <link rel="stylesheet" href="/hifive-res/fw/current/h5.css">
 
-<link rel="stylesheet" href="css/youtube.css">
-
+<link rel="stylesheet" href="youtube.css">
 <!-- IE8以下なら1系、それ以外なら2系のjQueryを使用する -->
 <!--[if lt IE 9]>
-<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+<script src="/hifive-res/ext/jquery/jquery-1.js" type="text/javascript"></script>
 <![endif]-->
 <!--[if gte IE 9]><!-->
-<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<script src="/hifive-res/ext/jquery/jquery-2.js" type="text/javascript"></script>
 <!--<![endif]-->
 
-<script src="/hifive-res/ext/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+<script src="/hifive-res/ext/bootstrap/2.2.1/js/bootstrap.min.js"></script>
 
 <script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
 <script src="/hifive-res/fw/current/h5.dev.js"></script>
 
 <!-- hifiveディベロッパーツール設定と読み込み -->
 <script>
-	window.__h5_devtool_page = '../build/h5-dev-tool.html';
+	window.__h5_devtool_page = '/hifive-res/devtool/current/h5-dev-tool.html';
 </script>
-<script src="../build/h5-dev-tool.js"></script>
+<script src="/hifive-res/devtool/current/h5-dev-tool.js"></script>
 
-<script src="../res/lib/hifiveUI/contextMenu.js"></script>
-<script src="../res/lib/hifiveUI/LoopCarouselWrapper.js"></script>
-<script src="src/search/SearchLogic.js"></script>
-<script src="src/search/SearchController.js"></script>
-<script src="src/screen/ScreenController.js"></script>
-<script src="src/playback/PlaybackController.js"></script>
-<script src="src/favorite/FavoriteLogic.js"></script>
-<script src="src/favorite/FavoriteController.js"></script>
-<script src="src/comment/CommentLogic.js"></script>
-<script src="src/comment/CommentController.js"></script>
-<script src="src/page/PageLogic.js"></script>
-<script src="src/page/PageController.js"></script>
-<script src="src/init.js"></script>
+<script src="res/lib/hifiveUI/contextMenu.js"></script>
+<script src="res/lib/hifiveUI/LoopCarouselWrapper.js"></script>
+<script src="search/SearchLogic.js"></script>
+<script src="search/SearchController.js"></script>
+<script src="screen/ScreenController.js"></script>
+<script src="playback/PlaybackController.js"></script>
+<script src="favorite/FavoriteLogic.js"></script>
+<script src="favorite/FavoriteController.js"></script>
+<script src="comment/CommentLogic.js"></script>
+<script src="comment/CommentController.js"></script>
+<script src="page/PageLogic.js"></script>
+<script src="page/PageController.js"></script>
+<script src="init.js"></script>
 <title>hifive コントローラ連携サンプル</title>
 </head>
 <body>
@@ -55,7 +56,8 @@
 				<img src="images/hifive_logo_clear.png"> <span>コントローラ連携サンプル</span>
 			</div>
 			<form class="form-search corner-all box">
-				<input type="text" class="input-medium search-query" placeholder="キーワード" /> <input type="submit"
+				<input type="text" class="input-medium search-query"
+					placeholder="キーワード" /> <input type="submit"
 					class="btn btn-submit corner-all" value="検索" />
 			</form>
 		</div>
@@ -75,28 +77,29 @@
 				</div>
 				<div class="controll">
 					<div class="icon play">
-						<i class="glyphicon glyphicon-play"></i>
+						<i class="icon-play"></i>
 					</div>
 					<div class="icon pause hidden">
-						<i class="glyphicon glyphicon-pause"></i>
+						<i class="icon-pause"></i>
 					</div>
 					<div class="icon stop">
-						<i class="glyphicon glyphicon-stop"></i>
+						<i class="icon-stop"></i>
 					</div>
 					<div class="icon cue">
-						<i class="glyphicon glyphicon-fast-backward"></i>
+						<i class="icon-fast-backward"></i>
 					</div>
 					<div class="icon backword">
-						<i class="glyphicon glyphicon-backward"></i>
+						<i class="icon-backward"></i>
 					</div>
 					<div class="icon forward">
-						<i class="glyphicon glyphicon-forward"></i>
+						<i class="icon-forward"></i>
 					</div>
 					<div class="icon registFav">
-						<i class="glyphicon glyphicon-star-empty"></i>
+						<i class="icon-star-empty"></i>
 					</div>
 				</div>
-				<div class="favorite carouselWrapper contextMenuBox" data-targetall="false">
+				<div class="favorite carouselWrapper contextMenuBox"
+					data-targetall="false">
 					<div class="carousel">
 						<div class="empty-guide">
 							<span>お気に入りリストがここに表示されます</span>

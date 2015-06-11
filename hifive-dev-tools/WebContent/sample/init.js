@@ -1,19 +1,10 @@
-/*
- * Copyright (C) 2013-2014 NS Solutions Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+(function() {
+	h5.u.obj.expose('youtube.common', {
+		// TODO ここにAPIキーを文字列で指定
+		API_KEY: null
+	});
+})();
+
 
 // youtubeプレイヤーオブジェクトを取得
 // 参考 https://developers.google.com/youtube/iframe_api_reference?hl=ja
@@ -25,7 +16,7 @@
 
 	// Youtubeのスクリプトを取得
 	var script = document.createElement('script');
-	script.src = 'http://www.youtube.com/iframe_api';
+	script.src = 'https://www.youtube.com/iframe_api';
 	var firstScript = document.getElementsByTagName('script')[0];
 	firstScript.parentNode.insertBefore(script, firstScript);
 
@@ -44,6 +35,12 @@
 			events: {
 				onReady: function(event) {
 					// プレイヤーの準備ができた時に1度だけ呼ばれる
+					//client.jsを読み込む
+					script = document.createElement('script');
+					script.src = 'https://apis.google.com/js/client.js?onload=handleClientLoad';
+					var firstScript = document.getElementsByTagName('script')[0];
+					firstScript.parentNode.insertBefore(script, firstScript);
+
 					// playerオブジェクトを引数に格納してPlayerReadyのイベントをあげる
 					$(PLAY_CONTAINER_SELECTOR).trigger('playerReady', {
 						player: event.target
@@ -63,6 +60,10 @@
 	};
 
 	$(function() {
+		// APIキーが未指定の場合は警告
+		if (!youtube.common.API_KEY) {
+			alert('このサンプルの動作にはYouTube Data API v3のAPIキーの指定が必要です。\ninit.jsの\n"// TODO ここにAPIキーを文字列で指定"\nと書かれている箇所に取得したAPIキーを指定してください');
+		}
 		// コントローラをバインド
 		h5.core.controller(PLAY_CONTAINER_SELECTOR, youtube.controller.PageController);
 	});
