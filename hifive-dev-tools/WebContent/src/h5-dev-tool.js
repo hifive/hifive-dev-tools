@@ -165,6 +165,13 @@
 				}
 			},
 			{
+				selector: '.h5devtool .logline .time',
+				rule: {
+					marginRight: '1em',
+					color: 'gray'
+				}
+			},
+			{
 				selector: '.h5devtool .fixedControlls',
 				rule: {
 					paddingLeft: 0,
@@ -254,12 +261,6 @@
 				selector: '.h5devtool .trace-list>li.selected',
 				rule: {
 					backgroundColor: '#ddd'
-				}
-			},
-			{
-				selector: '.h5devtool .trace-list>li .time',
-				rule: {
-					marginRight: '1em'
 				}
 			},
 			{
@@ -893,7 +894,7 @@
 	view
 			.register(
 					'logger-log-part',
-					'<li class=" logger-log log logLine [%= levelString %]">[%= time %] [[%= levelString %]] [%= message %] </li>');
+					'<li class=" logger-log log logLine [%= levelString %]"><span class="time">[%= time %]</span>[[%= levelString %]] [%= message %] </li>');
 
 	view
 			.register(
