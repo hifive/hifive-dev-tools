@@ -168,7 +168,8 @@
 				selector: '.h5devtool .logline .time',
 				rule: {
 					marginRight: '1em',
-					color: 'gray'
+					color: 'gray',
+					fontWeight: 'normal'
 				}
 			},
 			{
