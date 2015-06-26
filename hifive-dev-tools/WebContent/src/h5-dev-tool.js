@@ -1158,13 +1158,15 @@
 		var body = null;
 		var w = null;
 		if (useWindowOpen) {
-			// Firefoxは'about:blank'で開くとDOM追加した後に要素が消されてしまう
-			// IE9の場合はnullで開くとDocmodeがquirksになり、'about:blank'で開くとちゃんと9モードになる
-			// chromeの場合はどちらでもいい
-			// IE9の場合だけ'about:blank'を使うようにしている
-			// IE7,8の場合は、about:blankでもnullや空文字でも、Docmodeがquirksになる
+			// 'about:blank'でwindow.open()すると、
+			// 古いFirefox(31より前)は'about:blank'で開くとDOM追加した後に要素が消されてしまう
+			// 少なくとも31以降のバージョンでは'about:blank'で開いても追加したDOMが残るので問題ない。
+			// chromeも問題ない
+			// IEの場合、9は空文字で開くとDocmodeがquirksになり、'about:blank'で開くとちゃんと9モードになる
+			// IE7,8の場合は、about:blankでも空文字でも、Docmodeがquirksになる
 			// そのため、IE7,8はDocmode指定済みの空のhtmlを開く
-			var url = null;
+			// それ以外は'about:blank'で開いている
+			var url = 'about:blank';
 			if (h5.env.ua.isIE) {
 				if (h5.env.ua.browserVersion >= 9) {
 					url = 'about:blank';
