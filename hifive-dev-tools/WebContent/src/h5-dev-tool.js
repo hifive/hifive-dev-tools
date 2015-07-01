@@ -1180,7 +1180,9 @@
 					url = window.__h5_devtool_page;
 				}
 			}
-			w = window.open(url, '1',
+			// ウィンドウ名はランダムにして、devtool(devtoolを読み込んだページ)を複数開けるようにしている
+			w = window.open(url, 'h5-devtool-' + new Date().getTime() + '-'
+					+ parseInt(Math.random() * 1000),
 					'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
 			if (!w) {
 				// ポップアップがブロックされた場合
