@@ -3117,9 +3117,7 @@
 			this._loggerArrayUpdateListener = this.own(this._loggerArrayUpdate);
 			this._loggerArray.addEventListener('logUpdate', this._loggerArrayUpdateListener);
 		},
-		__construct: function(ctx) {
-			ctx.args;
-		},
+
 		setInfoControllers: function(ctrls) {
 			this.infoCtrls = ctrls;
 		},
