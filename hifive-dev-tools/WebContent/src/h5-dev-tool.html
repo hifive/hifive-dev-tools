@@ -4,5 +4,250 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+<!-- scriptやcssはビルドすると全てhtml内に埋め込まれるようにする -->
+
+<!-- IE8以下なら1系、それ以外なら2系のjQueryを使用する -->
+<!--[if lt IE 9]>
+<script src="/hifive-res/ext/jquery/jquery-1.js" type="text/javascript"></script>
+<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js" type="text/javascript"></script>
+<!--<![endif]-->
+
+<!-- <link href="/hifive-res/fw/current/h5.css" rel="stylesheet"> -->
+<!-- <script src="/hifive-res/fw/current/ejs-h5mod.js"></script> -->
+<!-- <script src="/hifive-res/fw/current/h5.dev.js"></script> -->
+<!-- hifive NIGHTLY使用 -->
+<link href="../hifive/h5.css" rel="stylesheet">
+<script src="../hifive/ejs-h5mod.js"></script>
+<script src="../hifive/h5.dev.js"></script>
+
+<link href="h5-dev-tool.css" rel="stylesheet">
+<script src="common.js"></script>
+<script src="h5-dev-tool-child.js"></script>
+<!-- テンプレート -->
+<script type="text/ejs" id="instance-list">
+	<li><span class="target-name [%= cls %]" data-instance-id="[%= instanceId %]">[%= name %]</span></li>
+</script>
+<script type="text/ejs" id="method-list">
+	<div class="fixedControlls">
+		<select class="method-select"></select>
+	</div>
+	<ul class="liststyle-none no-padding method-list floating-list">
+		[% for(var i = 0, l = methods.length; i < l; i++){
+			var p = methods[i];
+			var count = methodMap[p].count;
+			var str = methodMap[p].str; %]
+		<li class="[%= count ? "called":"nocalled" %]" data-method-name="[%= p %]">
+			<span class="name">[%= p %]</span>
+			<span class="count">[%= count %]</span>
+			<pre class="value">[%= str %]</pre>
+		</li>[% } %]
+	</ul>
+</script>
+<script type="text/ejs" id="eventHandler-list">
+	<div class="fixedControlls">
+	[% if(eventHandlers.length){ %]
+		<select class="method-select"></select>
+	</div>
+	<ul class="liststyle-none no-padding method-list floating-list">
+		[% for(var i = 0, l = eventHandlers.length; i < l; i++){
+			var p = eventHandlers[i];
+			var count = methodMap[p].count;
+			var str = methodMap[p].str; %]
+		<li class="[%= count?"called":"nocalled" %]">
+			<span class="menu">ターゲット:<select class="eventTarget"></select>
+				<button class="trigger">実行</button>
+			</span>
+			<span class="name">[%= p %]</span>
+			<span class="count">[%= count %]</span>
+			<pre class="value">[%= str %]</pre>
+		</li>[% } %]
+	</ul>[% } else { %]<p>なし</p>[% } %]
+</script>
+<script type="text/ejs" id="trace-log-part">
+	<li class="[%= methodType %] logline">
+		<span class="time">[%= time %]</span>
+		<span style="margin-left:[%= indentWidth %]px" class="tag">[%:= tag %]:</span>
+		<span class="promiseState">[%= promiseState %]</span>
+		<span class="message [%= methodType %] [%= methodType %]Color">[%= message %]</span>
+	</li>
+</script>
+<script type="text/ejs" id="logger-log-part">
+	<li class=" logger-log log logline [%= levelString %]">
+		<span class="time">[%= time %]</span>
+		[[%= levelString %]] [%= message %]
+	</li>
+</script>
+<script type="text/ejs" id="controller-otherInfo">
+	<dl>
+		<dt>名前</dt>
+		<dd>[%= instanceName %]</dd>
+		<dt>ルートコントローラか</dt>
+		<dd>[%= isRoot %]</dd>
+		<dt>ルート要素</dt>
+		<dd>[%= rootElement %]</dd>
+		<dt>ルートコントローラ</dt>
+		<dd>[%= rootName %]</dd>
+		<dt>親コントローラ</dt>
+		<dd>[%= parentName %]</dd>
+		<dt>子コントローラ一覧</dt>
+		<dd>
+		[% if(!childrenNames.length){ %]なし[% }else{ %]
+			<ul class="no-padding">
+			[% for(var i = 0, l = childrenNames.length; i < l; i++){ %]
+				<li>[%= childrenNames[i] %]</li>[% } %]
+		</ul>[% } %]
+		</dd>
+		<dt>テンプレートパス一覧</dt>
+		<dd>
+		[% if(!templates || templates.length === 0){ %]なし[% }else{ %]
+			[%= templates.join(", ") %][% } %]
+		</dd>
+		<dt>このコントローラで登録されたテンプレートID一覧</dt>
+		<dd>
+		[% if(registedTemplates.length === 0){ %]なし[% }else{ %]
+			[%= registedTemplates.join(", ") %][% } %]
+		</dd>
+		<dt>利用可能なテンプレートID一覧</dt>
+		<dd>
+			[% if(availableTemplates.length === 0){ %]なし[% }else{ %]
+			[%= availableTemplates.join(", ") %][% } %]
+		</dd>
+</dl>
+</script>
+<script type="text/ejs" id="controller-detail">
+<div class="detail instance-detail controller-detail">
+	<ul class="nav nav-tabs">
+		<li class="active" data-tab-page="eventHandler">イベントハンドラ</li>
+		<li data-tab-page="method">メソッド</li>
+		<li data-tab-page="trace">トレース</li>
+		<li data-tab-page="otherInfo">その他情報</li>
+	</ul>
+	<div class="tab-content">
+		<div class="active eventHandler hasfix"></div>
+		<div class="method hasfix"></div>
+		<div class="trace hasfix"></div>
+		<div class="otherInfo"></div>
+	</div>
+</div>
+</script>
+
+<script type="text/ejs" id="trace-log">
+	<div class="fixedControlls">
+		<label class="event eventColor filterLabel"><input
+			type="checkbox" name="event" checked>イベント</label><label
+			class="public publicColor filterLabel"><input
+			type="checkbox" name="public" checked>パブリック</label><label
+			class="private privateColor filterLabel" checked><input
+			type="checkbox" name="private" checked>プライベート</label><label
+			class="lifecycle lifecycleColor filterLabel"><input
+			type="checkbox" name="lifecycle" checked>ライフサイクル</label><span
+			class="log logColor filterLabel"><label><input
+				type="checkbox" name="log" checked>ログ</label><select
+			class="logLevelThreshold"><option value="50">ERROR</option>
+				<option value="40">WARN</option>
+				<option value="30">INFO</option>
+				<option value="20" selected="">DEBUG</option>
+				<option value="10">TRACE</option></select></span><br> <input type="text"
+			class="filter">
+		<button class="filter-show">絞込み</button>
+		<button class="filter-hide">除外</button>
+		<button class="filter-clear" disabled="">フィルタ解除</button>
+		<span class="font-small">（ログを右クリックまたはタッチで関数にジャンプ）</span>
+	</div>
+	<ul class="log-list liststyle-none no-padding floating-list">
+	</ul>
+	<ul class="contextMenu logContextMenu dropdown-menu">
+		<li class="showFunction"><span>関数を表示</span></li>
+	</ul>
+</script>
+
+<script type="text/ejs" id="logic-detail">
+	<div class="detail instance-detail logic-detail">
+		<ul class="nav nav-tabs">
+			<li class="active" data-tab-page="method">メソッド</li>
+			<li data-tab-page="trace">トレース</li>
+			<li data-tab-page="otherInfo">その他情報</li>
+		</ul>
+		<div class="tab-content">
+			<div class="active method hasfix"></div>
+			<div class="trace hasfix"></div>
+			<div class="otherInfo"></div>
+		</div>
+	</div>
+</script>
+<script type="text/ejs" id="logic-otherInfo">
+	<dl>
+		<dt>名前</dt>
+		<dd>[%= instanceName %]</dd>
+		<dt>ルートロジックか</dt>
+		<dd>[%= isRoot %]</dd>
+		<dt>ルートインスタンス</dt>
+		<dd>[%= rootName %]</dd>
+		<dt>親インスタンス</dt>
+		<dd>[%= parentName %]</dd>
+		<dt>子ロジック一覧</dt>
+		<dd>
+		[% if(!childrenNames.length){ %]なし[% }else{ %]
+			<ul class="no-padding">
+			[% for(var i = 0, l = childrenNames.length; i < l; i++){ %]
+				<li>[%= childrenNames[i] %]</li>[% } %]
+		</ul>[% } %]
+		</dd>
+	</dl>
+</script>
+<script type="text/ejs" id="overlay">
+<div class="h5devtool-overlay [%= cls %]"><div class="body"></div><div class="border top"></div><div class="border right"></div><div class="border bottom"></div><div class="border left"></div></div>
+</script>
+<script type="text/ejs" id="settings">
+<label for="h5devtool-setting-LogLengthLimit">ログの最大表示件数</label><input type="text" id="h5devtool-setting-LogLengthLimit" data-h5-bind="attr(value):LogLengthLimit" name="LogLengthLimit"/><button class="set">設定</button>
+</script>
 </head>
+<body class="h5devtool">
+	<div class="devtool-tab">
+		<ul class="nav nav-tabs root-nav">
+			<li class="active" data-tab-page="controller-info">コントローラ</li>
+			<li data-tab-page="logic-info">ロジック</li>
+			<li data-tab-page="trace">トレース</li>
+			<li data-tab-page="logger">ロガー</li>
+			<li data-tab-page="settings">設定</li>
+		</ul>
+		<div class="tab-content">
+			<div class="active controller-info target-info columnLayoutWrapper">
+				<div class="left ovfAuto">
+					<ul class="targetlist root">
+					</ul>
+				</div>
+				<div class="right ovfHidden"></div>
+			</div>
+			<div class="logic-info target-info columnLayoutWrapper">
+				<div class="left ovfAuto">
+					<ul class="targetlist root">
+					</ul>
+				</div>
+				<div class="right ovfHidden"></div>
+			</div>
+			<div class="trace hasfix"></div>
+			<div class="logger hasfix">
+				<div class="fixedControlls">
+					フィルタ：<select class="logLevelThreshold"><option value="50">ERROR</option>
+						<option value="40">WARN</option>
+						<option value="30">INFO</option>
+						<option value="20" selected>DEBUG</option>
+						<option value="10">TRACE</option></select>
+				</div>
+				<ul class="log-list liststyle-none no-padding floating-list console">
+				</ul>
+			</div>
+			<div class="settings" data-h5-dyn-bind-root="0" data-h5-dyn-vid="0">
+				<label for="h5devtool-setting-LogLengthLimit">ログの最大表示件数</label><input
+					type="text" id="h5devtool-setting-LogLengthLimit"
+					data-h5-bind="attr(value):LogLengthLimit" name="LogLengthLimit">
+				<button class="set">設定</button>
+			</div>
+		</div>
+	</div>
+</body>
 </html>

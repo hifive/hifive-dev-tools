@@ -1,0 +1,464 @@
+@charset 'utf-8';
+
+html,body {
+	padding: 0;
+	margin: 0;
+	height: 100%;
+	width: 100%;
+	position: relative;
+}
+
+.h5devtool {
+	background-color: rgba(255, 255, 255, 0.8);
+	height: 100%;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	z-index: 20000;
+}
+
+.h5devtool .devtool-tab {
+	height: 100%;
+}
+
+.h5devtool.posfix {
+	position: fixed;
+	top: 0;
+	left: 0;
+}
+
+.h5devtool-upper-right {
+	position: fixed;
+	z-index: 20001;
+	top: 0;
+	left: 810px;
+	width: 100px;
+	text-align: right;
+}
+
+.h5devtool .liststyle-none {
+	list-style: none;
+}
+
+.h5devtool .no-padding {
+	padding: 0 !important;
+}
+
+.h5devtool .font-small {
+	font-size: 0.8em;
+}
+
+.h5devtool .logline {
+	padding-left: 0;
+	padding-top: 4px;
+	border-top: 1px solid #eee;
+	border-bottom: 1px solid #eee;
+	margin: 0 0 -1px 2px;
+	color: gray;
+	white-space: nowrap;
+	font-size: 12px;
+	font-family: "ＭＳ ゴシック", Osaka－等幅, sans-serif;
+}
+
+.h5devtool .logline .time {
+	margin-right: 1em;
+	color: gray;
+	font-weight: normal;
+}
+
+.h5devtool .fixedControlls {
+	padding-left: 0;
+	margin: 0;
+	background-color: #fff;
+	border: solid 1px gray;
+	padding: 3px;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.h5devtool .trace {
+	padding-bottom: 60px;
+}
+
+.h5devtool .lifecycleColor {
+	color: #15A2E3;
+	border-color: #15a2e3;
+}
+
+.h5devtool .publicColor {
+	color: #31A120;
+	border-color: #31a120;
+}
+
+.h5devtool .privateColor {
+	color: #4A370C;
+	border-color: #4a370c;
+}
+
+.h5devtool .eventhandlerColor {
+	color: #861EC2;
+	border-color: #861ec2;
+}
+
+.h5devtool .logLevelThreshold {
+	margin: 0;
+	padding: 0;
+	height: 17px;
+}
+
+.h5devtool .trace .fixedControlls .filterLabel {
+	margin: 0 2px 4px 0;
+	border-width: 0 0 3px 0;
+	border-style: solid;
+	display: inline-block;
+}
+
+.h5devtool .trace .fixedControlls {
+	height: 60px;
+}
+
+.h5devtool .floating-list {
+  height: 100%;
+  overflow: auto;
+  margin: 0px;
+}
+
+.h5devtool .trace-list .logline {
+	color: gray;
+}
+
+.h5devtool .trace-list>li.selected {
+	background-color: #ddd;
+}
+
+.h5devtool .trace-list>li .tag {
+	display: inline-block;
+	min-width: 3em;
+}
+
+.h5devtool .trace-list>li .promiseState {
+	display: inline-block;
+	margin-right: 0.5em;
+}
+
+.h5devtool .logger {
+	padding-bottom: 24px;
+	overflow: hidden;
+}
+
+.h5devtool .logger .console {
+
+}
+
+.h5devtool .logger .fixedControlls {
+	height: 24px;
+	border-width: 1px 0 1px 0;
+}
+
+.h5devtool .logger-log.TRACE {
+	color: #000000;
+}
+
+.h5devtool .logger-log.DEBUG {
+	color: #0000ff;
+}
+
+.h5devtool .logger-log.INFO {
+	color: #000000;
+}
+
+.h5devtool .logger-log.WARN {
+	color: #0000ff;
+}
+
+.h5devtool .logger-log.ERROR {
+	color: #ff0000;
+}
+
+.h5devtool .logger-log.EXCEPTION {
+	color: #ff0000;
+	font-weight: bold;
+}
+
+.h5devtool .columnLayoutWrapper {
+	overflow: hidden !important;
+}
+
+.h5devtool .target-info .controll {
+	padding-left: 30px;
+}
+
+.h5devtool .target-info .instance-detail {
+	height: 100%;
+}
+
+.h5devtool .target-info .targetlist {
+	padding-top: 0;
+	padding-left: 1.2em;
+	margin-top: 2px;
+	*padding-left: 0;
+	*position: relative;
+	*left: -1.2em;
+	*padding-left: 0;
+}
+
+.h5devtool .target-info .targetlist .target-name {
+	cursor: default;
+}
+
+.h5devtool .target-info .targetlist .target-name.selected {
+	background: rgb(170, 237, 255) !important;
+}
+
+.h5devtool .target-info .targetlist .target-name:hover {
+	background: rgb(220, 247, 254);
+}
+
+.h5devtool .eventHandler .fixedController {
+	height: 24px;
+}
+
+.h5devtool .eventHandler {
+	padding-bottom: 24px;
+}
+
+.h5devtool .target-info .eventHandler ul {
+	list-style: none;
+	margin: 0;
+}
+
+.h5devtool .target-info .eventHandler ul li .name {
+	line-height: 28px;
+}
+
+.h5devtool .target-info .eventHandler li.selected {
+	background: rgb(203, 254, 231);
+}
+
+.h5devtool .method .fixedController {
+	height: 24px;
+}
+
+.h5devtool .method {
+	padding-bottom: 24px;
+}
+
+.h5devtool .method-list {
+	list-style: none;
+	margin: 0;
+	*padding-right: 16px !important;
+}
+
+.h5devtool .method-list .nocalled {
+	background: -webkit-gradient(linear, left top, right top, color-stop(0.95, #C3E0EF),
+		color-stop(0.00, #F5FBFE));
+	background: -webkit-linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%);
+	background: -moz-linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%);
+	background: -o-linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%);
+	background: -ms-linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%);
+	background: linear-gradient(left, #C3E0EF 0%, #F5FBFE 95%);
+}
+
+.h5devtool .method-list .called {
+	background: -webkit-gradient(linear, left top, right top, color-stop(0.95, #6EB7DB),
+		color-stop(0.00, #C3E0EF));
+	background: -webkit-linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%);
+	background: -moz-linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%);
+	background: -o-linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%);
+	background: -ms-linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%);
+	background: linear-gradient(left, #6EB7DB 0%, #C3E0EF 95%);
+}
+
+.h5devtool .method-list .blink {
+	background: #FF9617;
+}
+
+.h5devtool .target-info .otherInfo ul {
+	margin: 0;
+}
+
+.h5devtool .target-info .otherInfo dt {
+	font-weight: bold;
+	margin: 5px 0 5px 5px;
+}
+
+.h5devtool .method-list .count {
+	float: right;
+	font-weight: bold;
+	font-size: 30px;
+	position: relative;
+	top: 16px;
+	right: 10px;
+	color: #888;
+}
+
+.h5devtool .method-list pre {
+	margin: 0 0 10px;
+	padding: 4px;
+	word-break: break-all;
+	word-wrap: break-word;
+	white-space: pre-wrap;
+	background: rgb(250, 250, 250);
+	border: 1px solid rgb(213, 213, 213);
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	font-family: -monaco, -menlo, -consolas, "-courier -new", monospace;
+	font-size: 12px;
+}
+
+.h5devtool .target-info .detail {
+	overflow: auto;
+}
+
+.h5devtool .ovfAuto {
+	overflow: auto;
+}
+
+.h5devtool .ovfHidden {
+	overflow: hidden;
+}
+
+.h5devtool .left {
+	float: left;
+	height: 100%;
+	max-width: 350px;
+	border: 1px solid #20B5FF;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	*position: absolute;
+	*height: auto;
+	*top: 0;
+	*left: 0;
+	*bottom: 0;
+	*width: 350px;
+}
+
+.h5devtool .right {
+	height: 100%;
+	border: 1px solid #20B5FF;
+	border-left: none;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	*position: absolute;
+	*height: auto;
+	*width: auto;
+	*top: 0;
+	*left: 350px;
+	*right: 0;
+	*bottom: 0;
+}
+
+.h5devtool .eventHandler .menu {
+	display: none;
+}
+
+.h5devtool .eventHandler .menu>* {
+	display: inline-block;
+}
+
+.h5devtool .eventHandler .selected .menu {
+	display: inline-block;
+}
+
+.h5devtool ul.nav-tabs {
+	list-style: none;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	float: left;
+}
+
+.h5devtool ul.nav-tabs>li {
+	float: left;
+	padding: 3px;
+	border: 1px solid #ccc;
+	color: #20B5FF;
+	margin-left: -1px;
+	cursor: pointer;
+}
+
+.h5devtool ul.nav-tabs>li.active {
+	color: #000;
+	border-bottom: none;
+}
+
+.h5devtool .tab-content {
+	margin-top: -1px;
+	width: 100%;
+	height: 100%;
+	padding-bottom: 30px;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	*position: absolute;
+	*height: auto;
+	*top: 26px;
+	*left: 0;
+	*bottom: 0;
+	*right: 20px;
+	*padding-bottom: 0;
+	*overflow-y: auto;
+	*overflow-x: hidden;
+}
+
+.h5devtool .tab-content>* {
+	overflow: auto;
+	float: left;
+	height: 100%;
+	width: 100%;
+	padding-left: 0;
+	margin: 0;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.h5devtool .tab-content>*.hasfix {
+	overflow: visible !important;
+}
+
+.h5devtool .tab-content>* {
+	display: none;
+}
+
+.h5devtool .tab-content>.active {
+	display: block;
+}
+
+.h5devtool .dropdown-menu {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	z-index: 1000;
+	display: none;
+	float: left;
+	min-width: 160px;
+	padding: 5px 0;
+	margin: 2px 0 0;
+	list-style: none;
+	background-color: #fff;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	-webkit-border-radius: 6px;
+	-moz-border-radius: 6px;
+	border-radius: 6px;
+	-webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+	-moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+	box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+	-webkit-background-clip: padding-box;
+	-moz-background-clip: padding;
+	background-clip: padding-box;
+}
+
+.h5devtool .dropdown-menu li {
+	font-size: 0.8em;
+	padding: 8px;
+	cursor: pointer;
+}
+
+.h5devtool .dropdown-menu li:hover {
+	background-color: #eee;
+}
