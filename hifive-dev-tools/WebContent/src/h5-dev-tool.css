@@ -57,7 +57,7 @@ html,body {
 	color: gray;
 	white-space: nowrap;
 	font-size: 12px;
-	font-family: "ＭＳ ゴシック", Osaka－等幅, sans-serif;
+	font-family: 'ＭＳ ゴシック', 'Osaka－等幅', sans-serif;
 }
 
 .h5devtool .logline .time {
@@ -119,9 +119,9 @@ html,body {
 }
 
 .h5devtool .floating-list {
-  height: 100%;
-  overflow: auto;
-  margin: 0px;
+	height: 100%;
+	overflow: auto;
+	margin: 0px;
 }
 
 .h5devtool .trace-list .logline {
@@ -271,7 +271,7 @@ html,body {
 }
 
 .h5devtool .method-list .blink {
-	background: #FF9617;
+	background: #FF9617 !important;
 }
 
 .h5devtool .target-info .otherInfo ul {
@@ -304,7 +304,7 @@ html,body {
 	-webkit-border-radius: 4px;
 	-moz-border-radius: 4px;
 	border-radius: 4px;
-	font-family: -monaco, -menlo, -consolas, "-courier -new", monospace;
+	font-family: -monaco, -menlo, -consolas, '-courier -new', monospace;
 	font-size: 12px;
 }
 

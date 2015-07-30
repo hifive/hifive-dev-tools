@@ -56,7 +56,7 @@
 			var p = eventHandlers[i];
 			var count = methodMap[p].count;
 			var str = methodMap[p].str; %]
-		<li class="[%= count?"called":"nocalled" %]">
+		<li class="[%= count ? "called":"nocalled" %]" data-method-name="[%= p %]">
 			<span class="menu">ターゲット:<select class="eventTarget"></select>
 				<button class="trigger">実行</button>
 			</span>
@@ -118,7 +118,7 @@
 </dl>
 </script>
 <script type="text/ejs" id="controller-detail">
-<div class="detail instance-detail controller-detail">
+<div class="detail instance-detail controller-detail tabRoot">
 	<ul class="nav nav-tabs">
 		<li class="active" data-tab-page="eventHandler">イベントハンドラ</li>
 		<li data-tab-page="method">メソッド</li>
@@ -165,7 +165,7 @@
 </script>
 
 <script type="text/ejs" id="logic-detail">
-	<div class="detail instance-detail logic-detail">
+	<div class="detail instance-detail logic-detail tabRoot">
 		<ul class="nav nav-tabs">
 			<li class="active" data-tab-page="method">メソッド</li>
 			<li data-tab-page="trace">トレース</li>
@@ -198,15 +198,14 @@
 		</dd>
 	</dl>
 </script>
-<script type="text/ejs" id="overlay">
-<div class="h5devtool-overlay [%= cls %]"><div class="body"></div><div class="border top"></div><div class="border right"></div><div class="border bottom"></div><div class="border left"></div></div>
-</script>
 <script type="text/ejs" id="settings">
-<label for="h5devtool-setting-LogLengthLimit">ログの最大表示件数</label><input type="text" id="h5devtool-setting-LogLengthLimit" data-h5-bind="attr(value):LogLengthLimit" name="LogLengthLimit"/><button class="set">設定</button>
+	<label for="h5devtool-setting-LogLengthLimit">ログの最大表示件数</label>
+	<input type="text" id="h5devtool-setting-LogLengthLimit" data-h5-bind="attr(value):LogLengthLimit" name="LogLengthLimit"/>
+	<button class="set">設定</button>
 </script>
 </head>
 <body class="h5devtool">
-	<div class="devtool-tab">
+	<div class="devtool-tab tabRoot">
 		<ul class="nav nav-tabs root-nav">
 			<li class="active" data-tab-page="controller-info">コントローラ</li>
 			<li data-tab-page="logic-info">ロジック</li>

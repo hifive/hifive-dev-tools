@@ -31,8 +31,6 @@
 	// =============================
 	/** DvelopperToolのバージョン */
 	var H5_DEV_TOOL_VERSION = '{version}';
-	/** 子ロジック判定用のsuffix */
-	var SUFFIX_LOGIC = 'Logic';
 	/** postMessageで使用するオリジン */
 	var TARGET_ORIGIN = h5devtool.consts.TARGET_ORIGIN;
 	/** ログのアップデートを行う際のディレイタイム(ms) */
@@ -43,6 +41,9 @@
 	var CONTROLLER_LIFECYCLE_METHODS = h5devtool.consts.CONTROLLER_LIFECYCLE_METHODS;
 	/** ロジックライフサイクルメソッド */
 	var LOGIC_LIFECYCLE_METHODS = h5devtool.consts.LOGIC_LIFECYCLE_METHODS;
+
+	/** メソッドタイプが指定されていない場合の警告メッセージ */
+	var MSG_METHOD_TYPE_WRONG = '実行されたメソッドのタイプ(lifecycle,eventHandler,public,private)が指定されていません';
 
 	// ---------------------
 	// メソッドタイプ
@@ -213,7 +214,7 @@
 			this._lengthLimit = limitLength;
 			var targets = [];
 			for ( var id in this._instanceLogMap) {
-				var logArray = this._instanceLogMap[i];
+				var logArray = this._instanceLogMap[id];
 				targets.push(logArray);
 			}
 			targets.push(this._wholeLog);
@@ -221,8 +222,10 @@
 
 			// 最大数を超えているなら取り除く
 			for (var i = 0, l = targets.length; i < l; i++) {
-				if (length - limitLength + 1 > 0) {
-					logArray.splice(length - limitLength + 1, length - 1);
+				var logArray = targets[i];
+				var length = logArray.length;
+				if (length > limitLength) {
+					logArray.splice(0, length - limitLength);
 				}
 			}
 		},
@@ -317,6 +320,27 @@
 	// コントローラ定義
 	// =============================
 	(function() {
+		//hifiveから流用(13470)
+		function getDisplayArea(prop) {
+			var compatMode = (document.compatMode !== 'CSS1Compat');
+			var e = compatMode ? document.body : document.documentElement;
+			return h5.env.ua.isiOS ? window['inner' + prop] : e['client' + prop];
+		}
+
+		//hifiveから流用(13455)
+		function scrollPosition(propName) {
+			var compatMode = (document.compatMode !== 'CSS1Compat');
+			var prop = propName;
+
+			return function() {
+				// doctypeが「XHTML1.0 Transitional DTD」だと、document.documentElement.scrollTopが0を返すので、互換モードを判定する
+				// http://mokumoku.mydns.jp/dok/88.html
+				var elem = compatMode ? document.body : document.documentElement;
+				var offsetProp = (prop === 'Top') ? 'Y' : 'X';
+				return window['page' + offsetProp + 'Offset'] || elem['scroll' + prop];
+			};
+		}
+
 		/**
 		 * コンテキストメニューコントローラ
 		 *
@@ -396,14 +420,15 @@
 
 				// イベントを上げる
 				// 既にopenしていたらイベントは上げない
-				if (!$contextMenu.hasClass('open')) {
-					var e = this.trigger('showCustomMenu', {
-						orgContext: context
-					});
-					if (e.isDefaultPrevented()) {
-						// preventDefaultされていたらメニューを出さない
-						return;
-					}
+				if ($contextMenu.hasClass('open')) {
+					return;
+				}
+				var e = this.trigger('showCustomMenu', {
+					orgContext: context
+				});
+				if (e.isDefaultPrevented()) {
+					// preventDefaultされていたらメニューを出さない
+					return;
 				}
 
 				$contextMenu.css({
@@ -412,9 +437,6 @@
 					left: 0,
 					top: 0
 				});
-				// contextMenu要素のスタイルの取得、offsetParentの取得はjQueryを使わないようにしている
-				// jQuery2.0.Xで、windowに属していない、別ウィンドウ内の要素についてwindow.getComputedStyle(elm)をしており、
-				// IEだとそれが原因でエラーになるため。
 				$contextMenu.addClass('open');
 				var pageX, pageY;
 				if (context.event.originalEvent.targetTouches) {
@@ -422,16 +444,16 @@
 					var touch = context.event.originalEvent.targetTouches[0];
 					pageX = touch.pageX;
 					pageY = touch.pageY;
+
 				} else {
 					pageX = context.event.pageX;
 					pageY = context.event.pageY;
 				}
-				var offsetParent = getOffsetParent($contextMenu);
-				var offsetParentOffset = $(offsetParent).offset();
+				var offsetParentOffset = $contextMenu.offsetParent().offset();
 				var left = pageX - offsetParentOffset.left;
 				var top = pageY - offsetParentOffset.top;
-				var outerWidth = getOuterWidth($contextMenu);
-				var outerHeight = getOuterHeight($contextMenu);
+				var outerWidth = $contextMenu.outerWidth();
+				var outerHeight = $contextMenu.outerHeight();
 				var scrollLeft = scrollPosition('Left')();
 				var scrollTop = scrollPosition('Top')();
 				var windowWidth = getDisplayArea('Width');
@@ -498,27 +520,6 @@
 							display: display
 						});
 					});
-				}
-
-				//hifiveから流用(13470)
-				function getDisplayArea(prop) {
-					var compatMode = (document.compatMode !== 'CSS1Compat');
-					var e = compatMode ? document.body : document.documentElement;
-					return h5.env.ua.isiOS ? window['inner' + prop] : e['client' + prop];
-				}
-
-				//hifiveから流用(13455)
-				function scrollPosition(propName) {
-					var compatMode = (document.compatMode !== 'CSS1Compat');
-					var prop = propName;
-
-					return function() {
-						// doctypeが「XHTML1.0 Transitional DTD」だと、document.documentElement.scrollTopが0を返すので、互換モードを判定する
-						// http://mokumoku.mydns.jp/dok/88.html
-						var elem = compatMode ? document.body : document.documentElement;
-						var offsetProp = (prop === 'Top') ? 'Y' : 'X';
-						return window['page' + offsetProp + 'Offset'] || elem['scroll' + prop];
-					};
 				}
 			},
 
@@ -632,14 +633,7 @@
 				// 非アクティブのものを非表示
 				this.$find('tab-content').not('.active').css('display', 'none');
 			},
-			/**
-			 * 指定されたクラスのタブへ切替
-			 *
-			 * @param {String} tabClass タブのクラス名
-			 */
-			selectTab: function(tabClass) {
-				this.$find('.nav-tabs li.' + tabClass).trigger('click');
-			},
+
 			/**
 			 * タブをクリック
 			 *
@@ -648,25 +642,77 @@
 			 * @param $el
 			 */
 			'.nav-tabs li click': function(context, $el) {
-				if ($el.hasClass('active')) {
+				this.selectTab($el.closest('.tabRoot'), $el.data('tab-page'));
+			},
+
+			/**
+			 * tabSelectイベント
+			 *
+			 * @memberOf h5devtool.TabController
+			 * @param context
+			 * @param $el
+			 */
+			'{rootElement} tabSelect': function(ctx) {
+				// 親要素にタブがある場合に伝播して複数のタブが変更されないようにしている
+				ctx.event.stopPropagation();
+				var tabClass = ctx.evArg.tabClass;
+				var $tabRoot = ctx.evArg.$tabRoot;
+				this.selectTab($tabRoot, tabClass);
+			},
+
+			/**
+			 * 指定されたクラスのタブへ切替
+			 *
+			 * @param {String} tabClass タブのクラス名
+			 */
+			selectTab: function($tabRoot, tabClass) {
+				var $tabElement = $tabRoot.find('>.nav-tabs>li[data-tab-page="' + tabClass + '"]');
+				if ($tabElement.hasClass('active')) {
 					return;
 				}
-				var $navTabs = $el.parent();
+				var $navTabs = $tabElement.parent();
 				$navTabs.find('>.active').removeClass('active');
-				$el.addClass('active');
-				var targetContent = $el.data('tab-page');
-				var $tabContentsRoot = $el.closest('.nav-tabs').next();
+				$tabElement.addClass('active');
+				var $tabContentsRoot = $tabElement.closest('.nav-tabs').next();
 				$tabContentsRoot.find('>.active').removeClass('active');
-				var $selectedContents = $tabContentsRoot.find('>.' + targetContent);
+				var $selectedContents = $tabContentsRoot.find('>.' + tabClass);
 				$selectedContents.addClass('active');
-				this.trigger('tabChange', targetContent);
-				$selectedContents.trigger('tabSelect');
+				$selectedContents.trigger('tabChanged', {
+					tabClass: tabClass
+				});
 			}
 		};
 		h5.core.expose(tabController);
 	})();
 
 	(function() {
+		/** オーバレイ表示時に指定するオーバレイのタイプ */
+		var OVERLAY_TYPE_ROOT = 'root';
+		var OVERLAY_TYPE_CHILD = 'child';
+		var OVERLAY_TYPE_EVENT_TARGET = 'event-target';
+
+		/**
+		 * 要素を点滅させる
+		 *
+		 * @param {DOM|jQuery} elm
+		 */
+		function blinkElm(elm) {
+			var $elm = $(elm);
+			function _blink(count) {
+				$elm.addClass('blink');
+				setTimeout(function() {
+					$elm.removeClass('blink');
+					if (!count) {
+						return;
+					}
+					setTimeout(function() {
+						_blink(--count);
+					}, 100);
+				}, 100);
+			}
+			_blink(4);
+		}
+
 		/**
 		 * InstanceInfoController
 		 * <p>
@@ -684,7 +730,7 @@
 			/**
 			 * @memberOf h5devtool.InstanceInfoController
 			 */
-			_parentWin: null,
+			_targetWindow: null,
 
 			/**
 			 * @memberOf h5devtool.InstanceInfoController
@@ -692,9 +738,11 @@
 			_$detailView: null,
 
 			/**
+			 * このコントローラにappendToListで追加されたインスタンス情報のマップ
+			 *
 			 * @memberOf h5devtool.InstanceInfoController
 			 */
-			_instanceMap: null,
+			_instanceMap: {},
 
 			/**
 			 * @memberOf h5devtool.InstanceInfoController
@@ -708,12 +756,17 @@
 			 */
 			_selectedTarget: null,
 
+			/**
+			 * @name h5devtool.InstanceInfoController
+			 */
 			__construct: function(ctx) {
-				this._parentWin = ctx.args.parentWindow;
-				this._instanceMap = ctx.args.instanceMap;
+				this._targetWindow = ctx.args.targetWindowdow;
 				this._logManager = ctx.args.logManager;
 			},
 
+			/**
+			 * @name h5devtool.InstanceInfoController
+			 */
 			__init: function() {
 				// コントローラの詳細表示エリア
 				this.$find('.right>.detail').css('display', 'none');
@@ -744,7 +797,10 @@
 			 */
 			'.targetlist .target-name mouseover': function(context, $el) {
 				var instanceId = $el.data('instance-id');
-				this.showOverlay(instanceId);
+				this.showOverlay({
+					controllerOverlay: instanceId,
+					selectedOverlay: this._selectedTarget && this._selectedTarget.instanceId
+				});
 			},
 			/**
 			 * マウスアウト
@@ -753,8 +809,15 @@
 			 * @param context
 			 * @param $el
 			 */
-			'.targetlist .target-name mouseout': function(context, $el) {
-				this.removeOverlay();
+			'.targetlist .target-name mouseout': function() {
+				var arg = null;
+				// 選択されているコントローラのオーバレイのみ表示
+				var selectedInstancdId = this._selectedTarget.instanceId;
+				if (selectedInstancdId) {
+					arg = {};
+					arg.selectedOverlay = selectedInstancdId;
+				}
+				this.showOverlay(arg);
 			},
 
 			/**
@@ -770,24 +833,11 @@
 					return;
 				}
 
-				this.$find('.target-name').removeClass('selected');
-				$el.addClass('selected');
-
 				var instanceId = $el.data('instance-id');
-				var target = this._instanceMap[instanceId];
-				this.setTarget(target);
-				// ターゲットリストと紐づいているオーバレイ要素を取得
-				//				var $overlay = $el.data('h5devtool-overlay');
-				//				if ($overlay) {
-				//					this.removeOverlay(true, $overlay);
-				//					// ボーダーだけのオーバレイに変更
-				//					$('.h5devtool-overlay').addClass('borderOnly');
-				//				}
-			},
-
-			setTarget: function(target) {
-				this._selectedTarget = target;
-				this.setDetail(target);
+				this.setDetail(instanceId);
+				this.showOverlay({
+					selectedOverlay: instanceId
+				});
 			},
 
 			/**
@@ -835,16 +885,16 @@
 			 */
 			'.method-select change': function(context, $el) {
 				var method = $el.val();
-				var $methodList = $el.parents('.active').eq(0).find('.method-list');
-				scrollByMethodName($methodList, method, true);
+				var instanceId = this._selectedTarget.instanceId;
+				this.scrollToInstanceMethod(instanceId, method, true);
 			},
 
 			/**
-			 * タブの切り替え
+			 * タブが切り替わった
 			 */
-			'{.h5devtool} tabChange': function(context) {
-				var target = context.evArg;
-				if (target !== 'eventHandler') {
+			'{.h5devtool} tabChanged': function(context) {
+				var tabClass = context.evArg.tabClass;
+				if (tabClass !== 'eventHandler') {
 					// イベントハンドラの選択状態を解除
 					this.removeOverlay();
 					this.$find('.eventHandler li').removeClass('selected');
@@ -859,65 +909,48 @@
 			 */
 			selectEventHandler: function($el) {
 				this.$find('.eventHandler li').removeClass('selected');
-				this.removeOverlay();
+				var instanceId = this._selectedTarget.instanceId;
 				if ($el == null) {
+					this.showOverlay({
+						selectedOverlay: instanceId
+					});
 					return;
 				}
 				$el.addClass('selected');
-				var instanceId = $el.data('instance-id');
-				var target = this._instanceMap[instanceId];
-				var selector = $.trim($el.find('.name').text());
-				var $target = this.selectEventHandlerTarget(selector, instanceId);
 
+				var methodName = $el.data('method-name');
+				this.showOverlay({
+					selectedOverlay: instanceId,
+					eventHandlerOverlay: instanceId,
+					methodName: methodName
+				});
+
+				// イベントハンドラの対象となる要素を取得する
+				// 非同期で返ってくる
+				// var eventHandlerTargetDfd = h5.async.deferred();
+				// this.trigger('getEventHandlerTarget', {
+				//
+				// });
+				//
 				// 取得結果を保存。これはクリックしてイベントを発火させるとき用です。
 				// 再度mosueoverされ場合は新しく取得しなおします。
-				$el.data('h5devtool-eventTarget', $target);
-				this.overlay($target, 'event-target');
+
 
 				// 実行メニューの表示
-				var $select = $el.closest('li').find('select.eventTarget').html('');
-				if (!$target.length) {
-					var $option = $(devtoolWindow.document.createElement('option'));
-					$option.text('該当なし');
-					$select.append($option);
-					$select.attr('disabled', 'disabled');
-				} else {
-					$target.each(function() {
-						var $option = $(devtoolWindow.document.createElement('option'));
-						$option.data('h5devtool-eventTarget', this);
-						$option.text(formatDOM(this));
-						$select.append($option);
-					});
-				}
-			},
-
-			/**
-			 * 親ウィンドウのイベントハンドラのターゲットの選択を行う
-			 * <p>
-			 * 実行ボタン押下時に選択したイベントハンドラターゲットに対してイベントを実行できるようにする
-			 * </p>
-			 */
-			selectEventHandlerTarget: function() {
-			// TODO
-			},
-
-
-			/**
-			 * 詳細画面をクリア(要素の削除とコントローラのdispose)
-			 *
-			 * @memberOf h5devtool.InstanceInfoController
-			 * @param target
-			 */
-			_clearDetailView: function() {
-				// 詳細ビューに表示されているコントローラを取得
-				var controllers = h5.core.controllerManager.getControllers(this._$detailView, {
-					deep: true
-				});
-				// 元々詳細ビューにバインドされていたコントローラをdispose
-				for (var i = 0, l = controllers.length; i < l; i++) {
-					controllers[i].dispose();
-				}
-				this.$find('.right').html('');
+				//				var $select = $el.closest('li').find('select.eventTarget').html('');
+				//				if (!$target.length) {
+				//					var $option = $(devtoolWindow.document.createElement('option'));
+				//					$option.text('該当なし');
+				//					$select.append($option);
+				//					$select.attr('disabled', 'disabled');
+				//				} else {
+				//					$target.each(function() {
+				//						var $option = $(devtoolWindow.document.createElement('option'));
+				//						$option.data('h5devtool-eventTarget', this);
+				//						$option.text(formatDOM(this));
+				//						$select.append($option);
+				//					});
+				//				}
 			},
 
 			/**
@@ -926,25 +959,166 @@
 			 * @memberOf h5devtool.InstanceInfoController
 			 * @param diagMessage
 			 */
-			setDetail: function(diagMessage) {
+			setDetail: function(instanceId) {
 				this._clearDetailView();
+				this.$find('.target-name[data-instance-id="' + instanceId + '"]').addClass(
+						'selected');
+				var diagMessage = this._instanceMap[instanceId];
 				if (diagMessage == null) {
 					return;
 				}
 
-				// methodCountオブジェクトを持たせる
-				//				var devtoolContext = getDevtoolContext(target);
-				//				if (!devtoolContext.methodCount._method) {
-				//					devtoolContext.methodCount._method = new MethodCount(target);
-				//				}
-
 				// コントローラの場合はコントローラの詳細ビューを表示
+				this._selectedTarget = diagMessage;
 				if (diagMessage.type === DIAG_EVENT_CONTROLLER_BOUND) {
 					this._showControllerDetail(diagMessage);
 				} else {
 					// ロジックの場合はロジックの詳細ビューを表示
 					this._showLogicDetail(diagMessage);
 				}
+			},
+
+			/**
+			 * メソッドの実行回数を更新
+			 *
+			 * @memberOf h5devtool.InstanceInfoController
+			 * @param instanceId
+			 * @param method メソッド名
+			 * @param count 実行回数
+			 */
+			methodCountRefresh: function(instanceId, method, count) {
+				if (!this._selectedTarget || this._selectedTarget.instanceId !== instanceId) {
+					return;
+				}
+				this.$find('.method-list [data-method-name]').each(function() {
+					// data属性にダブルコーテーションが含まれている場合、
+					// セレクタで選択できないので、eachで探索している
+					if ($(this).data('method-name') === method) {
+						$(this).find('.count').text(count);
+						return false;
+					}
+				});
+			},
+
+			/**
+			 * 選択を解除
+			 *
+			 * @memberOf h5devtool.InstanceInfoController
+			 */
+			unfocus: function() {
+				this.setDetail(null);
+				this.$find('.target-name').removeClass('selected');
+				this.removeEventOverlay();
+				this.removeControllerOverlay();
+			},
+
+			/**
+			 * コントローラのルート要素表示オーバレイの削除
+			 *
+			 * @param {Boolean} [deleteAll=false] ボーダーだけのオーバレイも削除するかどうか
+			 * @param {jQuery} $exclude 除外するオーバーレイ要素
+			 * @memberOf h5devtool.InstanceInfoController
+			 */
+			removeOverlay: function() {
+				this.trigger('setOverlay');
+			},
+
+			/**
+			 * コントローラまたはロジックをコントローラリストに追加
+			 *
+			 * @memberOf h5devtool.InstanceInfoController
+			 * @param diagMessage
+			 */
+			appendToList: function(diagMessage) {
+				var $ul;
+				var parentId = diagMessage.parentId;
+				if (parentId) {
+					// 親のliを探してその中にulを作る
+					var $parentLi = this
+							.$find('.targetlist *[data-instance-id="' + parentId + '"]').closest(
+									'li');
+					$ul = $('<ul class="targetlist">');
+					$parentLi.append($ul);
+				} else {
+					$ul = this.$find('.targetlist.root');
+				}
+				this._instanceMap[diagMessage.instanceId] = diagMessage;
+
+				this.view.append($ul, 'instance-list', {
+					name: diagMessage.name,
+					instanceId: diagMessage.instanceId,
+					cls: diagMessage.isRoot ? 'root' : 'child'
+				});
+			},
+
+			/**
+			 * コントローラまたはロジックをコントローラリストから削除
+			 *
+			 * @memberOf h5devtool.InstanceInfoController
+			 * @param target
+			 */
+			removeTargetList: function(target) {
+				var $selected = this.$find('.selected');
+				if (target === this.getTargetFromElem($selected)) {
+					this.unfocus();
+				}
+				var that = this;
+				this.$find('.targetlist .target-name').each(function() {
+					if (that.getTargetFromElem(this) === target) {
+						$(this).closest('li').remove();
+						return false;
+					}
+				});
+				delete this._instanceMap[diagMessage.instanceId];
+			},
+
+			/**
+			 * 指定されたインスタンスIDのインスタンスが追加されているか
+			 *
+			 * @memberOf h5devtool.InstanceInfoController
+			 * @param instanceId
+			 */
+			hasInstance: function(instanceId) {
+				return !!this._instanceMap[instanceId];
+			},
+
+			/**
+			 * オーバレイ表示
+			 *
+			 * @memberOf h5devtool.InstanceInfoController
+			 * @param {Object} arg
+			 */
+			showOverlay: function(arg) {
+				this.trigger('setOverlay', arg);
+			},
+
+			/**
+			 * オーバレイをすべて非表示
+			 *
+			 * @memberOf h5devtool.InstanceInfoController
+			 * @param {Object} arg
+			 */
+			removeOverlay: function(arg) {
+				this.trigger('setOverlay');
+			},
+
+			/**
+			 * 詳細画面をクリア(要素の削除とコントローラのdispose)
+			 *
+			 * @memberOf h5devtool.InstanceInfoController
+			 * @param target
+			 */
+			_clearDetailView: function() {
+				// 詳細ビュー内にバインドされているコントローラ(ログコントローラ)を取得
+				var controllers = h5.core.controllerManager.getControllers(this._$detailView, {
+					deep: true
+				});
+				// 元々詳細ビューにバインドされていたコントローラをdispose
+				for (var i = 0, l = controllers.length; i < l; i++) {
+					controllers[i].dispose();
+				}
+				this.$find('.target-name').removeClass('selected');
+				this.$find('.right').html('');
 			},
 
 			/**
@@ -975,9 +1149,13 @@
 					case METHOD_TYPE_PRIVATE:
 						privateMethods.push(p);
 						break;
-					default:
-						privateMethods.push(p);
+					case METHOD_TYPE_PUBLIC:
+						publicMethods.push(p);
 						break;
+					default:
+						this.log.warn(MSG_METHOD_TYPE_WRONG);
+						// publicに入れておく
+						publicMethods.push(p);
 					}
 				}
 				// ソート
@@ -1006,6 +1184,8 @@
 				// トレースログ
 				var $logTab = this.$find('.instance-detail .trace');
 				this.view.append($logTab, 'trace-log');
+				// インスタンスのログコントローラのバインド
+				// (インスタンスのログコントローラはインスタンスが切り替わるごとにごとにバインド、アンバインドしている)
 				h5.core.controller($logTab, h5devtool.LogController).setLogArray(
 						this._logManager.getInstanceLog(instanceId));
 
@@ -1138,192 +1318,46 @@
 				}
 			},
 
-			/**
-			 * メソッドの実行回数を更新
-			 *
-			 * @memberOf h5devtool.InstanceInfoController
-			 * @param instanceId
-			 * @param method メソッド名
-			 * @param count 実行回数
-			 */
-			methodCount: function(instanceId, method, count) {
+			scrollToInstanceMethod: function(instanceId, method, isBlink) {
 				if (!this._selectedTarget || this._selectedTarget.instanceId !== instanceId) {
-					return;
-				}
-				this.$find(
-						'.method-list [data-method-name="' + h5.u.str.escapeHtml(method)
-								+ '"] .count').text(count);
-			},
-
-			/**
-			 * エレメントにコントローラまたはロジックのIDを持たせる
-			 *
-			 * @memberOf h5devtool.InstanceInfoController
-			 * @param el
-			 * @param target
-			 */
-			setTargetToElem: function(el, target) {
-				$(el).data('h5devtool-targetId', getDevtoolContext(target).id);
-			},
-			/**
-			 * エレメントに覚えさせたコントローラまたはロジックを取得する
-			 *
-			 * @memberOf h5devtool.InstanceInfoController
-			 * @param el
-			 * @returns {Controller|Logic}
-			 */
-			getTargetFromElem: function(el) {
-				return getDevtoolTarget($(el).data('h5devtool-targetId'));
-			},
-			/**
-			 * 選択を解除
-			 *
-			 * @memberOf h5devtool.InstanceInfoController
-			 */
-			unfocus: function() {
-				this.setDetail(null);
-				this.$find('.target-name').removeClass('selected');
-				this.removeOverlay(true);
-			},
-			/**
-			 * 引数に指定された要素にオーバレイ
-			 *
-			 * @param elem オーバレイ対象要素
-			 * @param classNames オーバレイ要素に追加するクラス名
-			 * @returns 追加したオーバレイ要素
-			 * @memberOf h5devtool.InstanceInfoController
-			 */
-			overlay: function(elem, classNames) {
-				var className = ($.isArray(classNames) ? classNames : [classNames]).join(' ');
-				var $el = $(elem);
-				var $ret = $();
-				$el.each(function() {
-					var $overlay = $(view.get('overlay', {
-						cls: className
-					}));
-
-					var width = $(this).outerWidth();
-					var height = $(this).outerHeight();
-					// documentオブジェクトならoffset取得できないので、0,0にする
-					var offset = $(this).offset() || {
-						top: 0,
-						left: 0
-					};
-
-					$overlay.css({
-						width: width,
-						height: height,
-						top: offset.top,
-						left: offset.left
-					});
-					var $borderTop = $overlay.find('.border.top');
-					var $borderRight = $overlay.find('.border.right');
-					var $borderBottom = $overlay.find('.border.bottom');
-					var $borderLeft = $overlay.find('.border.left');
-
-					$borderTop.css({
-						top: 0,
-						left: 0,
-						width: width,
-						height: OVERLAY_BORDER_WIDTH
-					});
-					$borderRight.css({
-						top: 0,
-						left: width,
-						width: OVERLAY_BORDER_WIDTH,
-						height: height
-					});
-					$borderBottom.css({
-						top: height,
-						left: 0,
-						width: width,
-						height: OVERLAY_BORDER_WIDTH
-					});
-					$borderLeft.css({
-						top: 0,
-						left: 0,
-						width: OVERLAY_BORDER_WIDTH,
-						height: height
-					});
-
-					$(window.document.body).append($overlay);
-					$ret = $ret.add($overlay);
-				});
-				return $ret;
-			},
-			/**
-			 * オーバレイの削除。deleteAllにtrueが指定された場合ボーダーだけのオーバーレイも削除
-			 *
-			 * @param {Boolean} [deleteAll=false] ボーダーだけのオーバレイも削除するかどうか
-			 * @param {jQuery} $exclude 除外するオーバーレイ要素
-			 * @memberOf h5devtool.InstanceInfoController
-			 */
-			removeOverlay: function(deleteAll, $exclude) {
-			// TODO
-			//				this.parentWin.postMessage({
-			//					deleteAll: deleteAll,
-			//					instanceId: instanceId
-			//				}, TARGET_ORIGIN);
-			},
-			/**
-			 * オーバレイの表示。
-			 *
-			 * @param {Boolean} [deleteAll=false] ボーダーだけのオーバレイも削除するかどうか
-			 * @param {jQuery} $exclude 除外するオーバーレイ要素
-			 * @memberOf h5devtool.InstanceInfoController
-			 */
-			showOverlay: function(deleteAll, $exclude) {
-			// TODO
-			//				this.parentWin.postMessage({
-			//					deleteAll: deleteAll,
-			//					instanceId: instanceId
-			//				}, TARGET_ORIGIN);
-			},
-			/**
-			 * コントローラまたはロジックをコントローラリストに追加
-			 *
-			 * @memberOf h5devtool.InstanceInfoController
-			 * @param diagMessage
-			 */
-			appendToList: function(diagMessage) {
-				var $ul;
-				var parentId = diagMessage.parentId;
-				if (parentId) {
-					// 親のliを探してその中にulを作る
-					var $parentLi = this
-							.$find('.targetlist *[data-instance-id="' + parentId + '"]').closest(
-									'li');
-					$ul = $('<ul class="targetlist">');
-					$parentLi.append($ul);
-				} else {
-					$ul = this.$find('.targetlist.root');
+					// 指定されたインスタンスを表示していない場合は表示
+					var diagMessage = this._instanceMap[instanceId];
+					if (!diagMessage) {
+						return;
+					}
+					this.setDetail(instanceId);
+					// 詳細表示してからメソッドへのスクロールを行う
+					this.scrollToInstanceMethod(instanceId, method, isBlink);
 				}
 
-				this.view.append($ul, 'instance-list', {
-					name: diagMessage.name,
-					instanceId: diagMessage.instanceId,
-					cls: diagMessage.isRoot ? 'root' : 'child'
-				});
-			},
-			/**
-			 * コントローラまたはロジックをコントローラリストから削除
-			 *
-			 * @memberOf h5devtool.InstanceInfoController
-			 * @param target
-			 */
-			removeTargetList: function(target) {
-				var $selected = this.$find('.selected');
-				if (target === this.getTargetFromElem($selected)) {
-					this.unfocus();
-				}
-				var that = this;
-				this.$find('.targetlist .target-name').each(function() {
-					if (that.getTargetFromElem(this) === target) {
-						$(this).closest('li').remove();
+				// 現在指定されたインスタンス情報を表示しているなら、
+				// 該当メソッドのタブへ移動してスクロール
+
+				// メソッドまたはイベントハンドラタブを選択
+				// メソッド名に対応する要素(スクロール先要素)を取得
+				// メソッド名にダブルコーテーションが含まれる場合にセレクタで選択できないので
+				// メソッド名はeachで絞る
+				var $li;
+				this.$find('.instance-detail .method-list [data-method-name]').each(function() {
+					if ($(this).data('method-name') === method) {
+						$li = $(this);
 						return false;
 					}
 				});
-				removeDevtoolTarget(getDevtoolContext(target).id);
+
+				// メソッドに対応する要素が含まれるタブ(eventHandlerまたはmethod)を選択
+				var tabClass = $li.closest('.eventHandler').length ? 'eventHandler' : 'method';
+				$li.trigger('tabSelect', {
+					tabClass: tabClass,
+					$tabRoot: $li.closest('.tabRoot')
+				})
+				var $activeList = $li.parent();
+
+				var scrollVal = $li[0].offsetTop - $li[0].parentNode.offsetTop;
+				$activeList.scrollTop(scrollVal);
+				if (isBlink) {
+					blinkElm($li);
+				}
 			}
 		};
 		h5.core.expose(InstanceInfoController);
@@ -1398,6 +1432,12 @@
 			 * @memberOf h5devtool.LogController
 			 */
 			__name: 'h5devtool.LogController',
+
+			/**
+			 * 右クリックコントローラ
+			 */
+			_contextMenuController: h5devtool.ui.ContextMenuController,
+
 			/**
 			 * 表示する条件を格納するオブジェクト
 			 *
@@ -1431,10 +1471,24 @@
 			_updateDelayTimer: null,
 
 			/**
+			 * 選択されたログ行に対応するログオブジェクト
+			 *
+			 * @memberOf h5devtool.LogController
+			 */
+			_selectedLogObject: null,
+
+			/**
 			 * @memberOf h5devtool.LogController
 			 * @param context.evArg.logArray logArray
 			 */
 			__init: function(ctx) {
+				// 右クリック設定
+				this._contextMenuController.contextMenuExp = '.logContextMenu';
+				this._contextMenuController.setFilter(function(ctx) {
+					return !$(ctx.event.target).closest('.logline').hasClass('logger-log');
+				});
+
+				// ログの表示
 				this._$logList = this.$find('.log-list');
 				this._updateView();
 			},
@@ -1463,8 +1517,32 @@
 				}), LOG_DELAY);
 			},
 
-			'{rootElement} tabSelect': function() {
+			'{rootElement} tabChanged': function(ctx) {
 				this._updateView();
+			},
+
+			'{rootElement} showCustomMenu': function(context) {
+				var orgContext = context.evArg.orgContext;
+				var $li = $(orgContext.event.target).closest('li');
+				$li.addClass('selected');
+				this._selectedLogObject = this._logArray.get($li.attr('data-h5devtool-logindex'));
+			},
+
+			'{rootElement} hideCustomMenu': function(context) {
+				this._selectedLogObject = null;
+			},
+
+			'.showFunction click': function(context, $el) {
+				if (!this._selectedLogObject) {
+					return;
+				}
+				var instanceId = this._selectedLogObject.instanceId;
+				var method = this._selectedLogObject.method;
+
+				this.trigger('showInstanceMethod', {
+					instanceId: instanceId,
+					method: method
+				});
 			},
 
 			setLogArray: function(logArray) {
@@ -1651,7 +1729,7 @@
 			/**
 			 * @memberOf h5devtool.DevtoolController
 			 */
-			_instanceInfoController: h5devtool.InstanceInfoController,
+			_controllerInfoController: h5devtool.InstanceInfoController,
 
 			/**
 			 * @memberOf h5devtool.DevtoolController
@@ -1679,7 +1757,7 @@
 			 * @memberOf h5devtool.DevtoolController
 			 */
 			__meta: {
-				_instanceInfoController: {
+				_controllerInfoController: {
 					rootElement: '.controller-info'
 				},
 				_logicInfoController: {
@@ -1697,6 +1775,8 @@
 			},
 
 			/**
+			 * devtoolで表示するコントローラとロジックのインスタンス全てについてのマップ
+			 *
 			 * @memberOf h5devtool.DevtoolController
 			 */
 			_instanceMap: null,
@@ -1709,11 +1789,17 @@
 			/**
 			 * @memberOf h5devtool.DevtoolController
 			 */
+			targetWindow: null,
+
+			/**
+			 * @memberOf h5devtool.DevtoolController
+			 */
 			_promiseMap: {},
 
 			__construct: function(ctx) {
 				this._instanceMap = ctx.args.instanceMap;
 				this._logManager = ctx.args.logManager;
+				this._targetWindow = ctx.args.targetWindow;
 			},
 
 			__init: function(ctx) {
@@ -1743,16 +1829,16 @@
 				switch (message.type) {
 				case DIAG_EVENT_CONTROLLER_BOUND:
 					this._instanceMap[id] = message;
-					this._instanceInfoController.appendToList(message);
+					this._controllerInfoController.appendToList(message);
 					break;
 				case DIAG_EVENT_CONTROLLER_UNBOUND:
-					this._instanceInfoController.removeFromList(message);
+					this._controllerInfoController.removeFromList(message);
 					delete this._instanceMap[id];
 					break;
 				case DIAG_EVENT_LOGIC_BOUND:
 					this._instanceMap[id] = message;
 					if (message.isControllerLogic) {
-						this._instanceInfoController.appendToList(message);
+						this._controllerInfoController.appendToList(message);
 					} else {
 						// h5.core.logicによるロジック化なら、
 						// コントローラタブとは別のタブに表示するため、logicInfoControllerに通知する
@@ -1771,7 +1857,14 @@
 					// メソッドのカウント
 					if (this._instanceMap[id]) {
 						this._instanceMap[id].methodMap[message.method].count = message.count;
-						this._instanceInfoController.methodCount(id, message.method, message.count);
+						if (this._controllerInfoController.hasInstance(id)) {
+							this._controllerInfoController.methodCountRefresh(id, message.method,
+									message.count);
+						}
+						if (this._logicInfoController.hasInstance(id)) {
+							this._logicInfoController.methodCountRefresh(id, message.method,
+									message.count);
+						}
 					}
 					break;
 				case DIAG_EVENT_AFTER_METHOD_INVOKE:
@@ -1837,6 +1930,46 @@
 				}
 				// インスタンスの選択を解除
 				this.trigger('unfocus');
+			},
+
+			/**
+			 *
+			 */
+			'{rootElement} showInstanceMethod': function(ctx) {
+				// 対応するコントローラまたはロジックを選択
+				var instanceId = ctx.evArg.instanceId;
+				var method = ctx.evArg.method;
+				var targetCtrl = null;
+				if (this._controllerInfoController.hasInstance(instanceId)) {
+					targetCtrl = this._controllerInfoController;
+					this._tabController.selectTab(this.$find('>.tabRoot'), 'controller-info');
+				} else if (this._logicInfoController.hasInstance(instanceId)) {
+					targetCtrl = this._logicInfoController;
+					this._tabController.selectTab(this.$find('>.tabRoot'), 'logic-info');
+				}
+				if (!targetCtrl) {
+					// 見つからない場合(ログには残っているけどdisposeされたなどの場合)は何もしない
+					return;
+				}
+				targetCtrl.scrollToInstanceMethod(instanceId, method, true);
+			},
+
+			/**
+			 *
+			 */
+			'{rootElement} setOverlay': function(ctx) {
+				this.setOverlay(ctx.evArg);
+			},
+
+			setOverlay: function(arg) {
+				this._postMessage({
+					type: 'setOverlay',
+					arg: arg
+				});
+			},
+
+			_postMessage: function(message) {
+				this._targetWindow.postMessage(h5.u.obj.serialize(message), TARGET_ORIGIN);
 			}
 		};
 		h5.core.expose(devtoolController);
@@ -1857,13 +1990,13 @@
 		h5.core.controller('.h5devtool', h5devtool.DevtoolController, {
 			logManager: logManager,
 			instanceMap: instanceMap,
-			parentWin: window.opener
+			targetWindow: window.opener
 		}).readyPromise.done(function() {
 			devtoolController = this;
 			// 閉じられたときにdevtoolControllerをdispose
 			function unloadFunc() {
-				// オーバレイを削除
-				devtoolController._instanceInfoController.removeOverlay(true);
+				// 親ウィンドウのオーバレイを削除
+				devtoolController.setOverlay(null);
 				// コントローラをdispose
 				devtoolController.dispose();
 			}

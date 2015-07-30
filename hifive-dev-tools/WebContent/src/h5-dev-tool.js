@@ -38,12 +38,18 @@
 	var SUFFIX_LOGIC = 'Logic';
 	/** postMessageで使用するオリジン */
 	var TARGET_ORIGIN = h5devtool.consts.TARGET_ORIGIN;
+	/** オーバレイのボーダーの幅 */
+	var OVERLAY_BORDER_WIDTH = 3;
 	// ---------------
 	// メソッドタイプ
 	// ---------------
+	/** ライフサイクル */
 	var METHOD_TYPE_LIFECYCLE = h5devtool.consts.METHOD_TYPE_LIFECYCLE;
+	/** イベントハンドラ */
 	var METHOD_TYPE_EVENT_HANDLER = h5devtool.consts.METHOD_TYPE_EVENT_HANDLER;
+	/** パブリック */
 	var METHOD_TYPE_PUBLIC = h5devtool.consts.METHOD_TYPE_PUBLIC;
+	/** プライベート */
 	var METHOD_TYPE_PRIVATE = h5devtool.consts.METHOD_TYPE_PRIVATE;
 
 	// ---------------
@@ -93,7 +99,7 @@
 			backgroundColor: 'rgb(64, 214, 255)'
 		}
 	}, {
-		selector: '.h5devtool-overlay.event-target .body',
+		selector: '.h5devtool-overlay.eventHandlerOverlay .body',
 		rule: {
 			backgroundColor: 'rgb(128,255,198)'
 		}
@@ -106,33 +112,32 @@
 			borderTopWidth: '3px',
 			borderLeftWidth: '3px',
 			borderBottomWidth: 0,
-			borderRightWidth: 0
-		}
-	}, {
-		selector: '.h5devtool-overlay.root .border',
-		rule: {
-			borderStyle: 'solid',
+			borderRightWidth: 0,
 			borderColor: 'rgb(64, 214, 255)'
 		}
 	}, {
-		selector: '.h5devtool-overlay.child .border',
+		selector: '.h5devtool-overlay .border',
 		rule: {
-			borderStyle: 'dashed',
-			borderColor: 'rgb(64, 214, 255)'
+			borderStyle: 'dashed'
 		}
 	}, {
-		selector: '.h5devtool-overlay.event-target .border',
+		selector: '.h5devtool-overlay.rootController .border',
+		rule: {
+			borderStyle: 'solid'
+		}
+	}, {
+		selector: '.h5devtool-overlay.eventHandlerOverlay .border',
 		rule: {
 			borderStyle: 'dashed',
 			borderColor: 'rgb(128,255,198)'
 		}
 	}, {
-		selector: '.h5devtool-overlay.borderOnly .body',
+		selector: '.h5devtool-overlay.selectedOverlay .body',
 		rule: {
 			display: 'none'
 		}
 	}, {
-		selector: '.h5devtool-overlay.borderOnly',
+		selector: '.h5devtool-overlay.selectedOverlay',
 		rule: {
 			height: '0!important',
 			width: '0!important'
@@ -188,6 +193,18 @@
 	 * プロミスid採番用シーケンス
 	 */
 	var promiseIdSeq = h5.core.data.createSequence();
+
+	/**
+	 * devtoolで使用するビュー
+	 *
+	 * @type {View}
+	 */
+	var devtoolView = h5.core.view.createView();
+
+	/**
+	 * 現在表示中のオーバレイ管理オブジェクト
+	 */
+	var currentOverlay = {};
 
 	// =============================
 	// Functions
@@ -393,29 +410,6 @@
 	}
 
 	/**
-	 * イベントハンドラを指定しているキーから対象になる要素を取得
-	 *
-	 * @param {String} key
-	 * @param {Controller} controller
-	 * @returns {jQuery} イベントハンドラの対象になる要素
-	 */
-	function getTargetFromEventHandlerKey(key, controller) {
-		var $rootElement = $(controller.rootElement);
-		var lastIndex = key.lastIndexOf(' ');
-		var selector = $.trim(key.substring(0, lastIndex));
-		var isGlobalSelector = !!selector.match(/^\{.*\}$/);
-		if (isGlobalSelector) {
-			selector = $.trim(selector.substring(1, selector.length - 1));
-			if (selector === 'rootElement') {
-				return $rootElement;
-			}
-			return $(getGlobalSelectorTarget(selector));
-
-		}
-		return $rootElement.find(selector);
-	}
-
-	/**
 	 * ディベロッパウィンドウを開く
 	 *
 	 * @returns ディベロッパウィンドウが開くまで待機するpromiseオブジェクト
@@ -556,8 +550,11 @@
 			}
 		}
 		devtoolContext.name = instance.__name;
-		devtoolContext.templates = instance.__templates;
 		devtoolContext.instance = instance;
+		devtoolContext.isRoot = context.isRoot;
+		if (!isLogic) {
+			devtoolContext.templates = instance.__templates;
+		}
 	}
 
 	/**
@@ -696,8 +693,6 @@
 		var devtoolCtx = getDevtoolContextByInstance(controller);
 		// ルートエレメントを設定
 		devtoolCtx.rootElement = formatDOM(controller.rootElement);
-		var ctx = controller.__controllerContext;
-		var isRoot = ctx.isRoot;
 		var id = getInstanceId(controller);
 
 		// テンプレートパス
@@ -739,7 +734,7 @@
 			instanceId: id,
 			rootElement: devtoolCtx.rootElement,
 			parentId: parent ? getInstanceId(parent) : null,
-			isRoot: isRoot,
+			isRoot: devtoolCtx.isRoot,
 			rootId: getInstanceId(root),
 			methodMap: devtoolCtx.methodMap,
 			templates: templates,
@@ -750,12 +745,13 @@
 		h5.diag.dispatch(message);
 
 		// 子コントローラについて探索
-		var controllerProps = ctx.cache.childControllerProperties;
+		var cache = controller.__controllerContext.cache;
+		var controllerProps = cache.childControllerProperties;
 		for (var i = 0, l = controllerProps.length; i < l; i++) {
 			dispatchControllerBound(controller[controllerProps[i]], controller, root);
 		}
 		// 子ロジックについて探索
-		var logicProps = ctx.cache.logicProperties;
+		var logicProps = cache.logicProperties;
 		for (var i = 0, l = logicProps.length; i < l; i++) {
 			dispatchLogicBound(controller[logicProps[i]], controller, root);
 		}
@@ -784,6 +780,188 @@
 		}
 		unmanageInstance(controller);
 	}
+
+	/**
+	 * h5.core.controller.jsからコピペ
+	 *
+	 * @private
+	 * @param {String} selector セレクタ
+	 * @returns 特殊オブジェクトの場合は
+	 */
+	function getGlobalSelectorTarget(selector) {
+		var specialObj = ['window', 'document', 'navigator'];
+		for (var i = 0, len = specialObj.length; i < len; i++) {
+			var s = specialObj[i];
+			if (selector === s) {
+				// 特殊オブジェクトそのものを指定された場合
+				return h5.u.obj.getByPath(selector);
+			}
+			if (h5.u.str.startsWith(selector, s + '.')) {
+				// window. などドット区切りで続いている場合
+				return h5.u.obj.getByPath(selector);
+			}
+		}
+		return selector;
+	}
+
+	/**
+	 * コントローラのイベントハンドラのメソッド名から対象になる要素を取得
+	 *
+	 * @private
+	 * @param {String} key
+	 * @param {Controller} controller
+	 * @returns {jQuery} イベントハンドラの対象になる要素
+	 */
+	function getTargetFromEventHandlerMethodName(controller, methodName) {
+		var $rootElement = $(controller.rootElement);
+		var lastIndex = methodName.lastIndexOf(' ');
+		var selector = $.trim(methodName.substring(0, lastIndex));
+		var isGlobalSelector = !!selector.match(/^\{.*\}$/);
+		if (isGlobalSelector) {
+			selector = $.trim(selector.substring(1, selector.length - 1));
+			if (selector === 'rootElement') {
+				return $rootElement;
+			}
+			return $(getGlobalSelectorTarget(selector));
+
+		}
+		return $rootElement.find(selector);
+	}
+
+	/**
+	 * オーバレイを表示
+	 *
+	 * @private
+	 */
+	function showOverlay($target, overlayType, additionalClass, instanceId) {
+		$('.h5devtool-overlay.' + overlayType).remove();
+		$target.each(function() {
+			var $overlay = $(devtoolView.get('overlay', {
+				clsName: overlayType + (additionalClass ? additionalClass : '')
+			}));
+			var width = $(this).outerWidth();
+			var height = $(this).outerHeight();
+			// documentオブジェクトならoffset取得できないので、0,0にする
+			var offset = $(this).offset() || {
+				top: 0,
+				left: 0
+			};
+			$overlay.css({
+				width: width,
+				height: height,
+				top: offset.top,
+				left: offset.left
+			});
+			var $borderTop = $overlay.find('.border.top');
+			var $borderRight = $overlay.find('.border.right');
+			var $borderBottom = $overlay.find('.border.bottom');
+			var $borderLeft = $overlay.find('.border.left');
+
+			$borderTop.css({
+				top: 0,
+				left: 0,
+				width: width,
+				height: OVERLAY_BORDER_WIDTH
+			});
+			$borderRight.css({
+				top: 0,
+				left: width,
+				width: OVERLAY_BORDER_WIDTH,
+				height: height
+			});
+			$borderBottom.css({
+				top: height,
+				left: 0,
+				width: width,
+				height: OVERLAY_BORDER_WIDTH
+			});
+			$borderLeft.css({
+				top: 0,
+				left: 0,
+				width: OVERLAY_BORDER_WIDTH,
+				height: height
+			});
+
+			$(document.body).append($overlay);
+		});
+	}
+
+	/**
+	 * オーバレイを削除
+	 *
+	 * @private
+	 * @param {string} overlayType
+	 * @param {Object} instanceId
+	 */
+	function removeOverlay(overlayType, instanceId) {
+		// instanceIdが指定されていない場合はすべて削除
+		if (!instanceId) {
+			if (!overlayType) {
+				$('.h5devtool-overlay').remove();
+			} else {
+				$('.h5devtool-overlay.' + overlayType).remove();
+			}
+			return;
+		}
+		$('.h5devtool-overlay.' + overlayType + '[data-instance-id="' + instanceId + '"]').remove();
+	}
+
+	/**
+	 * オーバレイを設定
+	 *
+	 * @private
+	 * @param {Object} arg
+	 */
+	function setOverlay(arg) {
+		console.log(arg);
+		if (!arg) {
+			// 全てのオーバレイを削除
+			removeOverlay();
+			currentOverlay = {};
+			return;
+		}
+		var overlayTypes = ['controllerOverlay', 'selectedOverlay', 'eventHandlerOverlay'];
+		for (var i = 0, l = overlayTypes.length; i < l; i++) {
+			var overlayType = overlayTypes[i];
+			var isEventHandler = overlayType === 'eventHandlerOverlay';
+			if (currentOverlay[overlayType] === arg[overlayType]
+					&& (!isEventHandler || currentOverlay.methodName === arg.methodName)) {
+				// 変更無しの場合は何もしない
+				continue;
+			}
+			var instanceId = arg[overlayType];
+			if (!instanceId) {
+				// 指定されていない場合は削除
+				removeOverlay(overlayType);
+				continue;
+			}
+
+			var devCtx = devtoolContextMap[instanceId];
+			var instance = devCtx && devCtx.instance;
+			if (!instance) {
+				// 指定されたインスタンスが管理下にない(unbindされた)場合はオーバレイを削除
+				removeOverlay(overlayType, instanceId);
+				continue;
+			}
+			var additionalClass = '';
+			var methodName = null;
+			var $target = null;
+			if (isEventHandler) {
+				// イベントハンドラの場合はイベントハンドラのターゲットになっている要素を取得
+				methodName = arg.methodName;
+				$target = getTargetFromEventHandlerMethodName(instance, methodName);
+			} else {
+				$target = $(instance.rootElement);
+				if (!isEventHandler && devCtx.isRoot) {
+					// ルートならルートコントローラクラスも追加
+					additionalClass += ' rootController';
+				}
+			}
+			showOverlay($target, overlayType, additionalClass, instanceId, methodName);
+		}
+		currentOverlay = arg;
+	}
+
 	// =========================================================================
 	//
 	// Body
@@ -793,31 +971,28 @@
 	var devtoolLogger = h5.log.createLogger('hifive Developer Tool');
 	devtoolLogger.info('hifive Developer Tool(ver.{0})の読み込みが完了しました。', H5_DEV_TOOL_VERSION);
 
+	// オーバレイのビューを登録
+	devtoolView
+			.register(
+					'overlay',
+					'<div class="h5devtool-overlay [%= clsName %]"><div class="body"></div><div class="border top"></div><div class="border right"></div><div class="border bottom"></div><div class="border left"></div></div>');
+
+
 	// -------------------------------------------------
 	// ディベロッパツールウィンドウからメッセージを受け取る
 	// -------------------------------------------------
 	window.addEventListener('message', function(event) {
 		if (event.origin !== TARGET_ORIGIN) {
+			// オリジンが違う場合はreturn
 			return;
 		}
-		var message = h5.u.obj.desirialize(event.data);
-		// TODO
-		// オーバレイ表示
-		//				var target = this.getTargetFromElem($el);
-		//		if (!isDisposed(target) && target.__controllerContext) {
-		//		// disposeされていないコントローラならオーバレイを表示
-		//		$el.data('h5devtool-overlay', this.overlay(target.rootElement,
-		//				target.__controllerContext.isRoot ? 'root' : 'child'));
-		//	}
-
-		// TODO
-		// オーバレイ削除
-		//		var $target = deleteAll ? $('.h5devtool-overlay')
-		//				: $('.h5devtool-overlay:not(.borderOnly)');
-		//		($exclude ? $target.not($exclude) : $target).remove();
-		console.log(message);
+		var message = h5.u.obj.deserialize(event.data);
+		switch (message.type) {
+		case 'setOverlay':
+			setOverlay(message.arg);
+			break;
+		}
 	}, false);
-
 
 	// -------------------------------------------------
 	// ディベロッパツールウィンドウを開く
@@ -1027,7 +1202,7 @@
 		if (!devtoolWindow || !devtoolWindow.h5devtool
 				|| !devtoolWindow.h5devtool.messageListenerAdded) {
 			// devtoolウィンドウのpostMessageのリスナが登録されるまで待機する
-			if(message){
+			if (message) {
 				preMessages.push(message);
 			}
 			setTimeout(function() {
@@ -1037,7 +1212,7 @@
 		}
 		// devtoolウィンドウが準備できる前のメッセージがあればそれを先に送る
 		if (preMessages) {
-			for (var i = 0, l = preMessages.length; i < l; i++) {console.log(h5.u.obj.serialize(preMessages[i]));
+			for (var i = 0, l = preMessages.length; i < l; i++) {
 				devtoolWindow.postMessage(h5.u.obj.serialize(preMessages[i]), TARGET_ORIGIN);
 			}
 			preMessages = null;
