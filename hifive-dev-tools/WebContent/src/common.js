@@ -22,25 +22,34 @@
 					'__dispose'],
 			LOGIC_LIFECYCLE_METHODS: ['__construct', '__ready'],
 
-			// ---------------
-			// diagイベント名
-			// ---------------
-			/** diagイベント名 コントローラバインド時 */
-			DIAG_EVENT_CONTROLLER_BOUND: 'controllerBound',
-			/** diagイベント名 コントローラアンバインド時 */
-			DIAG_EVENT_CONTROLLER_UNBOUND: 'controllerUnbound',
-			/** diagイベント名 ロジック化時 */
-			DIAG_EVENT_LOGIC_BOUND: 'logicBound',
-			/** diagイベント名 メソッド実行直前 */
-			DIAG_EVENT_BEFORE_METHOD_INVOKE: 'beforeMethodInvoke',
-			/** diagイベント名 メソッド実行直後 */
-			DIAG_EVENT_AFTER_METHOD_INVOKE: 'afterMethodInvoke',
-			/** diagイベント名 非同期メソッド完了時 */
-			DIAG_EVENT_ASYNC_METHOD_COMPLETE: 'asyncMethodComplete',
-			/** diagイベント名 ログ出力時 */
-			DIAG_EVENT_LOG: 'log',
-			/** diagイベント名 エラー発生時 */
-			DIAG_EVENT_ERROR: 'error'
+			// ---------------------
+			// ポストメッセージのイベントタイプ名
+			// ---------------------
+			/** オーバレイの設定(子→親) */
+			POST_MSG_TYPE_SET_OVERLAY: 'setOverlay',
+			/** イベントハンドラターゲットの取得 */
+			POST_MSG_TYPE_GET_EVENT_HANDLER_TARGETS: 'getEventhandlerTargets',
+			/** イベントハンドラターゲットの取得完了通知 */
+			POST_MSG_TYPE_SET_EVENT_HANDLER_TARGETS: 'setEventhandlerTargets',
+			/** イベントハンドラの実行 */
+			POST_MSG_TYPE_GET_EXECUTE_EVENT_HANDLER: 'executeEventhandler',
+
+			/** コントローラバインド時 */
+			POST_MSG_TYPE_DIAG_CONTROLLER_BOUND: 'controllerBound',
+			/** コントローラアンバインド時 */
+			POST_MSG_TYPE_DIAG_CONTROLLER_UNBOUND: 'controllerUnbound',
+			/** ロジック化時 */
+			POST_MSG_TYPE_DIAG_LOGIC_BOUND: 'logicBound',
+			/** メソッド実行直前 */
+			POST_MSG_TYPE_DIAG_BEFORE_METHOD_INVOKE: 'beforeMethodInvoke',
+			/** メソッド実行直後 */
+			POST_MSG_TYPE_DIAG_AFTER_METHOD_INVOKE: 'afterMethodInvoke',
+			/** 非同期メソッド完了時 */
+			POST_MSG_TYPE_DIAG_ASYNC_METHOD_COMPLETE: 'asyncMethodComplete',
+			/** ログ出力時 */
+			POST_MSG_TYPE_DIAG_LOG: 'log',
+			/** エラー発生時 */
+			POST_MSG_TYPE_DIAG_ERROR: 'error'
 		},
 		util: {
 			/**

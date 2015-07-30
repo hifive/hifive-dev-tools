@@ -51,31 +51,40 @@
 	var METHOD_TYPE_PUBLIC = h5devtool.consts.METHOD_TYPE_PUBLIC;
 	/** プライベート */
 	var METHOD_TYPE_PRIVATE = h5devtool.consts.METHOD_TYPE_PRIVATE;
-
-	// ---------------
-	// diagイベント名
-	// ---------------
-	/** diagイベント名 コントローラバインド時 */
-	var DIAG_EVENT_CONTROLLER_BOUND = h5devtool.consts.DIAG_EVENT_CONTROLLER_BOUND;
-	/** diagイベント名 コントローラアンバインド時 */
-	var DIAG_EVENT_CONTROLLER_UNBOUND = h5devtool.consts.DIAG_EVENT_CONTROLLER_UNBOUND;
-	/** diagイベント名 ロジック化時 */
-	var DIAG_EVENT_LOGIC_BOUND = h5devtool.consts.DIAG_EVENT_LOGIC_BOUND;
-	/** diagイベント名 メソッド実行直前 */
-	var DIAG_EVENT_BEFORE_METHOD_INVOKE = h5devtool.consts.DIAG_EVENT_BEFORE_METHOD_INVOKE;
-	/** diagイベント名 メソッド実行直後 */
-	var DIAG_EVENT_AFTER_METHOD_INVOKE = h5devtool.consts.DIAG_EVENT_AFTER_METHOD_INVOKE;
-	/** diagイベント名 非同期メソッド完了時 */
-	var DIAG_EVENT_ASYNC_METHOD_COMPLETE = h5devtool.consts.DIAG_EVENT_ASYNC_METHOD_COMPLETE;
-	/** diagイベント名 ログ出力時 */
-	var DIAG_EVENT_LOG = h5devtool.consts.DIAG_EVENT_LOG;
-	/** diagイベント名 エラー発生時 */
-	var DIAG_EVENT_ERROR = h5devtool.consts.DIAG_EVENT_ERROR;
-
 	/** コントローラライフサイクルメソッド */
 	var CONTROLLER_LIFECYCLE_METHODS = h5devtool.consts.CONTROLLER_LIFECYCLE_METHODS;
 	/** ロジックライフサイクルメソッド */
 	var LOGIC_LIFECYCLE_METHODS = h5devtool.consts.LOGIC_LIFECYCLE_METHODS;
+
+	// ---------------------
+	// ポストメッセージのイベントタイプ名
+	// ---------------------
+	/** オーバレイの設定(子→親) */
+	var POST_MSG_TYPE_SET_OVERLAY = h5devtool.consts.POST_MSG_TYPE_SET_OVERLAY;
+	/** イベントハンドラターゲットの取得 */
+	var POST_MSG_TYPE_GET_EVENT_HANDLER_TARGETS = h5devtool.consts.POST_MSG_TYPE_GET_EVENT_HANDLER_TARGETS;
+	/** イベントハンドラターゲットの取得完了通知 */
+	var POST_MSG_TYPE_SET_EVENT_HANDLER_TARGETS = h5devtool.consts.POST_MSG_TYPE_SET_EVENT_HANDLER_TARGETS;
+	/** イベントハンドラの実行 */
+	var POST_MSG_TYPE_GET_EXECUTE_EVENT_HANDLER = h5devtool.consts.POST_MSG_TYPE_GET_EXECUTE_EVENT_HANDLER;
+
+	// diagイベントタイプ
+	/** コントローラバインド時 */
+	var POST_MSG_TYPE_DIAG_CONTROLLER_BOUND = h5devtool.consts.POST_MSG_TYPE_DIAG_CONTROLLER_BOUND;
+	/** コントローラアンバインド時 */
+	var POST_MSG_TYPE_DIAG_CONTROLLER_UNBOUND = h5devtool.consts.POST_MSG_TYPE_DIAG_CONTROLLER_UNBOUND;
+	/** ロジック化時 */
+	var POST_MSG_TYPE_DIAG_LOGIC_BOUND = h5devtool.consts.POST_MSG_TYPE_DIAG_LOGIC_BOUND;
+	/** メソッド実行直前 */
+	var POST_MSG_TYPE_DIAG_BEFORE_METHOD_INVOKE = h5devtool.consts.POST_MSG_TYPE_DIAG_BEFORE_METHOD_INVOKE;
+	/** メソッド実行直後 */
+	var POST_MSG_TYPE_DIAG_AFTER_METHOD_INVOKE = h5devtool.consts.POST_MSG_TYPE_DIAG_AFTER_METHOD_INVOKE;
+	/** 非同期メソッド完了時 */
+	var POST_MSG_TYPE_DIAG_ASYNC_METHOD_COMPLETE = h5devtool.consts.POST_MSG_TYPE_DIAG_ASYNC_METHOD_COMPLETE;
+	/** ログ出力時 */
+	var POST_MSG_TYPE_DIAG_LOG = h5devtool.consts.POST_MSG_TYPE_DIAG_LOG;
+	/** エラー発生時 */
+	var POST_MSG_TYPE_DIAG_ERROR = h5devtool.consts.POST_MSG_TYPE_DIAG_ERROR;
 
 	/**
 	 * スタイル定義
@@ -205,6 +214,11 @@
 	 * 現在表示中のオーバレイ管理オブジェクト
 	 */
 	var currentOverlay = {};
+
+	/**
+	 * 現在選択中のイベントハンドラターゲット
+	 */
+	currentSelectedEventHandlerTargets = null;
 
 	// =============================
 	// Functions
@@ -397,11 +411,14 @@
 	 * @param {DOM|window|document} elm
 	 * @returns {string}
 	 */
-	function formatDOM(elm) {
+	function stringifyElement(elm) {
 		if (elm === window) {
 			return 'window';
 		} else if (elm.nodeType === 9) {
 			return 'document';
+		} else if (!elm.nodeType) {
+			// ただのオブジェクトの場合など
+			return elm.toString();
 		}
 		var tagName = elm.tagName;
 		var id = elm.id;
@@ -656,7 +673,7 @@
 		var isRoot = logic === root;
 		var id = getInstanceId(logic);
 		var message = {
-			type: DIAG_EVENT_LOGIC_BOUND,
+			type: POST_MSG_TYPE_DIAG_LOGIC_BOUND,
 			name: devtoolCtx.name,
 			instanceId: id,
 			parentId: parent ? getInstanceId(parent) : null,
@@ -692,7 +709,7 @@
 		manageInstance(controller);
 		var devtoolCtx = getDevtoolContextByInstance(controller);
 		// ルートエレメントを設定
-		devtoolCtx.rootElement = formatDOM(controller.rootElement);
+		devtoolCtx.rootElement = stringifyElement(controller.rootElement);
 		var id = getInstanceId(controller);
 
 		// テンプレートパス
@@ -729,7 +746,7 @@
 
 		// メッセージオブジェクトの送信
 		var message = {
-			type: DIAG_EVENT_CONTROLLER_BOUND,
+			type: POST_MSG_TYPE_DIAG_CONTROLLER_BOUND,
 			name: devtoolCtx.name,
 			instanceId: id,
 			rootElement: devtoolCtx.rootElement,
@@ -767,7 +784,7 @@
 		var ctx = controller.__controlelrContext;
 		var id = getInstanceId(controller);
 		var message = {
-			type: DIAG_EVENT_CONTROLLER_UNBOUND,
+			type: POST_MSG_TYPE_DIAG_CONTROLLER_UNBOUND,
 			name: controller.__name,
 			instanceId: id,
 			timeStamp: getTimeStamp()
@@ -782,24 +799,29 @@
 	}
 
 	/**
-	 * h5.core.controller.jsからコピペ
+	 * h5.core.controller.jsから流用(ただし別ウィンドウは考慮していない)
 	 *
 	 * @private
 	 * @param {String} selector セレクタ
-	 * @returns 特殊オブジェクトの場合は
+	 * @param {Controller} [controller] セレクタがthis.で始まっているときにコントローラの持つオブジェクトをターゲットにする
+	 * @returns {Object|String} パスで指定されたオブジェクト、もしくは未変換の文字列
 	 */
-	function getGlobalSelectorTarget(selector) {
+	function getGlobalSelectorTarget(selector, controller) {
+		if (controller && selector === 'rootElement') {
+			return controller.rootElement;
+		}
 		var specialObj = ['window', 'document', 'navigator'];
 		for (var i = 0, len = specialObj.length; i < len; i++) {
 			var s = specialObj[i];
-			if (selector === s) {
-				// 特殊オブジェクトそのものを指定された場合
+			if (selector === s || h5.u.str.startsWith(selector, s + '.')) {
+				//特殊オブジェクトそのものを指定された場合またはwindow. などドット区切りで続いている場合
 				return h5.u.obj.getByPath(selector);
 			}
-			if (h5.u.str.startsWith(selector, s + '.')) {
-				// window. などドット区切りで続いている場合
-				return h5.u.obj.getByPath(selector);
-			}
+		}
+		// selectorが'this.'で始まっていて、かつcontrollerが指定されている場合はコントローラから取得する
+		var controllerObjectPrefix = 'this.';
+		if (controller && h5.u.str.startsWith(selector, controllerObjectPrefix)) {
+			return h5.u.obj.getByPath(selector.slice(controllerObjectPrefix.length), controller);
 		}
 		return selector;
 	}
@@ -839,8 +861,14 @@
 			var $overlay = $(devtoolView.get('overlay', {
 				clsName: overlayType + (additionalClass ? additionalClass : '')
 			}));
-			var width = $(this).outerWidth();
-			var height = $(this).outerHeight();
+			var width, height;
+			try {
+				width = $(this).outerWidth();
+				height = $(this).outerHeight();
+			} catch (e) {
+				// dom要素で無い場合は取得できないので、オーバレイは表示しない
+				return;
+			}
 			// documentオブジェクトならoffset取得できないので、0,0にする
 			var offset = $(this).offset() || {
 				top: 0,
@@ -913,7 +941,6 @@
 	 * @param {Object} arg
 	 */
 	function setOverlay(arg) {
-		console.log(arg);
 		if (!arg) {
 			// 全てのオーバレイを削除
 			removeOverlay();
@@ -988,8 +1015,51 @@
 		}
 		var message = h5.u.obj.deserialize(event.data);
 		switch (message.type) {
-		case 'setOverlay':
+		case POST_MSG_TYPE_SET_OVERLAY:
 			setOverlay(message.arg);
+			break;
+		case POST_MSG_TYPE_GET_EVENT_HANDLER_TARGETS:
+			var arg = message.arg;
+			var instanceId = arg.instanceId;
+			var methodName = arg.methodName;
+			var devCtx = devtoolContextMap[instanceId];
+			var controller = devCtx && devCtx.instance;
+			if (!controller) {
+				// 指定されたインスタンスが管理下にない(unbindされた)場合は何もしない
+				return;
+			}
+			var $targets = getTargetFromEventHandlerMethodName(controller, methodName);
+			// 実行するときのために覚えておく
+			currentSelectedEventHandlerTargets = {
+				instanceId: instanceId,
+				methodName: methodName,
+				$targets: $targets
+			};
+			var eventHandlerTargets = [];
+			$targets.each(function() {
+				eventHandlerTargets.push(stringifyElement(this));
+			});
+			var message = {
+				type: POST_MSG_TYPE_SET_EVENT_HANDLER_TARGETS,
+				arg: {
+					eventHandlerTargets: eventHandlerTargets
+				}
+			}
+			devtoolWindow.postMessage(h5.u.obj.serialize(message), TARGET_ORIGIN);
+			break;
+		case POST_MSG_TYPE_GET_EXECUTE_EVENT_HANDLER:
+			var arg = message.arg;
+			var instanceId = arg.instanceId;
+			var methodName = arg.methodName;
+			if (currentSelectedEventHandlerTargets.instanceId === instanceId
+					&& currentSelectedEventHandlerTargets.methodName === methodName) {
+				// 指定されたイベントハンドラが前回取得したイベントハンドラターゲットのものであれば実行
+				var $target = currentSelectedEventHandlerTargets.$targets.eq(arg.targetIndex);
+				var eventName = $.trim(methodName.substring(methodName.lastIndexOf(' '),
+						methodName.length));
+				// triggerでイベントハンドラを実行
+				$target.trigger(eventName);
+			}
 			break;
 		}
 	}, false);
@@ -1039,7 +1109,7 @@
 				type: {
 					log: function(obj) {
 						h5.diag.dispatch({
-							type: DIAG_EVENT_LOG,
+							type: POST_MSG_TYPE_DIAG_LOG,
 							level: obj.level,
 							levelString: obj.levelString,
 							message: h5.u.str.format.apply(h5.u.str, obj.args),
@@ -1098,7 +1168,7 @@
 	$(window).bind('error', function(ev) {
 		var orgEvent = ev.originalEvent;
 		h5.diag.dispatch({
-			type: DIAG_EVENT_ERROR,
+			type: POST_MSG_TYPE_DIAG_ERROR,
 			levelString: 'EXCEPTION',
 			level: 50, // エラーと同じレベル
 			message: orgEvent.message,
@@ -1140,7 +1210,7 @@
 
 			// メソッド呼び出しをdiagに通知
 			var beforeMessage = {
-				type: DIAG_EVENT_BEFORE_METHOD_INVOKE,
+				type: POST_MSG_TYPE_DIAG_BEFORE_METHOD_INVOKE,
 				name: name,
 				method: fName,
 				methodType: methodType,
@@ -1156,7 +1226,7 @@
 			// 呼び出し終了を通知
 			var isPromise = isAsync(ret);
 			var afterMessage = {
-				type: DIAG_EVENT_AFTER_METHOD_INVOKE,
+				type: POST_MSG_TYPE_DIAG_AFTER_METHOD_INVOKE,
 				name: name,
 				method: fName,
 				methodType: methodType,
@@ -1172,7 +1242,7 @@
 				afterMessage.promiseId = promiseId;
 				// dataに非同期メソッド完了通知用オブジェクトを持たせる
 				data.asyncMethodCompleteMessage = {
-					type: DIAG_EVENT_ASYNC_METHOD_COMPLETE,
+					type: POST_MSG_TYPE_DIAG_ASYNC_METHOD_COMPLETE,
 					promiseId: promiseId,
 					timeStamp: getTimeStamp()
 				};
@@ -1221,10 +1291,11 @@
 			devtoolWindow.postMessage(h5.u.obj.serialize(message), TARGET_ORIGIN);
 		}
 	}
-	var addHandlerTargetDiagEvents = [DIAG_EVENT_CONTROLLER_BOUND, DIAG_EVENT_CONTROLLER_UNBOUND,
-			DIAG_EVENT_LOGIC_BOUND, DIAG_EVENT_BEFORE_METHOD_INVOKE,
-			DIAG_EVENT_AFTER_METHOD_INVOKE, DIAG_EVENT_ASYNC_METHOD_COMPLETE, DIAG_EVENT_LOG,
-			DIAG_EVENT_ERROR];
+	var addHandlerTargetDiagEvents = [POST_MSG_TYPE_DIAG_CONTROLLER_BOUND,
+			POST_MSG_TYPE_DIAG_CONTROLLER_UNBOUND, POST_MSG_TYPE_DIAG_LOGIC_BOUND,
+			POST_MSG_TYPE_DIAG_BEFORE_METHOD_INVOKE, POST_MSG_TYPE_DIAG_AFTER_METHOD_INVOKE,
+			POST_MSG_TYPE_DIAG_ASYNC_METHOD_COMPLETE, POST_MSG_TYPE_DIAG_LOG,
+			POST_MSG_TYPE_DIAG_ERROR];
 	for (var i = 0, l = addHandlerTargetDiagEvents.length; i < l; i++) {
 		h5.diag.addHandler(addHandlerTargetDiagEvents[i], postDiagMessage);
 	}

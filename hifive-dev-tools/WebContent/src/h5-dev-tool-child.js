@@ -61,24 +61,34 @@
 	var TRACE_LOG_TAG_DFD = 'DFD&nbsp;&nbsp;';
 
 	// ---------------------
-	// diagイベント名
+	// ポストメッセージのイベントタイプ名
 	// ---------------------
-	/** diagイベント名 コントローラバインド時 */
-	var DIAG_EVENT_CONTROLLER_BOUND = h5devtool.consts.DIAG_EVENT_CONTROLLER_BOUND;
-	/** diagイベント名 コントローラアンバインド時 */
-	var DIAG_EVENT_CONTROLLER_UNBOUND = h5devtool.consts.DIAG_EVENT_CONTROLLER_UNBOUND;
-	/** diagイベント名 ロジック化時 */
-	var DIAG_EVENT_LOGIC_BOUND = h5devtool.consts.DIAG_EVENT_LOGIC_BOUND;
-	/** diagイベント名 メソッド実行直前 */
-	var DIAG_EVENT_BEFORE_METHOD_INVOKE = h5devtool.consts.DIAG_EVENT_BEFORE_METHOD_INVOKE;
-	/** diagイベント名 メソッド実行直後 */
-	var DIAG_EVENT_AFTER_METHOD_INVOKE = h5devtool.consts.DIAG_EVENT_AFTER_METHOD_INVOKE;
-	/** diagイベント名 非同期メソッド完了時 */
-	var DIAG_EVENT_ASYNC_METHOD_COMPLETE = h5devtool.consts.DIAG_EVENT_ASYNC_METHOD_COMPLETE;
-	/** diagイベント名 ログ出力時 */
-	var DIAG_EVENT_LOG = h5devtool.consts.DIAG_EVENT_LOG;
-	/** diagイベント名 エラー発生時 */
-	var DIAG_EVENT_ERROR = h5devtool.consts.DIAG_EVENT_ERROR;
+	/** オーバレイの設定(子→親) */
+	var POST_MSG_TYPE_SET_OVERLAY = h5devtool.consts.POST_MSG_TYPE_SET_OVERLAY;
+	/** イベントハンドラターゲットの取得 */
+	var POST_MSG_TYPE_GET_EVENT_HANDLER_TARGETS = h5devtool.consts.POST_MSG_TYPE_GET_EVENT_HANDLER_TARGETS;
+	/** イベントハンドラターゲットの取得完了通知 */
+	var POST_MSG_TYPE_SET_EVENT_HANDLER_TARGETS = h5devtool.consts.POST_MSG_TYPE_SET_EVENT_HANDLER_TARGETS;
+	/** イベントハンドラの実行 */
+	var POST_MSG_TYPE_GET_EXECUTE_EVENT_HANDLER = h5devtool.consts.POST_MSG_TYPE_GET_EXECUTE_EVENT_HANDLER;
+
+	// diagイベントタイプ
+	/** コントローラバインド時 */
+	var POST_MSG_TYPE_DIAG_CONTROLLER_BOUND = h5devtool.consts.POST_MSG_TYPE_DIAG_CONTROLLER_BOUND;
+	/** コントローラアンバインド時 */
+	var POST_MSG_TYPE_DIAG_CONTROLLER_UNBOUND = h5devtool.consts.POST_MSG_TYPE_DIAG_CONTROLLER_UNBOUND;
+	/** ロジック化時 */
+	var POST_MSG_TYPE_DIAG_LOGIC_BOUND = h5devtool.consts.POST_MSG_TYPE_DIAG_LOGIC_BOUND;
+	/** メソッド実行直前 */
+	var POST_MSG_TYPE_DIAG_BEFORE_METHOD_INVOKE = h5devtool.consts.POST_MSG_TYPE_DIAG_BEFORE_METHOD_INVOKE;
+	/** メソッド実行直後 */
+	var POST_MSG_TYPE_DIAG_AFTER_METHOD_INVOKE = h5devtool.consts.POST_MSG_TYPE_DIAG_AFTER_METHOD_INVOKE;
+	/** 非同期メソッド完了時 */
+	var POST_MSG_TYPE_DIAG_ASYNC_METHOD_COMPLETE = h5devtool.consts.POST_MSG_TYPE_DIAG_ASYNC_METHOD_COMPLETE;
+	/** ログ出力時 */
+	var POST_MSG_TYPE_DIAG_LOG = h5devtool.consts.POST_MSG_TYPE_DIAG_LOG;
+	/** エラー発生時 */
+	var POST_MSG_TYPE_DIAG_ERROR = h5devtool.consts.POST_MSG_TYPE_DIAG_ERROR;
 
 	// =============================
 	// Development Only
@@ -802,6 +812,7 @@
 					selectedOverlay: this._selectedTarget && this._selectedTarget.instanceId
 				});
 			},
+
 			/**
 			 * マウスアウト
 			 *
@@ -812,7 +823,7 @@
 			'.targetlist .target-name mouseout': function() {
 				var arg = null;
 				// 選択されているコントローラのオーバレイのみ表示
-				var selectedInstancdId = this._selectedTarget.instanceId;
+				var selectedInstancdId = this._selectedTarget && this._selectedTarget.instanceId;
 				if (selectedInstancdId) {
 					arg = {};
 					arg.selectedOverlay = selectedInstancdId;
@@ -869,15 +880,15 @@
 			 * イベントを実行
 			 */
 			' .eventHandler .trigger click': function(context, $el) {
-				var evName = $.trim($el.closest('li').find('.name').text()).match(/ (\S+)$/)[1];
-				var target = $el.closest('.menu').find('option:selected').data(
-						'h5devtool-eventTarget');
-				if (target) {
-					// TODO evNameがmouse/keyboard/touch系ならネイティブのイベントでやる
-					$(target).trigger(evName);
-				} else {
-					alert('イベントターゲットがありません');
-				}
+				var $li = $el.closest('li');
+				var instanceId = this._selectedTarget.instanceId;
+				var methodName = $li.data('method-name');
+				var targetIndex = $li.find('select.eventTarget').val();
+				this.trigger('executeEventHandler', {
+					instanceId: instanceId,
+					methodName: methodName,
+					targetIndex: targetIndex
+				});
 			},
 
 			/**
@@ -927,30 +938,39 @@
 
 				// イベントハンドラの対象となる要素を取得する
 				// 非同期で返ってくる
-				// var eventHandlerTargetDfd = h5.async.deferred();
-				// this.trigger('getEventHandlerTarget', {
-				//
-				// });
-				//
-				// 取得結果を保存。これはクリックしてイベントを発火させるとき用です。
-				// 再度mosueoverされ場合は新しく取得しなおします。
-
-
-				// 実行メニューの表示
-				//				var $select = $el.closest('li').find('select.eventTarget').html('');
-				//				if (!$target.length) {
-				//					var $option = $(devtoolWindow.document.createElement('option'));
-				//					$option.text('該当なし');
-				//					$select.append($option);
-				//					$select.attr('disabled', 'disabled');
-				//				} else {
-				//					$target.each(function() {
-				//						var $option = $(devtoolWindow.document.createElement('option'));
-				//						$option.data('h5devtool-eventTarget', this);
-				//						$option.text(formatDOM(this));
-				//						$select.append($option);
-				//					});
-				//				}
+				function callback(arg) {
+					if (isDisposed(this) || !$el.hasClass('selected')) {
+						// このコントローラがdisposeされているまたは選択解除されていたら何もしない
+						return;
+					}
+					var eventHandlerTargets = arg.eventHandlerTargets;
+					// イベントハンドラ対象要素をセレクトに追加して実行できるようにする
+					var $li = $el.closest('li');
+					var $select = $li.find('select.eventTarget').html('');
+					if (!eventHandlerTargets.length) {
+						// 該当するターゲットがない場合は該当なしと表示
+						var $option = $('<option>');
+						$option.text('該当なし');
+						$select.append($option);
+						$select.prop('disabled', true);
+						$li.find('.trigger').prop('disabled', true);
+						return;
+					}
+					for (var i = 0, l = eventHandlerTargets.length; i < l; i++) {
+						var eventHandlerTarget = eventHandlerTargets[i];
+						var $option = $('<option>');
+						$option.val(i);
+						$option.text(eventHandlerTarget);
+						$select.append($option);
+						$select.prop('disabled', false);
+						$li.find('.trigger').prop('disabled', false);
+					}
+				}
+				this.trigger('getEventHandlerTarget', {
+					callback: this.own(callback),
+					instanceId: instanceId,
+					methodName: methodName
+				});
 			},
 
 			/**
@@ -970,7 +990,7 @@
 
 				// コントローラの場合はコントローラの詳細ビューを表示
 				this._selectedTarget = diagMessage;
-				if (diagMessage.type === DIAG_EVENT_CONTROLLER_BOUND) {
+				if (diagMessage.type === POST_MSG_TYPE_DIAG_CONTROLLER_BOUND) {
 					this._showControllerDetail(diagMessage);
 				} else {
 					// ロジックの場合はロジックの詳細ビューを表示
@@ -1008,8 +1028,7 @@
 			unfocus: function() {
 				this.setDetail(null);
 				this.$find('.target-name').removeClass('selected');
-				this.removeEventOverlay();
-				this.removeControllerOverlay();
+				this.removeOverlay();
 			},
 
 			/**
@@ -1820,22 +1839,22 @@
 			/**
 			 * diagメッセージを受け取るリスナ
 			 *
-			 * @param message
+			 * @param {String} messageData シリアライズされたメッセージデータ
 			 */
 			messageListener: function(messageData) {
 				var message = h5.u.obj.deserialize(messageData);
 				var id = message.instanceId;
 				var traceLogObj = null;
 				switch (message.type) {
-				case DIAG_EVENT_CONTROLLER_BOUND:
+				case POST_MSG_TYPE_DIAG_CONTROLLER_BOUND:
 					this._instanceMap[id] = message;
 					this._controllerInfoController.appendToList(message);
 					break;
-				case DIAG_EVENT_CONTROLLER_UNBOUND:
+				case POST_MSG_TYPE_DIAG_CONTROLLER_UNBOUND:
 					this._controllerInfoController.removeFromList(message);
 					delete this._instanceMap[id];
 					break;
-				case DIAG_EVENT_LOGIC_BOUND:
+				case POST_MSG_TYPE_DIAG_LOGIC_BOUND:
 					this._instanceMap[id] = message;
 					if (message.isControllerLogic) {
 						this._controllerInfoController.appendToList(message);
@@ -1845,7 +1864,7 @@
 						this._logicInfoController.appendToList(message);
 					}
 					break;
-				case DIAG_EVENT_BEFORE_METHOD_INVOKE:
+				case POST_MSG_TYPE_DIAG_BEFORE_METHOD_INVOKE:
 					traceLogObj = {
 						tag: TRACE_LOG_TAG_BEGIN,
 						instanceId: id,
@@ -1867,7 +1886,7 @@
 						}
 					}
 					break;
-				case DIAG_EVENT_AFTER_METHOD_INVOKE:
+				case POST_MSG_TYPE_DIAG_AFTER_METHOD_INVOKE:
 					traceLogObj = {
 						tag: TRACE_LOG_TAG_END,
 						instanceId: id,
@@ -1880,7 +1899,7 @@
 						this._promiseMap[message.promiseId] = traceLogObj;
 					}
 					break;
-				case DIAG_EVENT_ASYNC_METHOD_COMPLETE:
+				case POST_MSG_TYPE_DIAG_ASYNC_METHOD_COMPLETE:
 					var endLogObj = this._promiseMap[message.promiseId];
 					traceLogObj = {
 						tag: TRACE_LOG_TAG_DFD,
@@ -1892,12 +1911,16 @@
 						time: formatTime(message.timeStamp)
 					};
 					break;
-				case DIAG_EVENT_LOG:
-				case DIAG_EVENT_ERROR:
+				case POST_MSG_TYPE_DIAG_LOG:
+				case POST_MSG_TYPE_DIAG_ERROR:
 					var logObj = message;
 					logObj.time = formatTime(message.timeStamp);
 					this._logManager.appendLog(message);
 					break;
+				case POST_MSG_TYPE_SET_EVENT_HANDLER_TARGETS:
+					this._currentWaitingEventhandlerTarget
+							&& this._currentWaitingEventhandlerTarget.callback
+							&& this._currentWaitingEventhandlerTarget.callback(message.arg);
 				}
 				if (traceLogObj) {
 					// トレースログメッセージを追加
@@ -1909,9 +1932,10 @@
 			 * キー操作
 			 *
 			 * @memberOf h5devtool.DevtoolController
+			 * @param ctx
 			 */
-			'{document} keydown': function(context) {
-				var event = context.event;
+			'{document} keydown': function(ctx) {
+				var event = ctx.event;
 				var key = event.keyCode;
 				if (key === 116 && useWindowOpen) {
 					// F5キーによる更新の防止
@@ -1923,9 +1947,11 @@
 			 * 何もない箇所をクリック
 			 *
 			 * @memberOf h5devtool.DevtoolController
+			 * @param ctx
+			 * @param $el
 			 */
-			'.left click': function(context, $el) {
-				if (context.event.target !== $el[0]) {
+			'.left click': function(ctx, $el) {
+				if (ctx.event.target !== $el[0]) {
 					return;
 				}
 				// インスタンスの選択を解除
@@ -1933,7 +1959,10 @@
 			},
 
 			/**
+			 * 指定されたインスタンスのメソッドを表示(関数へジャンプ機能)
 			 *
+			 * @memberOf h5devtool.DevtoolController
+			 * @param ctx
 			 */
 			'{rootElement} showInstanceMethod': function(ctx) {
 				// 対応するコントローラまたはロジックを選択
@@ -1955,19 +1984,89 @@
 			},
 
 			/**
+			 * オーバレイの設定
 			 *
+			 * @memberOf h5devtool.DevtoolController
+			 * @param ctx
 			 */
 			'{rootElement} setOverlay': function(ctx) {
 				this.setOverlay(ctx.evArg);
 			},
 
+			/**
+			 * イベントハンドラターゲットの取得
+			 *
+			 * @memberOf h5devtool.DevtoolController
+			 * @param ctx
+			 */
+			'{rootElement} getEventHandlerTarget': function(ctx) {
+				this.getEventHandlerTarget(ctx.evArg);
+			},
+
+			/**
+			 * イベントハンドラターゲットの取得
+			 *
+			 * @param ctx
+			 * @memberOf h5devtool.DevtoolController
+			 */
+			'{rootElement} executeEventHandler': function(ctx) {
+				this.executeEventHandler(ctx.evArg);
+			},
+
+			/**
+			 * オーバレイの設定
+			 *
+			 * @memberOf h5devtool.DevtoolController
+			 * @param arg
+			 */
 			setOverlay: function(arg) {
 				this._postMessage({
-					type: 'setOverlay',
+					type: POST_MSG_TYPE_SET_OVERLAY,
 					arg: arg
 				});
 			},
 
+			/**
+			 * イベントハンドラターゲットの取得
+			 *
+			 * @param arg
+			 */
+			getEventHandlerTarget: function(arg) {
+				var callback = arg.callback;
+				var instanceId = arg.instanceId;
+				var methodName = arg.methodName;
+				this._currentWaitingEventhandlerTarget = {
+					instanceId: instanceId,
+					methodName: methodName,
+					callback: callback
+				};
+				var message = {
+					type: POST_MSG_TYPE_GET_EVENT_HANDLER_TARGETS,
+					arg: {
+						instanceId: instanceId,
+						methodName: methodName
+					}
+				};
+				this._postMessage(message);
+			},
+
+			/**
+			 * イベントハンドラの実行
+			 *
+			 * @param arg
+			 */
+			executeEventHandler: function(arg) {
+				this._postMessage({
+					type: POST_MSG_TYPE_GET_EXECUTE_EVENT_HANDLER,
+					arg: arg
+				});
+			},
+
+			/**
+			 * 親ウィンドウへのpostMessageの実行
+			 *
+			 * @param arg
+			 */
 			_postMessage: function(message) {
 				this._targetWindow.postMessage(h5.u.obj.serialize(message), TARGET_ORIGIN);
 			}
