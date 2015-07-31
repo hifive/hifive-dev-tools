@@ -5,27 +5,27 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=Edge">
 
-<!-- scriptやcssはビルドすると全てhtml内に埋め込まれるようにする -->
-
+<!-- {##jquery-start##} -->
 <!-- IE8以下なら1系、それ以外なら2系のjQueryを使用する -->
 <!--[if lt IE 9]>
 <script src="/hifive-res/ext/jquery/jquery-1.js" type="text/javascript"></script>
 <![endif]-->
 <!--[if gte IE 9]><!-->
 <script src="/hifive-res/ext/jquery/jquery-2.js" type="text/javascript"></script>
-<!--<![endif]-->
+<!-- {##jquery-end##} -->
 
-<!-- <link href="/hifive-res/fw/current/h5.css" rel="stylesheet"> -->
-<!-- <script src="/hifive-res/fw/current/ejs-h5mod.js"></script> -->
-<!-- <script src="/hifive-res/fw/current/h5.dev.js"></script> -->
-<!-- hifive NIGHTLY使用 -->
-<link href="../hifive/h5.css" rel="stylesheet">
-<script src="../hifive/ejs-h5mod.js"></script>
-<script src="../hifive/h5.dev.js"></script>
+<!-- {##hifive-start##} -->
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+<!-- {##hifive-end##} -->
 
+<!-- {##devtool-start##} -->
 <link href="h5-dev-tool.css" rel="stylesheet">
-<script src="common.js"></script>
+<script src="h5-dev-tool-common.js"></script>
 <script src="h5-dev-tool-child.js"></script>
+<!-- {##devtool-end##} -->
+
 <!-- テンプレート -->
 <script type="text/ejs" id="instance-list">
 	<li><span class="target-name [%= cls %]" data-instance-id="[%= instanceId %]">[%= name %]</span></li>

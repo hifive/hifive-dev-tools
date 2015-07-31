@@ -12,8 +12,6 @@
 <link rel="stylesheet"
 	href="/hifive-res/ext/bootstrap/2.2.1/css/bootstrap.min.css">
 
-<link rel="stylesheet" href="/hifive-res/fw/current/h5.css">
-
 <link rel="stylesheet" href="youtube.css">
 <!-- IE8以下なら1系、それ以外なら2系のjQueryを使用する -->
 <!--[if lt IE 9]>
@@ -25,12 +23,17 @@
 
 <script src="/hifive-res/ext/bootstrap/2.2.1/js/bootstrap.min.js"></script>
 
-<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
-<script src="/hifive-res/fw/current/h5.dev.js"></script>
+<!-- <link rel="stylesheet" href="/hifive-res/fw/current/h5.css"> -->
+<!-- <script src="/hifive-res/fw/current/ejs-h5mod.js"></script> -->
+<!-- <script src="/hifive-res/fw/current/h5.dev.js"></script> -->
+<!-- hifive NIGHTLY使用(シリアライズバグ対応済みを使用する必要があるため) -->
+<link href="../hifive/h5.css" rel="stylesheet">
+<script src="../hifive/ejs-h5mod.js"></script>
+<script src="../hifive/h5.dev.js"></script>
 
 <!-- hifiveディベロッパーツール設定と読み込み -->
 <script>
-	window.__h5_devtool_page = '/hifive-res/devtool/current/h5-dev-tool.html';
+	window.__h5_devtool_page = '../build/h5-dev-tool.html';
 </script>
 <script src="../build/h5-dev-tool.js"></script>
 
