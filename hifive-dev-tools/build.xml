@@ -21,10 +21,15 @@
 	<property name="build.tmp.dir" value="${build.dir}/tmp" />
 	<property name="build.dev.filename" value="h5-dev-tool.dev.js" />
 	<property name="build.min.filename" value="h5-dev-tool.js" />
+	<property name="build.css.filename" value="h5-dev-tool.css" />
+
 	<property name="build.supplement.html.filename" value="h5-dev-tool.html" />
-	<property name="min.header.filename" value="min-build-header.txt" />
-	<property name="dev.header.filename" value="dev-build-header.txt" />
-	<property name="config.dir" value="config" />
+	<property name="build.config" value="${basedir}/config/build" />
+	<property name="constructionFile" value="h5-dev-file-construction.xml"/>
+	<property name="minTempFile" value="template/hifive-dev-min-js.vm" />
+	<property name="devTempFile" value="template/hifive-dev-js.vm" />
+	<property name="childJsTempFile" value="template/hifive-dev-child-js.vm" />
+	<property name="childCssTempFile" value="template/hifive-dev-child-css.vm" />
 
 	<property name="lib.project.dir" value="./lib" />
 
@@ -33,6 +38,8 @@
 	</path>
 
 	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpathref="base.path" />
+	<taskdef name="buildService" classname="com.htmlhifive.dev.service.ant.GenericBuilderServiceTask" classpathref="base.path" />
+	<taskdef name="childScriptBuildService" classname="com.htmlhifive.dev.service.ant.GenericBuilderServiceTask" classpathref="base.path" />
 
 	<target name="clean">
 		<delete dir="${build.dir}" />
@@ -61,63 +68,53 @@
 		<echo message="gitCommitId: ${gitCommitId}" />
 	</target>
 
-	<target name="devtool-build" depends="clean,getVersion,getGitHash">
-		<!-- タイムスタンプを取得 -->
-		<tstamp>
-			<format property="timestamp" pattern="yyyy/MM/dd HH:mm:ss.SSS (Z)" />
-		</tstamp>
-		<!-- build.tmp.dirに必要なソースをコピー -->
-		<copy todir="${build.tmp.dir}">
-			<fileset dir="${config.dir}" />
-			<fileset dir="${src.dir}" />
-		</copy>
-		<!-- dev版のヘッダ挿入 -->
-		<!-- version、gitCommitId, タイムスタンプを挿入 -->
-		<replace file="${build.tmp.dir}/${dev.header.filename}">
-			<replacefilter token="{version}" value="${versionNumber}" />
-			<replacefilter token="{gitCommitId}" value="${gitCommitId}" />
-			<replacefilter token="{timestamp}" value="${timestamp}" />
-		</replace>
-		<!-- min版のヘッダ挿入 -->
-		<!-- ヘッダにversion, gitCommitIdのセット -->
-		<copy file="${config.dir}/${min.header.filename}" todir="${build.tmp.dir}" />
-		<replace file="${build.tmp.dir}/${min.header.filename}">
-			<replacefilter token="{version}" value="${versionNumber}" />
-			<replacefilter token="{gitCommitId}" value="${gitCommitId}" />
-		</replace>
-
-		<!-- dev版の作成 -->
-		<!-- ファイル結合してbuildに出力 -->
-		<concat destfile="${build.dir}/${build.dev.filename}">
-			<filelist dir="${build.tmp.dir}" files="${dev.header.filename},${src.h5diag.js},${src.devtool-common.js},${src.devtool.js}" />
-		</concat>
-
-		<!-- ClosureCompilerを使ってmin版の作成。コンパイル後にヘッダ追記するので、build.tmp.dirにいったん出力する -->
-		<jscomp compilationLevel="simple" debug="false" output="${build.tmp.dir}/${build.min.filename}">
-			<sources dir="${build.dir}">
-				<file name="${build.dev.filename}" />
-			</sources>
-		</jscomp>
-		<!-- ヘッダとソースを結合してbuildに出力 -->
-		<concat destfile="${build.dir}/${build.min.filename}">
-			<filelist dir="${build.tmp.dir}" files="${min.header.filename},${build.min.filename}" />
-		</concat>
+	<target name="devtool-build" depends="clean,getGitHash">
+		<buildService>
+			<buildParameter
+				tmpFiles="false"
+				devName="${build.dev.filename}"
+				releaseName="${build.min.filename}"
+				jsDir="${src.dir}"
+				dstDir="${build.dir}"
+				version="${versionNumber}"
+				configBaseDir="${build.config}"
+				jsTemplateFile="${devTempFile}"
+				minHeaderFile="${minTempFile}"
+				moduleNames="devtool"
+				constructionFile="${constructionFile}" />
+			<velocityParameter name="gitCommitId" value="${gitCommitId}" />
+		</buildService>
 	</target>
 
 	<target name="html-build">
 		<!-- h5-dev-tool.htmlファイルにscriptやcssを埋め込む -->
+		<!-- replaceregexで\文字を置換後の文字に指定できないので、\文字を一旦エスケープする -->
+		<!-- スクリプト埋め込み後にエスケープした\文字を元に戻している -->
 		<property name="escape-backslash" value="##escape-backslash##" />
 		<!-- {##jquery-start##}から{##jquery-end##}の箇所にjqueryを埋め込み -->
 		<loadfile property="tmp.jquery1" srcfile="${res.jquery1.js}" />
 		<loadfile property="tmp.jquery2" srcfile="${res.jquery2.js}" />
+		<mkdir dir="${build.tmp.dir}" />
+		<copy file="${src.dir}/${src.devtool.html}" tofile="${build.tmp.dir}/${src.devtool.html}" />
+
+		<!-- h5-dev-tool.htmlファイルにversion、gitCommitIdを埋め込む -->
+		<replaceregexp encoding="UTF-8" flags="gs" replace="${versionNumber}">
+			<fileset dir="${build.tmp.dir}" includes="${src.devtool.html}" />
+			<regexp pattern="\{##version##\}" />
+		</replaceregexp>
+		<replaceregexp encoding="UTF-8" flags="g" replace="${gitCommitId}">
+			<fileset dir="${build.tmp.dir}" includes="${src.devtool.html}" />
+			<regexp pattern="\{##gitCommitId##\}" />
+		</replaceregexp>
+
 		<script language="javascript"><![CDATA[
-			var replaceCode = ('<!--[if lt IE 9]><script>'
-			+ project.getProperty('tmp.jquery1')
-			+ '</script><![endif]--><!--[if gte IE 9]><!--><script>'
-			+ project.getProperty('tmp.jquery2')
-			+ '</script>')
-			.replace(/\$/g, '$$')
-			.replace(/\\/g, project.getProperty('escape-backslash'));
+			var replaceCode = ('<!--[if lt IE 9]>\n<script>'
+				+ project.getProperty('tmp.jquery1')
+				+ '</script>\n<![endif]--><!--[if gte IE 9]><!-->\n<script>'
+				+ project.getProperty('tmp.jquery2')
+				+ '</script>\n<!--<![endif]-->');
+			// \文字と$文字のエスケープ
+			replaceCode = replaceCode.replace(/\$/g, '$$').replace(/\\/g, project.getProperty('escape-backslash'));
 			project.setNewProperty('tmp.jqueryload',replaceCode);
 		]]></script>
 		<!-- jquery1,jquery2の読み分け -->
@@ -132,13 +129,14 @@
 		<loadfile property="tmp.ejs.js" srcfile="${res.ejs-h5mod.js}" />
 		<script language="javascript"><![CDATA[
 			var replaceCode = ('<style>'
-			+ project.getProperty('tmp.hifive.css')
-			+ '</style><script>'
-			+ project.getProperty('tmp.ejs.js')
-			+ '</script><script>'
-			+ project.getProperty('tmp.hifive.js')
-			+ '</script>')
-			.replace(/\\/g, project.getProperty('escape-backslash'));
+				+ ('' + project.getProperty('tmp.hifive.css')).replace(/^@charset ['|"]utf-8['|"];/i, '')
+				+ '\n</style>\n<script>\n'
+				+ project.getProperty('tmp.ejs.js')
+				+ '\n</script>\n<script>\n'
+				+ project.getProperty('tmp.hifive.js')
+				+ '\n</script>');
+			// \文字と$文字のエスケープ
+			replaceCode = replaceCode.replace(/\$/g, '$$').replace(/\\/g, project.getProperty('escape-backslash'));
 			project.setNewProperty('tmp.hifiveload',replaceCode);
 		]]></script>
 		<replaceregexp encoding="UTF-8" flags="gs" replace="${tmp.hifiveload}">
@@ -147,27 +145,38 @@
 		</replaceregexp>
 
 		<!-- {##devtool-start##}から{##devtool-end##}の箇所にdevtoolスクリプトを埋め込み -->
-		<loadfile property="tmp.devtool.css" srcfile="${build.tmp.dir}/${src.devtool.css}" />
-		<!-- minifyする -->
-		<jscomp compilationLevel="simple" debug="false" output="${build.tmp.dir}/temp.devtool-child.js">
-			<sources dir="${build.tmp.dir}">
-				<file name="${src.devtool-common.js}"/>
-				<file name="${src.devtool-child.js}" />
-			</sources>
-		</jscomp>
-		<loadfile property="tmp.devtool-child.js" srcfile="${build.tmp.dir}/temp.devtool-child.js" />
+		<childScriptBuildService>
+			<buildParameter
+				tmpFiles="false"
+				devName="tmp-h5-dev-tool-child.dev.js"
+				releaseName="tmp-h5-dev-tool-child.js"
+				cssName="tmp-h5-dev-tool-child.css"
+				jsDir="${src.dir}"
+				cssDir="${src.dir}"
+				dstDir="${build.tmp.dir}"
+				configBaseDir="${build.config}"
+				cssTemplateFile="${childCssTempFile}"
+				jsTemplateFile="${devTempFile}"
+				minHeaderFile="${childJsTempFile}"
+				moduleNames="devtool-child"
+				constructionFile="${constructionFile}" />
+			<velocityParameter name="gitCommitId" value="${gitCommitId}" />
+		</childScriptBuildService>
+		<loadfile property="tmp.devtool-child.css" srcfile="${build.tmp.dir}/tmp-h5-dev-tool-child.css" />
+		<loadfile property="tmp.devtool-child.js" srcfile="${build.tmp.dir}/tmp-h5-dev-tool-child.js" />
 		<script language="javascript"><![CDATA[
-			var replaceCode = ('<style>'
-			+ project.getProperty('tmp.devtool.css')
-			+ '</style>	<script>'
-			+ project.getProperty('tmp.devtool-child.js')
-			+ '</script>')
-			.replace(/\\/g, project.getProperty('escape-backslash'));
+			var replaceCode = ('<style>\n'
+				+ ('' + project.getProperty('tmp.devtool-child.css')).replace(/^@charset ['|"]utf-8['|"];/i, '')
+				+ '\n</style>\n<script>\n'
+				+ project.getProperty('tmp.devtool-child.js')
+				+ '\n</script>');
+			// \文字と$文字のエスケープ
+			replaceCode = replaceCode.replace(/\$/g, '$$').replace(/\\/g, project.getProperty('escape-backslash'));
 			project.setNewProperty('tmp.devtoolload',replaceCode);
 		]]></script>
 		<replaceregexp encoding="UTF-8" flags="gs" replace="${tmp.devtoolload}">
-			<fileset dir="${build.tmp.dir}" includes="${src.devtool.html}" />
-			<regexp pattern="\&lt;!-- \{##devtool-start##\}.*?\{##devtool-end##\} --\&gt;" />
+		<fileset dir="${build.tmp.dir}" includes="${src.devtool.html}" />
+		<regexp pattern="\&lt;!-- \{##devtool-start##\}.*?\{##devtool-end##\} --\&gt;" />
 		</replaceregexp>
 
 		<!-- \文字をエスケープしたものを元に戻す -->
@@ -180,7 +189,14 @@
 		<copy file="${build.tmp.dir}/${src.devtool.html}" tofile="${build.dir}/${build.supplement.html.filename}" />
 	</target>
 
-	<target name="build" depends="devtool-build,html-build">
+	<target name="setHeadVersion">
+		<tstamp>
+			<format property="timestamp"  pattern="yyyy-MM-dd_HH-mm-ss-SSS" />
+		</tstamp>
+		<property name="versionNumber" value="Nightly_${timestamp}"/>
+	</target>
+
+	<target name="build" depends="getVersion,devtool-build,html-build">
 		<!-- tmpフォルダの削除 -->
 		<delete dir="${build.tmp.dir}" />
 
@@ -188,11 +204,12 @@
 		<echo message="ビルドしたファイルを${output.dir}に出力しました。" />
 	</target>
 
-		<target name="setHeadVersion">
-		<property name="versionNumber" value="0.0.0" />
-	</target>
+	<target name="build-nightly" depends="setHeadVersion,devtool-build,html-build">
+		<!-- tmpフォルダの削除 -->
+		<delete dir="${build.tmp.dir}" />
 
-	<target name="build-head" depends="setHeadVersion, build">
-
+		<property name="output.dir" location="${build.dir}" />
+		<touch file="${build.dir}/NIGHTLY" />
+		<echo message="ビルドしたファイルを${output.dir}に出力しました。" />
 	</target>
 </project>

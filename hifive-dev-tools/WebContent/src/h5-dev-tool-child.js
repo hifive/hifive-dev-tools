@@ -14,9 +14,6 @@
  * limitations under the License.
  *
  * hifive Developer Tool
- *   version {version}
- *   gitCommitId : {gitCommitId}
- *   build at {timestamp}
  */
 
 (function($) {

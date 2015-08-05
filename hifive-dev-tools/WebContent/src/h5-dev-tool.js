@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2014 NS Solutions Corporation
+ * Copyright (C) 2013-2015 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * hifive
+ * hifive Developer Tool
  */
 (function() {
 	// 必要なモジュールが無い場合は読み込み中止

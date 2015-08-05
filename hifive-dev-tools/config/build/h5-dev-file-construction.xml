@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<h5-file-constraction xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="h5-dev-file-constraction.xsd">
+	<module name="devtool">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="h5.diag.js" />
+			<file name="h5-dev-tool-common.js" />
+			<file name="h5-dev-tool.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
+	<module name="devtool-child">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="h5-dev-tool-common.js" />
+			<file name="h5-dev-tool-child.js" />
+		</files>
+		<cssfiles>
+			<file name="h5-dev-tool.css" />
+		</cssfiles>
+	</module>
+</h5-file-constraction>
