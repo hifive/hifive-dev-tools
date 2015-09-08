@@ -835,11 +835,12 @@
 			 * @param context
 			 * @param $el
 			 */
-			'.targetlist .target-name click': function(context, $el) {
+			'.targetlist .target-name click': function(ctx, $el) {
 				if ($el.hasClass('selected')) {
 					// 既に選択済み
 					return;
 				}
+				ctx.event.stopPropagation();
 
 				var instanceId = $el.data('instance-id');
 				this.setDetail(instanceId);
@@ -907,6 +908,58 @@
 					this.removeOverlay();
 					this.$find('.eventHandler li').removeClass('selected');
 				}
+				// コピーモードの解除
+				this.$find('.select-for-copy').removeClass('select-for-copy');
+			},
+
+			/**
+			 * 表示されているインスタンスのリストをクリップボードにコピーできるモードにする
+			 *
+			 * @param ctx
+			 * @memberOf h5devtool.DevtoolController
+			 */
+			'.targetlist.root [dblclick]': function(ctx, $el) {
+				if ($(ctx.event.target).is('.target-name')) {
+					return;
+				}
+				ctx.event.preventDefault();
+				if ($el.hasClass('select-for-copy')) {
+					$el.removeClass('select-for-copy');
+				} else {
+					$el.addClass('select-for-copy');
+				}
+				$el.select();
+			},
+
+			/**
+			 * 表示されているインスタンスのリストをクリップボードにコピー
+			 *
+			 * @param ctx
+			 * @memberOf h5devtool.DevtoolController
+			 */
+			'{document} copy': function(ctx, $el) {
+				var $copyTarget = this.$find('.select-for-copy');
+				if (!$copyTarget.length) {
+					return;
+				}
+				clipboardData = ctx.event.originalEvent.clipboardData;
+				var str = '';
+				function toStr($list, indent) {
+					if ($list.hasClass('targetlist')) {
+						$list.children().children().each(function() {
+							toStr($(this), indent + 1);
+						});
+						return;
+					}
+					var space = '';
+					for (var i = 0; i < indent; i++) {
+						space += '\t';
+					}
+					return str += space + $list.text() + '\n';
+				}
+				toStr($copyTarget, -1);
+				clipboardData.setData('text', str);
+				ctx.event.preventDefault();
 			},
 
 			/**
