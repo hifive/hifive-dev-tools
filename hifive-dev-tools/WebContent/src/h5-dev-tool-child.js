@@ -922,11 +922,28 @@
 				if ($(ctx.event.target).is('.target-name')) {
 					return;
 				}
+				// IEの場合何かしら文字を選択していないとcopyイベントが起きない
+				// そのため、ダミーのtextareaを追加して文字列選択状態にする
 				ctx.event.preventDefault();
-				if ($el.hasClass('select-for-copy')) {
-					$el.removeClass('select-for-copy');
+				var textareaForListCopyCls = 'textareaForListCopy';
+				var selectForCopyCls = 'select-for-copy';
+				if ($el.hasClass()) {
+					$el.removeClass(selectForCopyCls);
+					this.$find('.' + textareaForListCopyCls).remove();
 				} else {
-					$el.addClass('select-for-copy');
+					$el.addClass(selectForCopyCls);
+					var $textareForListCopy = this.$find('.' + textareaForListCopyCls);
+					if (!$textareForListCopy.length) {
+						$textareForListCopy = $('<textarea>').addClass(textareaForListCopyCls);
+						$el.append($textareForListCopy);
+					}
+					$textareForListCopy.val(this._getTargetListString($el));
+					$textareForListCopy.focus();
+					$textareForListCopy.select();
+					$textareForListCopy.one('blur', function() {
+						$textareForListCopy.remove();
+						$el.removeClass('select-for-copy');
+					});
 				}
 				$el.select();
 			},
@@ -937,28 +954,11 @@
 			 * @param ctx
 			 * @memberOf h5devtool.DevtoolController
 			 */
-			'{document} copy': function(ctx, $el) {
+			'.textareaForListCopy copy': function(ctx, $el) {
 				var $copyTarget = this.$find('.select-for-copy');
-				if (!$copyTarget.length) {
-					return;
-				}
-				clipboardData = ctx.event.originalEvent.clipboardData;
-				var str = '';
-				function toStr($list, indent) {
-					if ($list.hasClass('targetlist')) {
-						$list.children().children().each(function() {
-							toStr($(this), indent + 1);
-						});
-						return;
-					}
-					var space = '';
-					for (var i = 0; i < indent; i++) {
-						space += '\t';
-					}
-					return str += space + $list.text() + '\n';
-				}
-				toStr($copyTarget, -1);
-				clipboardData.setData('text', str);
+				var txt = $el.length ? $el.val() : this._getTargetListString($copyTarget);
+				clipboardData = ctx.event.originalEvent.clipboardData || window.clipboardData;
+				clipboardData.setData('text', txt);
 				ctx.event.preventDefault();
 			},
 
@@ -1084,8 +1084,6 @@
 			/**
 			 * コントローラのルート要素表示オーバレイの削除
 			 *
-			 * @param {Boolean} [deleteAll=false] ボーダーだけのオーバレイも削除するかどうか
-			 * @param {jQuery} $exclude 除外するオーバーレイ要素
 			 * @memberOf h5devtool.InstanceInfoController
 			 */
 			removeOverlay: function() {
@@ -1169,6 +1167,31 @@
 			 */
 			removeOverlay: function(arg) {
 				this.trigger('setOverlay');
+			},
+
+			/**
+			 * コントローラやロジックのリストを文字列化
+			 *
+			 * @param $list
+			 * @returns {String}
+			 */
+			_getTargetListString: function($targetList) {
+				var str = '';
+				function toStr($list, indent) {
+					if ($list.hasClass('targetlist')) {
+						$list.children().children().each(function() {
+							toStr($(this), indent + 1);
+						});
+						return;
+					}
+					var space = '';
+					for (var i = 0; i < indent; i++) {
+						space += '\t';
+					}
+					return str += space + $list.text() + '\n';
+				}
+				toStr($targetList, -1);
+				return str;
 			},
 
 			/**

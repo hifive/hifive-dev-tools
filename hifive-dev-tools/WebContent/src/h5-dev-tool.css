@@ -56,6 +56,12 @@ html,body {
 	background-color: rgba(0, 0, 0, 0.08);
 }
 
+.h5devtool .textareaForListCopy {
+	width: 0;
+	height: 0;
+	opacity: 0;
+}
+
 .h5devtool .logline {
 	padding-left: 0;
 	padding-top: 4px;
