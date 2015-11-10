@@ -1637,6 +1637,11 @@
 				});
 			},
 
+			'.clear-log click': function(){
+				this._logArray.splice(0, this._logArray.length);
+				this.refresh();
+			},
+
 			setLogArray: function(logArray) {
 				this._logArray = logArray;
 			},

@@ -447,7 +447,7 @@
 		// ウィンドウ名はランダムにして、devtool(devtoolを読み込んだページ)を複数開けるようにしている
 		w = window.open(url, '__h5devtool__' + new Date().getTime() + '_'
 				+ parseInt(Math.random() * 1000),
-				'resizable=1, menubar=no, width=910, height=700, toolbar=no, scrollbars=yes');
+				'resizable=1, menubar=no, width=1000, height=700, toolbar=no, scrollbars=yes');
 		if (!w) {
 			// ポップアップがブロックされた場合
 			return dfd.reject('block').promise();
