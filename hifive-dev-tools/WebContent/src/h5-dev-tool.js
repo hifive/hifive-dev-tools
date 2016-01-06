@@ -1051,7 +1051,7 @@
 	 * </p>
 	 */
 	var useJQueryMeasuringFunctions = !h5.env.ua.isIE
-			|| !/(^2\..*)|(^1\.8|9|(10)\..*)/.test($().jquery)
+			|| !/(^2\..*)|(^1\.8|9|(10)\..*)/.test($().jquery);
 
 	/**
 	 * devtoolで表示しているコントローラまたはロジックのマップ。idからコントローラまたはロジックを特定できる
@@ -1824,7 +1824,7 @@
 			// jQuery2.0.Xで、windowに属していない、別ウィンドウ内の要素についてwindow.getComputedStyle(elm)をしており、
 			// IEだとそれが原因でエラーになるため。
 			$contextMenu.addClass('open');
-			var pageX, pageY;
+			var pageX,pageY;
 			if (context.event.originalEvent.targetTouches) {
 				// タッチイベントの場合
 				var touch = context.event.originalEvent.targetTouches[0];
