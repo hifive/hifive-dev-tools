@@ -1063,7 +1063,7 @@
 	// =============================
 	/**
 	 * h5.scopedglobals.jsからコピペ
-	 * 
+	 *
 	 * @private
 	 * @param value 値
 	 * @returns 配列化された値、ただし引数がnullまたはundefinedの場合はそのまま
@@ -1076,7 +1076,7 @@
 	}
 	/**
 	 * h5.core.__compileAspectsからコピペ
-	 * 
+	 *
 	 * @param {Object|Object[]} aspects アスペクト設定
 	 */
 	function compileAspects(aspects) {
@@ -1095,7 +1095,7 @@
 	}
 	/**
 	 * h5scopedglobals.jsからコピペ
-	 * 
+	 *
 	 * @private
 	 * @param {String} str 文字列
 	 * @returns {String} エスケープ済文字列
@@ -1105,7 +1105,7 @@
 	}
 	/**
 	 * h5scopedglobals.jsからコピペ
-	 * 
+	 *
 	 * @private
 	 * @param {String|RegExp} target 値
 	 * @returns {RegExp} オブジェクト
@@ -1128,7 +1128,7 @@
 
 	/**
 	 * h5.core.controller.jsからコピペ
-	 * 
+	 *
 	 * @param {String} selector セレクタ
 	 * @returns 特殊オブジェクトの場合は
 	 */
@@ -1150,7 +1150,7 @@
 
 	/**
 	 * ディベロッパウィンドウを開く
-	 * 
+	 *
 	 * @returns ディベロッパウィンドウが開くまで待機するpromiseオブジェクト
 	 */
 	function openDevtoolWindow() {
@@ -1241,7 +1241,7 @@
 	// --------------- CSSの設定 ---------------
 	/**
 	 * キャメルケースからハイフン区切りに変換する
-	 * 
+	 *
 	 * @param {String} str
 	 * @returns 引数をハイフン区切りにした文字列
 	 */
@@ -1358,7 +1358,7 @@
 
 	/**
 	 * コントローラが持つ子コントローラの定義されたプロパティキーのリストを返す
-	 * 
+	 *
 	 * @param {Controller} controller
 	 * @returns {String[]} コントローラが持つ子コントローラの定義されたプロパティキーのリスト
 	 */
@@ -1377,7 +1377,7 @@
 
 	/**
 	 * イベントハンドラを指定しているキーから対象になる要素を取得
-	 * 
+	 *
 	 * @param {String} key
 	 * @param {Controller} controller
 	 * @returns {jQuery} イベントハンドラの対象になる要素
@@ -1400,7 +1400,7 @@
 
 	/**
 	 * Dateをフォーマット
-	 * 
+	 *
 	 * @param {Date} date
 	 * @returns {String} フォーマットした日付文字列
 	 */
@@ -1420,7 +1420,7 @@
 	}
 	/**
 	 * ログメッセージオブジェクトを作成
-	 * 
+	 *
 	 * @param {Controller|Logic} target
 	 * @param message メッセージ}
 	 * @param {String} cls クラス。'private'や'event'など
@@ -1445,7 +1445,7 @@
 
 	/**
 	 * 第2引数のログメッセージオブジェクトを第1引数のObservableArrayに追加する。 最大数を超えないようにする
-	 * 
+	 *
 	 * @param {ObservableArray} logArray
 	 * @param {Object} logObj ログオブジェクト
 	 */
@@ -1465,7 +1465,7 @@
 
 	/**
 	 * コントローラ定義オブジェクトを追加する(hifive1.1.8以前用)
-	 * 
+	 *
 	 * @param {Controller} controller
 	 * @param {Object} defObj コントローラ定義オブジェクト
 	 */
@@ -1493,7 +1493,7 @@
 
 	/**
 	 * ログ用のObservableArrayを作成する
-	 * 
+	 *
 	 * @returns ログオブジェクトを格納するObservableArray
 	 */
 	function createLogArray() {
@@ -1504,7 +1504,7 @@
 
 	/**
 	 * エレメントのスタイルを取得します
-	 * 
+	 *
 	 * @param {DOM|jQuery} elm
 	 * @returns styleオブジェクト
 	 */
@@ -1515,7 +1515,7 @@
 
 	/**
 	 * devtoolWindow内の要素についてouterHeightを計算する
-	 * 
+	 *
 	 * @param {DOM|jQuery} elm
 	 * @returns 引数で渡された要素のouterHeight
 	 */
@@ -1532,7 +1532,7 @@
 
 	/**
 	 * devtoolWindow内の要素についてouterWidthを計算する
-	 * 
+	 *
 	 * @param {DOM|jQuery} elm
 	 * @returns 引数で渡された要素のouterWidth
 	 */
@@ -1549,7 +1549,7 @@
 
 	/**
 	 * offsetParentを取得する
-	 * 
+	 *
 	 * @param {DOM|jQuery} elm
 	 * @returns 引数で渡された要素のoffsetParent
 	 */
@@ -1564,7 +1564,7 @@
 
 	/**
 	 * コントローラまたはロジックがすでにdisposeされているかどうかを判定する
-	 * 
+	 *
 	 * @param {Controller|Logic} target
 	 * @returns {Boolean}
 	 */
@@ -1578,7 +1578,7 @@
 	 * <p>
 	 * (メソッド名をプロパティにしたObservableItemは作成できない(プロパティの命名制限のため)ので、オリジナルのクラスを作成)
 	 * </p>
-	 * 
+	 *
 	 * @param {Controller|Logic} target
 	 * @param {Function} callback メソッドが実行されたときに実行するコールバック関数
 	 * @returns {ObservableItem}
@@ -1620,7 +1620,7 @@
 
 	/**
 	 * コントローラまたはロジックからdevtoolコンテキストを取得する。 ない場合はからオブジェクトを作成する
-	 * 
+	 *
 	 * @param {Controller|Logic} target コントローラまたはロジック
 	 * @returns devtoolコンテキスト
 	 */
@@ -1635,7 +1635,7 @@
 
 	/**
 	 * 要素を点滅させる
-	 * 
+	 *
 	 * @param {DOM|jQuery} elm
 	 */
 	function blinkElm(elm) {
@@ -1657,7 +1657,7 @@
 
 	/**
 	 * コントローラまたはターゲットを登録する
-	 * 
+	 *
 	 * @param {Controller|Logic} target
 	 */
 	function registerDevtoolTarget(target) {
@@ -1668,7 +1668,7 @@
 
 	/**
 	 * 登録されたコントローラまたはロジックを取得する
-	 * 
+	 *
 	 * @param {String} id
 	 * @returns {Controller|Logic}
 	 */
@@ -1678,7 +1678,7 @@
 
 	/**
 	 * コントローラまたはターゲットの登録を削除する
-	 * 
+	 *
 	 * @param {Controller|Logic} target
 	 */
 	function removeDevtoolTarget(id) {
@@ -1687,7 +1687,7 @@
 
 	/**
 	 * イベントリスナをバインド
-	 * 
+	 *
 	 * @param {Object} target addEventlisterたはatacheEvent
 	 * @param {String} event イベント名
 	 * @param {Function} listener イベントリスナ
@@ -1702,7 +1702,7 @@
 
 	/**
 	 * 第1引数で指定されたメソッドリスト要素を、第2引数のメソッド名を持つliまでスクロールする。 第3引数で点滅させるかどうか指定する。
-	 * 
+	 *
 	 * @param {jQuery} $methodList
 	 * @param {string} method
 	 * @param {boolean} isBlink
@@ -1940,7 +1940,7 @@
 		 * コンテキストメニューを出すかどうかを判定するフィルタを設定する。 引数には関数またはセレクタを指定できる。
 		 * 指定する関数はcontextを引数に取り、falseを返したらコンテキストメニューを出さないような関数を指定する。
 		 * セレクタを指定した場合は、右クリック時のevent.targetがセレクタにマッチする場合にコンテキストメニューを出さない。
-		 * 
+		 *
 		 * @memberOf ___anonymous46_5456
 		 * @param selectorOrFunc
 		 */
@@ -2026,7 +2026,7 @@
 	 * <p>
 	 * コントローラ及びロジックの情報を表示するコントローラ
 	 * </p>
-	 * 
+	 *
 	 * @name h5.devtool.ControllerAndLogicInfoController
 	 */
 	var controllerAndLogicInfoController = {
@@ -2044,14 +2044,14 @@
 		$info: null,
 		/**
 		 * 選択中のコントローラまたはロジック
-		 * 
+		 *
 		 * @name h5.devtool.ControllerAndLogicInfoController
 		 */
 		selectedTarget: null,
 
 		/**
 		 * コントローラまたはロジックのメソッド名と、実行回数表示DOMのマップ
-		 * 
+		 *
 		 * @name h5.devtool.ControllerAndLogicInfoController
 		 */
 		_methodCountMap: {},
@@ -2094,7 +2094,7 @@
 		},
 		/**
 		 * クローズ時のイベント
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 */
 		'{.h5devtool} close': function() {
@@ -2115,7 +2115,7 @@
 		},
 		/**
 		 * マウスオーバーでコントローラのバインド先オーバレイ表示(PC用)
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param context
 		 * @param $el
@@ -2131,7 +2131,7 @@
 		},
 		/**
 		 * マウスアウト
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param context
 		 * @param $el
@@ -2142,7 +2142,7 @@
 
 		/**
 		 * コントローラリスト上のコントローラをクリック
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param context
 		 * @param $el
@@ -2173,7 +2173,7 @@
 
 		/**
 		 * イベントハンドラにマウスオーバーで選択(PC用)
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 */
 		' .eventHandler li:not(.selected) mouseover': function(context, $el) {
@@ -2181,7 +2181,7 @@
 		},
 		/**
 		 * イベントハンドラをクリックで選択(タブレット用)
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'.eventHandler li:not(.selected) click': function(context, $el) {
@@ -2189,7 +2189,7 @@
 		},
 		/**
 		 * イベントハンドラからカーソルを外した時(PC用)
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 */
 		' .eventHandler li.selected mouseleave': function(context, $el) {
@@ -2198,7 +2198,7 @@
 
 		/**
 		 * イベントハンドラの選択
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param $el
 		 */
@@ -2271,7 +2271,7 @@
 		},
 		/**
 		 * 詳細画面をクリア(要素の削除とコントローラのdispose)
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param target
 		 */
@@ -2289,7 +2289,7 @@
 
 		/**
 		 * 詳細画面(右側画面)をコントローラまたはロジックを基に作成。nullが渡されたら空白にする
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param target
 		 */
@@ -2315,7 +2315,7 @@
 		},
 		/**
 		 * コントローラの詳細表示
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param controller
 		 */
@@ -2474,7 +2474,7 @@
 
 		/**
 		 * ロジックの詳細表示
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param logic
 		 */
@@ -2541,7 +2541,7 @@
 
 		/**
 		 * メソッドカウントにメソッドをカウントするコールバックを登録
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param {MethodCount} methodCount
 		 */
@@ -2560,7 +2560,7 @@
 
 		/**
 		 * エレメントにコントローラまたはロジックのIDを持たせる
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param el
 		 * @param target
@@ -2570,7 +2570,7 @@
 		},
 		/**
 		 * エレメントに覚えさせたコントローラまたはロジックを取得する
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param el
 		 * @returns {Controller|Logic}
@@ -2580,7 +2580,7 @@
 		},
 		/**
 		 * 選択を解除
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 */
 		unfocus: function() {
@@ -2590,7 +2590,7 @@
 		},
 		/**
 		 * 引数に指定された要素にオーバレイ
-		 * 
+		 *
 		 * @param elem オーバレイ対象要素
 		 * @param classNames オーバレイ要素に追加するクラス名
 		 * @returns 追加したオーバレイ要素
@@ -2656,7 +2656,7 @@
 		},
 		/**
 		 * オーバレイの削除。deleteAllにtrueが指定された場合ボーダーだけのオーバーレイも削除
-		 * 
+		 *
 		 * @param {Boolean} [deleteAll=false] ボーダーだけのオーバレイも削除するかどうか
 		 * @param {jQuery} $exclude 除外するオーバーレイ要素
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
@@ -2668,7 +2668,7 @@
 		},
 		/**
 		 * コントローラまたはロジックをコントローラリストに追加
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param target
 		 */
@@ -2752,7 +2752,7 @@
 		},
 		/**
 		 * コントローラまたはロジックをコントローラリストから削除
-		 * 
+		 *
 		 * @memberOf h5.devtool.ControllerAndLogicInfoController
 		 * @param target
 		 */
@@ -2775,7 +2775,7 @@
 
 	/**
 	 * デバッガの設定を行うコントローラ
-	 * 
+	 *
 	 * @name h5.devtool.SettingsController
 	 */
 	var settingsController = {
@@ -2831,7 +2831,7 @@
 
 	/**
 	 * トレースログ、ロガーの共通処理を抜き出したコントローラ
-	 * 
+	 *
 	 * @name h5.devtool.BaseLogConttoller
 	 */
 	var baseLogController = {
@@ -2853,21 +2853,21 @@
 
 		/**
 		 * ログリストが一番下までスクロールされているかどうか
-		 * 
+		 *
 		 * @memberOf h5.devtool.BaseLogController
 		 */
 		_isScrollLast: false,
 
 		/**
 		 * ログ配列
-		 * 
+		 *
 		 * @memberOf h5.devtool.BaseLogController
 		 */
 		_logArray: null,
 
 		/**
 		 * logArrayからHTMLに変換する関数 setCreateHTMLで登録する
-		 * 
+		 *
 		 * @memberOf h5.devtool.BaseLogController
 		 */
 		_createLogHTML: function() {
@@ -2882,7 +2882,7 @@
 		},
 		/**
 		 * ログ配列のセット
-		 * 
+		 *
 		 * @memberOf h5.devtool.BaseLogController
 		 */
 		setLogArray: function(logArray, target) {
@@ -3043,7 +3043,7 @@
 
 	/**
 	 * トレースログコントローラ<br>
-	 * 
+	 *
 	 * @name h5.devtool.TraceLogController
 	 */
 	var traceLogController = {
@@ -3053,7 +3053,7 @@
 		__name: 'h5.devtool.TraceLogController',
 		/**
 		 * 表示する条件を格納するオブジェクト
-		 * 
+		 *
 		 * @memberOf h5.devtool.TraceLogController
 		 */
 		_condition: {
@@ -3064,28 +3064,28 @@
 
 		/**
 		 * ログ出力共通コントローラ
-		 * 
+		 *
 		 * @memberOf h5.devtool.TraceLogController
 		 */
 		baseController: baseLogController,
 
 		/**
 		 * トレースログと紐づくcontrollerAndLogicInfoControllerインスタンス
-		 * 
+		 *
 		 * @memberOf h5.devtool.BaseLogController
 		 */
 		infoCtrls: [],
 
 		/**
 		 * トレースログ
-		 * 
+		 *
 		 * @memberOf h5.devtool.BaseLogController
 		 */
 		_traceLogArray: null,
 
 		/**
 		 * ロガーログ
-		 * 
+		 *
 		 * @memberOf h5.devtool.BaseLogController
 		 */
 		_loggerArray: null,
@@ -3202,7 +3202,7 @@
 
 		/**
 		 * フィルタを掛ける
-		 * 
+		 *
 		 * @memberOf h5.devtool.TraceLogController
 		 */
 		'input.filter keydown': function(context) {
@@ -3217,7 +3217,7 @@
 		},
 		/**
 		 * 入力欄が空になったらフィルタを解除
-		 * 
+		 *
 		 * @memberOf h5.devtool.TraceLogController
 		 */
 		'input.filter keyup': function(context) {
@@ -3257,7 +3257,7 @@
 
 		/**
 		 * 表示されているログについてフィルタを掛けなおす
-		 * 
+		 *
 		 * @memberOf h5.devtool.TraceLogController
 		 */
 		refresh: function() {
@@ -3276,7 +3276,7 @@
 
 	/**
 	 * ロガーコントローラ
-	 * 
+	 *
 	 * @name h5.devtool.LoggerController
 	 */
 	var loggerController = {
@@ -3287,7 +3287,7 @@
 
 		/**
 		 * ログ出力共通コントローラ
-		 * 
+		 *
 		 * @memberOf h5.devtool.LoggerController
 		 */
 		baseController: h5.devtool.BaseLogController,
@@ -3349,7 +3349,7 @@
 
 		/**
 		 * 表示されているログについてフィルタを掛けなおす
-		 * 
+		 *
 		 * @memberOf h5.devtool.TraceLogController
 		 */
 		refresh: function() {
@@ -3359,7 +3359,7 @@
 
 		/**
 		 * Log出力するHTML文字列を作成
-		 * 
+		 *
 		 * @memberOf h5.devtool.LoggerController
 		 * @param logArray
 		 * @returns {String}
@@ -3392,7 +3392,7 @@
 
 	/**
 	 * タブコントローラ タブ表示切替をサポートする
-	 * 
+	 *
 	 * @name h5.devtool.TabController
 	 */
 	var tabController = {
@@ -3409,7 +3409,7 @@
 		},
 		/**
 		 * 指定されたクラスのタブへ切替
-		 * 
+		 *
 		 * @param {String} tabClass タブのクラス名
 		 */
 		selectTab: function(tabClass) {
@@ -3417,7 +3417,7 @@
 		},
 		/**
 		 * タブをクリック
-		 * 
+		 *
 		 * @memberOf h5.devtool.TabController
 		 * @param context
 		 * @param $el
@@ -3442,7 +3442,7 @@
 
 	/**
 	 * ディベロッパツールコントローラ
-	 * 
+	 *
 	 * @name h5.devtool.DevtoolController
 	 */
 	var devtoolController = {
@@ -3452,13 +3452,13 @@
 		__name: 'h5.devtool.DevtoolController',
 		/**
 		 * devtoolを表示しているウィンドウ
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 */
 		win: null,
 		/**
 		 * デバッグのターゲットとなるウィンドウ(devtool.jsを読み込んでいるウィンドウのwindow)
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 */
 		targetWindow: window,
@@ -3607,7 +3607,7 @@
 		},
 		/**
 		 * ロジックがh5.core.logicでロジック化された(devtoolがあげているイベント)
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 * @param context
 		 */
@@ -3618,7 +3618,7 @@
 
 		/**
 		 * コントローラが新たにバインドされた
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 * @param context
 		 */
@@ -3633,7 +3633,7 @@
 
 		/**
 		 * コントローラがアンバインドされた
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 * @param context
 		 */
@@ -3643,7 +3643,7 @@
 
 		/**
 		 * キー操作
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'{document} keydown': function(context) {
@@ -3657,7 +3657,7 @@
 
 		/**
 		 * 何もない箇所をクリック
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'.left click': function(context, $el) {
@@ -3668,7 +3668,7 @@
 		},
 		/**
 		 * 閉じるボタン(モバイル用) 閉じて、オーバレイも消える。
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'{.h5devtool-controllBtn.opencloseBtn.closeTool} click': function(context, $el) {
@@ -3679,7 +3679,7 @@
 		},
 		/**
 		 * 開くボタン(モバイル用)
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'{.h5devtool-controllBtn.opencloseBtn.openTool} click': function(context, $el) {
@@ -3695,7 +3695,7 @@
 		 * <p>
 		 * オーバレイを隠す。タブレット版の場合はディベロッパツールも隠す。
 		 * </p>
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'{.h5devtool-controllBtn.showhideBtn.hideTool} click': function(context, $el) {
@@ -3708,7 +3708,7 @@
 		},
 		/**
 		 * 見るボタン(モバイル用)
-		 * 
+		 *
 		 * @memberOf h5.devtool.DevtoolController
 		 */
 		'{.h5devtool-controllBtn.showhideBtn.showTool} click': function(context, $el) {
