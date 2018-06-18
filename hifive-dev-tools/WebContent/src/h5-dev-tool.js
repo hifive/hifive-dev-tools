@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2016 NS Solutions Corporation
+ * Copyright (C) 2013-2018 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,13 +185,14 @@
 					boxSizing: 'border-box'
 				}
 			},
+
 			/*
 			 * トレースログ
 			 */
 			{
 				selector: '.h5devtool .trace',
 				rule: {
-					paddingBottom: '60px' // .fixedControllsの高さ
+					paddingBottom: '68px' // .fixedControllsの高さ
 				}
 			},
 			{
@@ -249,7 +250,7 @@
 			{
 				selector: '.h5devtool .trace .fixedControlls',
 				rule: {
-					height: '60px'
+					height: '66px'
 				}
 			},
 			{
@@ -295,7 +296,7 @@
 			{
 				selector: '.h5devtool .logger .fixedControlls',
 				rule: {
-					height: '24px',
+					height: '30px',
 					borderWidth: '1px 0 1px 0'
 				}
 			},
@@ -877,6 +878,7 @@
 							+ '<label class="lifecycle lifecycleColor filterLabel"><input type="checkbox" checked name="lifecycle"/>ライフサイクル</label>'
 							+ '<span class="log logColor filterLabel"><label><input type="checkbox" checked name="log"/>ログ</label>'
 							+ '<select class="logLevelThreshold"><option value="50">ERROR</option><option value="40">WARN</option><option value="30">INFO</option><option value="20" selected>DEBUG</option><option value="10">TRACE</option></select></span>'
+							+ '<button class="clearAllLogs">ログをクリア</button>'
 							+ '<br>'
 							+ '<input type="text" class="filter"/><button class="filter-show">絞込み</button><button class="filter-hide">除外</button><button class="filter-clear" disabled>フィルタ解除</button>'
 							+ '<span class="font-small">（ログを右クリックまたはタッチで関数にジャンプ）</span></div>'
@@ -900,7 +902,11 @@
 	view
 			.register(
 					'logger',
-					'<div class="fixedControlls">フィルタ：<select class="logLevelThreshold"><option value="50">ERROR</option><option value="40">WARN</option><option value="30">INFO</option><option value="20" selected>DEBUG</option><option value="10">TRACE</option></select></div><ul class="liststyle-none no-padding floating-list console"></ul>');
+					'<div class="fixedControlls">フィルタ：'
+							+ '<select class="logLevelThreshold"><option value="50">ERROR</option><option value="40">WARN</option>'
+							+ '<option value="30">INFO</option><option value="20" selected>DEBUG</option><option value="10">TRACE</option></select>'
+							+ '<button class="clearAllLogs">ログをクリア</button>'
+							+ '</div><ul class="liststyle-none no-padding floating-list console"></ul>');
 
 	// --------------------- コントローラ --------------------- //
 	// 詳細情報画面
@@ -1824,7 +1830,7 @@
 			// jQuery2.0.Xで、windowに属していない、別ウィンドウ内の要素についてwindow.getComputedStyle(elm)をしており、
 			// IEだとそれが原因でエラーになるため。
 			$contextMenu.addClass('open');
-			var pageX,pageY;
+			var pageX, pageY;
 			if (context.event.originalEvent.targetTouches) {
 				// タッチイベントの場合
 				var touch = context.event.originalEvent.targetTouches[0];
@@ -2902,6 +2908,17 @@
 		setCreateLogHTML: function(func) {
 			this._createLogHTML = func;
 		},
+
+		/**
+		 * 現在保持しているログデータをすべて消去します。
+		 */
+		clear: function() {
+			if (this._logArray) {
+				//copyFromにnullを渡すと空配列をコピーしたことになる＝中身が空になる
+				this._logArray.copyFrom(null);
+			}
+		},
+
 		_update: function() {
 			// ログ出力箇所が表示されていなければ(タブがactiveになっていなければ)なにもしない
 			if (!$(this.rootElement).hasClass('active')) {
@@ -3247,6 +3264,11 @@
 			this._executeFilter('');
 			this.$find('.filter-clear').prop('disabled', true);
 		},
+
+		'button.clearAllLogs click': function(context) {
+			this.clear();
+		},
+
 		_executeFilter: function(val, execlude) {
 			this.$find('.filter-clear').prop('disabled', !val);
 			this._condition.filterStr = val;
@@ -3263,6 +3285,14 @@
 		refresh: function() {
 			this.$find('.trace-list')[0].innerHTML = this
 					._createLogHTML(this.baseController._logArray);
+		},
+
+		/**
+		 * 表示されているログをすべて消去する
+		 */
+		clear: function() {
+			this.baseController.clear();
+			this.$find('.trace-list')[0].innerHTML = '';
 		},
 
 		/**
@@ -3345,6 +3375,11 @@
 
 		'.logLevelThreshold change': function(context, $el) {
 			this.refresh();
+		},
+
+		'.clearAllLogs click': function() {
+			this.baseController.clear();
+			this.$find('.console')[0].innerHTML = '';
 		},
 
 		/**
