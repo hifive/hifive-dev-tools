@@ -3590,12 +3590,18 @@
 								for (var i = levelString.length; i < 5; i++) {
 									levelString += ' ';
 								}
+
+								var msgAry = obj.args;
+								if (typeof obj.args[0] !== 'string') {
+									msgAry = ['(Object)'];
+								}
+
 								loggerArray.push({
 									levelString: levelString,
 									level: obj.level,
 									time: timeFormat(obj.date),
 									timeStamp: obj.date.getTime(),
-									message: h5.u.str.format.apply(h5.u.str, obj.args)
+									message: h5.u.str.format.apply(h5.u.str, msgAry)
 								});
 								loggerArray.dispatchEvent({
 									type: 'logUpdate'
